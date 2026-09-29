@@ -55,6 +55,9 @@ namespace KanBagi.Core
         /// <summary>Dukkan su anda acik mi?</summary>
         public bool IsShopOpen { get; private set; }
 
+        public float OpenHour => openHour;
+        public float CloseHour => closeHour;
+
         /// <summary>Yeni musteri kabul ediliyor mu? Kapanisa yaklasinca kapanir.</summary>
         public bool AcceptsNewCustomers => IsShopOpen && TimeOfDay < closeHour - lastCallHours;
 

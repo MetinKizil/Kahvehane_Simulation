@@ -58,8 +58,9 @@ Assets/_Project/
                        PropertyData, PropertyCatalog
     ├── Delivery/      DeliveryManager
     ├── Editor/        RowPrefabBuilder, ReportPanelBuilder, SaveMenuItems, SignPrefabBuilder,
-                       GamblingSignBuilder, MafiaPrefabBuilder
-    ├── Illegal/       GamblingTable, SuspicionManager, MafiaManager, MafiaCollector
+                       GamblingSignBuilder, MafiaPrefabBuilder, PolicePrefabBuilder
+    ├── Illegal/       GamblingTable, SuspicionManager, MafiaManager, MafiaCollector,
+                       PoliceManager, PoliceOfficer
     ├── Neighborhood/  PropertyBuilding, PropertyVisualSwitch
     ├── Economy/       EconomyManager, PurchaseManager
     ├── Interaction/   IInteractable, HoldableItem, PlayerInteractor
@@ -71,7 +72,8 @@ Assets/_Project/
     └── UI/            MoneyUI, ReputationUI, StockUI, HeldItemUI, InteractionPromptUI, ProgressBarUI,
                        OrderBubbleUI, Billboard, ComputerUI, CatalogEntryUI, DeliveryNotificationUI,
                        TabGroupUI, UpgradeListUI, UpgradeEntryUI, ClockUI, DailyReportUI,
-                       PropertyListUI, PropertyEntryUI, PropertySignUI, GamblingSignUI, MafiaSignUI
+                       PropertyListUI, PropertyEntryUI, PropertySignUI, GamblingSignUI, MafiaSignUI,
+                       PoliceNotificationUI
 ```
 
 ### Kod konvansiyonları (mevcut koda uyulmalı)
@@ -325,6 +327,20 @@ Assets/_Project/
   - `NetProfit = Revenue + RentIncome + GamblingNet - Expenses - ProtectionPaid`
 - **Test sırasında yakalanan bug:** mafya barajı aştığın **gün** kapıya dayanıyordu (oyun daha oynanmadan). `firstVisitDelayDays` + `earliestVisitDay` ile çözüldü.
 
+### Adım 8c — Polis baskını ✅ (şüphenin ilk gerçek sonucu)
+- **Gizleme mekaniği** `GamblingTable`'a eklendi: `IsHidden` (varsayılan **true** — güvenli taraf), `SetHidden`, `coverVisual` + `exposedVisuals[]`, `event OnHiddenChanged`.
+  - **E tuşu bağlama göre anlam değiştiriyor:** gündüz kumar oynanamadığı için E **örtüyü** açar/kapatır; gece örtü kapalıysa önce açar, açıksa oynar. Ayrı bir tuş/obje gerekmedi.
+  - `exposedVisuals`'a masanın tabelası konur, yoksa örtülü masanın tepesinde "BAHIS 100 TL" parlar.
+- `PoliceManager` (singleton, `KanBagi.Illegal`) — **kayıt edilmez**, tamamen gün içi durum:
+  - Gün başında zar: `SuspicionRatio < minimumSuspicionRatio` (0.2) ise hiç gelmez; değilse ihtimal `ratio × maxRaidChance` (0.6). `earliestRaidDay` 4'ten önce baskın yok.
+  - Akış: dükkan açıkken rastgele bir saat → **`OnRaidWarning`** (20 sn süre) → memur gelir (`OnOfficerArrived`) → 12 sn denetim → `OnRaidResolved(busted, fine)`
+  - Yakalanınca: para cezası (parası yetmezse elindeki kadarı), itibar −10, **şüphe sıfırlanır** (dosya kapandı). Temiz geçerse şüphe −15.
+  - `FinePaidToday` — günlük özet bunu okur. Ceza `TrySpendMoney`'den geçtiği için zaten `Expenses`'ta; **`NetProfit`'te tekrar düşülmez**, satır sadece bilgi amaçlı (kumar/haraçtan farklı).
+- `PoliceOfficer`: bilinçli olarak boş `Interact()` — memurla pazarlık yok, iş masayı zamanında örtmekti.
+- `PoliceNotificationUI`: uyarı (sarı) / memur geldi (kırmızı) / sonuç mesajları.
+- `PolicePrefabBuilder` (**Editor**): `Kan Bagi > Polis Prefabini Olustur` + **`Kan Bagi > Kumar Ortusunu Olustur ve Bagla`** (örtüyü üretip `coverVisual` alanına kendisi bağlar).
+- `DayCycleManager`'a `OpenHour` / `CloseHour` getter'ları eklendi (baskın saatini seçmek için).
+
 ---
 
 ## 7. SAHNE KURULUMU (`Assets/Scenes/SampleScene.unity`)
@@ -334,7 +350,7 @@ Assets/_Project/
 | `Zemin` (Plane) | (0,0,0) | **NavMeshSurface** (bake edilmiş) |
 | `Player` (Empty) | (0, 1.1, 0) | CharacterController, PlayerController, PlayerInteractor, PlayerHands, PlayerLock |
 | └ `Main Camera` | (0, 0.6, 0) | — (child) |
-| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, **5 × UpgradeUnlocker** (YeniMasa→Masa3, KahveMakinesi→KahveMakinesi, Oralet→OraletSemaveri, Okey→OkeyTakimi1/2/3) |
+| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, PoliceManager, **5 × UpgradeUnlocker** (YeniMasa→Masa3, KahveMakinesi→KahveMakinesi, Oralet→OraletSemaveri, Okey→OkeyTakimi1/2/3) |
 | `EventSystem` | — | **Input System UI Input Module** (butonlar bunsuz çalışmaz) |
 | `Canvas` | — | InteractionPromptUI, HeldItemUI, ProgressBarUI, **ComputerUI** |
 | ├ `MoneyText` | sol üst (Pos Y -20) | MoneyUI |
@@ -344,6 +360,7 @@ Assets/_Project/
 | ├ `HeldItemText` | sol alt | — |
 | ├ `BildirimText` | üst-orta | DeliveryNotificationUI |
 | ├ `SaatText` | sağ üst | ClockUI |
+| ├ `PolisUyariText` | üst-orta (Pos Y -90) | PoliceNotificationUI |
 | ├ `GunlukOzetPaneli` (**Canvas'ın son çocuğu**) | tam ekran | DailyReportUI (kök hep aktif) |
 | &nbsp;&nbsp;└ `Icerik` → `Panel` (560×460, VLG) | orta | 7 satır + `YeniGunButton` |
 | ├ `ProgressBar` → `Dolum` (Image/Filled) + `ProgressLabel` | orta-alt | — |
@@ -374,6 +391,7 @@ Assets/_Project/
 | `Depo` (Cube) | (-2, 0.5, 3.5) | StorageRack |
 | `KumarMasasi` (Cube) — **başta pasif** | (-4, 0.4, 3.5) | GamblingTable + tabela child'ı (Gizli Kumarhane upgrade'i açar) |
 | `MafyaNoktasi` (Empty) | (1.5, 0.9, -4) | — (tahsildar burada belirir, y=0.9 kapsül yere bassın diye) |
+| `PolisNoktasi` (Empty) | (-1.5, 0.9, -4) | — (memur burada belirir) |
 
 **Prefab'lar:**
 - `CayBardagi` (Cylinder 0.08/0.05/0.08 + child `Sivi` + HoldableItem + TeaGlass)
@@ -383,6 +401,8 @@ Assets/_Project/
 - `EmlakTabelasi` — **elle kurulmaz/yerleştirilmez**, `Kan Bagi > Emlak Tabelasi Prefabini Olustur` + `Kan Bagi > Tabelalari Binalara Yerlestir`
 - `KumarTabelasi` — **elle kurulmaz**, `Kan Bagi > Kumar Tabelasini Olustur ve Yerlestir`
 - `Tahsildar` — **elle kurulmaz, sahneye elle konmaz**, `Kan Bagi > Tahsildar Prefabini Olustur`; MafiaManager runtime'da üretir/yok eder
+- `PolisMemuru` — aynı şekilde `Kan Bagi > Polis Prefabini Olustur`; PoliceManager runtime'da üretir/yok eder
+- `KumarMasasi > Ortu` — `Kan Bagi > Kumar Ortusunu Olustur ve Bagla` menüsü üretip bağlar
 - `Koli` (Cube 0.35/0.3/0.35 + **Rigidbody** + HoldableItem + DeliveryBox) — Rigidbody olmazsa koli havada asılı kalır
 
 **ScriptableObject'ler:**
@@ -406,6 +426,8 @@ Assets/_Project/
 ---
 
 ## 8. ŞU AN NEREDE KALDIK
+
+**Adım 8c bitti ve test edildi.** Şüphe biriktikçe polis baskın yapıyor: uyarı geliyor, oyuncunun masayı örtmek için ~20 saniyesi oluyor, örtmezse para cezası + itibar kaybı, örterse temiz geçip şüphe düşüyor. Faz 4'ün üç ayağı (kumarhane, mafya, polis) birbirine bağlandı.
 
 **Adım 8b bitti ve test edildi.** Mafya itibar 30 + servet 2000 barajını aşınca haberdar oluyor, birkaç gün sonra tahsildar kapıya geliyor; ödenince para düşüyor ve adam gidiyor, ödenmeyince ertesi gün itibar/şüphe cezası uygulanıp haraç ×1.5 büyüyor. Günlük özette "Harac" satırı doğru, kayıt/yükleme sorunsuz.
 
@@ -468,21 +490,23 @@ Faz 2'nin tamamı bitti: stok, PC, kurye, upgrade'ler (obje açma **ve** stat iy
 
 ---
 
-Mafya geldi, şüphe birikiyor — ama **şüphenin hâlâ bir sonucu yok.** `SuspicionManager` sayıyor, kimse okumuyor.
+**Master prompt'taki dört fazın tamamı iskelet olarak ayakta.** Oyun baştan sona oynanabiliyor: çay sat → büyü → mahalleyi al → geceleri kumar → mafya ve polisle başa çık.
+
+Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 ---
 
-## 9. SIRADAKİ ADIM — 8C: POLİS BASKINI
+## 9. SIRADAKİ ADIM — 9A: DENGE VE İLK GERÇEK OYUN
 
-**Amaç:** Şüphe biriktikçe polisin rutin kontrole gelmesi. Kumar masası açıkken yakalanırsan bedeli ağır.
+**Amaç:** Test için şişirilmiş değerleri gerçek oyuna çevirmek ve baştan sona oynanabilir bir denge kurmak.
 
 Planlanan (henüz onaylanmadı):
-1. `PoliceManager` (singleton, `ISaveable`): gün başında `SuspicionManager.SuspicionRatio`'ya göre baskın ihtimali hesaplar. Baskın günü, dükkan açıkken bir memur gelir.
-2. `PoliceOfficer` (`IInteractable`): belli bir süre dükkanda dolaşır/bekler. Kumar masası **açıkken** görürse ceza: para cezası + itibar kaybı + şüphe sıfırlanmaz.
-3. **Gizleme mekaniği:** kumar masasının kapatılabilmesi (E ile örtü/kapak) — polis gelmeden fark edip saklamak. Master prompt'taki "oyuncu bunları gizlemek zorunda" maddesi.
-4. Baskın bildirimi + günlük özete "Ceza" satırı.
+1. **Test değerlerini geri al:** `Starting Money` 2000/5000 → **250**, `Starting Reputation` 40/60 → **0**, `Day Duration Minutes` → **6**, `Delivery Delay` → **20**, PoliceManager test değerleri → gerçek değerler.
+2. Sıfırdan oyna, her fazın **ne kadar sürdüğünü ölç**: ilk upgrade kaçıncı gün alınabiliyor? Kumarhane (itibar 50) kaçıncı gün? Mafya barajı (itibar 30 + 2000 TL) ne zaman?
+3. Tıkanan yerleri düzelt — fiyatlar, sabır, müşteri sıklığı, kira gelirleri.
+4. `MoneyTestInteractable` benzeri kalıntı yok; ama `RowPrefabBuilder`/`ReportPanelBuilder`/`SignPrefabBuilder`/`GamblingSignBuilder`/`MafiaPrefabBuilder`/`PolicePrefabBuilder` arasında **kopyala-yapıştır kod** birikti — ortak bir `SignFactory` editor yardımcısına çıkarılabilir (isteğe bağlı temizlik).
 
-**Sonrasında:** Faz 4'ün kalanı — mafya ile ilişkinin derinleşmesi (koruma karşılığı işbirliği, rakip dükkan baskını vb.) ve denge ayarı (`Starting Money` 250'ye, `Starting Reputation` 0'a geri).
+**Sonraki fikirler (henüz planlanmadı):** kapı objesi ve dükkan içi/dışı ayrımı, müşteri çeşitliliği (farklı sabır/bahşiş), mafya ile işbirliği kolu, ses/müzik, ana menü.
 
 ---
 
@@ -507,5 +531,5 @@ Planlanan (henüz onaylanmadı):
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Adım 8c planını anlat, onay al**, sonra kod yaz.
+3. **Adım 9a planını anlat, onay al**, sonra kod yaz.
 4. Kod bittikten sonra Unity Editor talimatlarını adım adım ver.

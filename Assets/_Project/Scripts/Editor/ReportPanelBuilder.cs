@@ -22,7 +22,7 @@ namespace KanBagi.EditorTools
         private const string PanelPath = PrefabFolder + "/GunlukOzetPaneli.prefab";
 
         private const float PanelWidth = 560f;
-        private const float PanelHeight = 605f;
+        private const float PanelHeight = 650f;
         private const float RowHeight = 38f;
         private const float TitleHeight = 52f;
         private const float ButtonHeight = 52f;
@@ -53,6 +53,7 @@ namespace KanBagi.EditorTools
             TextMeshProUGUI rent = CreateRow(panel.transform, "KiraText", "Kira geliri: 0 TL", 22f, RowHeight, TextAlignmentOptions.MidlineLeft);
             TextMeshProUGUI gambling = CreateRow(panel.transform, "KumarText", "Kumar: 0 TL", 22f, RowHeight, TextAlignmentOptions.MidlineLeft);
             TextMeshProUGUI protection = CreateRow(panel.transform, "HaracText", "Harac: 0 TL", 22f, RowHeight, TextAlignmentOptions.MidlineLeft);
+            TextMeshProUGUI fine = CreateRow(panel.transform, "CezaText", "Ceza: 0 TL", 22f, RowHeight, TextAlignmentOptions.MidlineLeft);
             TextMeshProUGUI expense = CreateRow(panel.transform, "GiderText", "Gider: 0 TL", 22f, RowHeight, TextAlignmentOptions.MidlineLeft);
             TextMeshProUGUI profit = CreateRow(panel.transform, "NetText", "Net: 0 TL", 26f, RowHeight + 6f, TextAlignmentOptions.MidlineLeft);
             TextMeshProUGUI reputation = CreateRow(panel.transform, "ItibarText", "Itibar: 0  (+0)", 22f, RowHeight, TextAlignmentOptions.MidlineLeft);
@@ -69,6 +70,7 @@ namespace KanBagi.EditorTools
             serialized.FindProperty("rentText").objectReferenceValue = rent;
             serialized.FindProperty("gamblingText").objectReferenceValue = gambling;
             serialized.FindProperty("protectionText").objectReferenceValue = protection;
+            serialized.FindProperty("fineText").objectReferenceValue = fine;
             serialized.FindProperty("expenseText").objectReferenceValue = expense;
             serialized.FindProperty("profitText").objectReferenceValue = profit;
             serialized.FindProperty("reputationText").objectReferenceValue = reputation;

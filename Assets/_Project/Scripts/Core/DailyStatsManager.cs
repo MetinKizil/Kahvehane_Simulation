@@ -36,6 +36,13 @@ namespace KanBagi.Core
         /// <summary>Bugun mafyaya odenen harac.</summary>
         public int ProtectionPaid { get; private set; }
 
+        /// <summary>
+        /// Bugun polisin kestigi ceza.
+        /// PoliceManager'dan okunuyor; ceza TrySpendMoney'den gectigi icin
+        /// Expenses'a da yazildi, bu yuzden NetProfit'te tekrar dusulmez.
+        /// </summary>
+        public int FinePaid => PoliceManager.Instance != null ? PoliceManager.Instance.FinePaidToday : 0;
+
         public int NetProfit => Revenue + RentIncome + GamblingNet - Expenses - ProtectionPaid;
 
         /// <summary>Gun basindaki itibar. Gun sonu farki bununla hesaplanir.</summary>
