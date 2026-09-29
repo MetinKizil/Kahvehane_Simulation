@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e06d2918ef6bf54aaa16d6a1ea79b8e, type: 3}
+  m_Name: EmlakKatalogu
+  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.PropertyCatalog
+  properties:
+  - {fileID: 11400000, guid: bc97dfc61bf2078409badbb968aba985, type: 2}
+  - {fileID: 11400000, guid: 3e2b955421428564bbe7e5e57b6e3d4d, type: 2}
+  - {fileID: 11400000, guid: 72c6ec8f13d37ca4ea81fab87ad5c794, type: 2}

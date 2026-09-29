@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0753db69fda0deb4fbc2da686213779c, type: 3}
+  m_Name: GelistirmeKatalogu
+  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.UpgradeCatalog
+  upgrades:
+  - {fileID: 11400000, guid: 0452089875c6f18438b76391aa37449e, type: 2}
+  - {fileID: 11400000, guid: f4a1da74fb48fb74caad985543506ee9, type: 2}
+  - {fileID: 11400000, guid: 10f656ab4238dcf4c9870ed2514fd561, type: 2}
+  - {fileID: 11400000, guid: 4adf4d7166207e441bf0d7490e7a9175, type: 2}
+  - {fileID: 11400000, guid: c4b9bc6b8fe3b7e44a0c76ca56cd1859, type: 2}
+  - {fileID: 11400000, guid: ec9dfc1e91e92d1489f7e092bbe7231b, type: 2}
