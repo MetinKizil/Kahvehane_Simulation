@@ -58,8 +58,8 @@ Assets/_Project/
                        PropertyData, PropertyCatalog
     ├── Delivery/      DeliveryManager
     ├── Editor/        RowPrefabBuilder, ReportPanelBuilder, SaveMenuItems, SignPrefabBuilder,
-                       GamblingSignBuilder
-    ├── Illegal/       GamblingTable, SuspicionManager
+                       GamblingSignBuilder, MafiaPrefabBuilder
+    ├── Illegal/       GamblingTable, SuspicionManager, MafiaManager, MafiaCollector
     ├── Neighborhood/  PropertyBuilding, PropertyVisualSwitch
     ├── Economy/       EconomyManager, PurchaseManager
     ├── Interaction/   IInteractable, HoldableItem, PlayerInteractor
@@ -71,7 +71,7 @@ Assets/_Project/
     └── UI/            MoneyUI, ReputationUI, StockUI, HeldItemUI, InteractionPromptUI, ProgressBarUI,
                        OrderBubbleUI, Billboard, ComputerUI, CatalogEntryUI, DeliveryNotificationUI,
                        TabGroupUI, UpgradeListUI, UpgradeEntryUI, ClockUI, DailyReportUI,
-                       PropertyListUI, PropertyEntryUI, PropertySignUI, GamblingSignUI
+                       PropertyListUI, PropertyEntryUI, PropertySignUI, GamblingSignUI, MafiaSignUI
 ```
 
 ### Kod konvansiyonları (mevcut koda uyulmalı)
@@ -311,6 +311,20 @@ Assets/_Project/
 - **Muhasebe tuzağı çözüldü:** bahis `TrySpendMoney`'den geçtiği için `Expenses`'a yazılıyordu; `DailyStatsManager.HandleGamblingRound` bahsi giderden **geri çıkarıp** `GamblingNet`'e yazıyor → çift sayım yok. `NetProfit = Revenue + RentIncome + GamblingNet - Expenses`.
 - **Yakalanan soft-lock:** `GunlukOzetPaneli` sahneden silinince `OnDayEnded`'ı dinleyen kalmıyor, `DayCycleManager` "Yeni Gun" bekleyip **oyunu sessizce kilitliyordu** (otomatik kayıt da durmuş görünüyordu). Artık `OnDayEnded == null` ise uyarı basıp günü kendiliğinden devrediyor.
 
+### Adım 8b — Mafya ve haraç ✅
+- `MafiaManager` (singleton, `ISaveable`, `KanBagi.Illegal`):
+  - **Baraj:** `requiredReputation` 30 **VE** `requiredMoney` 2000 — gün başında kontrol edilir, bir kez tetiklenir
+  - **Zamanlama:** baraj aşılınca hemen gelmez → `firstVisitDelayDays` 2 sonra, ayrıca `earliestVisitDay` 3'ten önce asla. Sonraki ziyaretler `visitIntervalDays` 3 günde bir.
+  - `PayDemand()` → `TrySpendMoney` + tahsildar yok olur. **Ödenmezse ertesi gün başında reddedilmiş sayılır**: itibar −5, şüphe +10, `refusalCount++` → sonraki haraç `baseDemand × 1.5^refusalCount`
+  - **Ayrı "reddet" tuşu yok** — görmezden gelmek reddetmektir (bilinçli tasarım)
+  - `event OnDemandArrived / OnDemandPaid / OnDemandRefused`, `PaidToday`
+- `MafiaCollector` (`IInteractable`): haraç aktifken `MafiaManager` tarafından `spawnPoint`'te üretilir, ödenince/reddedilince yok edilir. Kayıttan yüklenince **hâlâ ödenmemişse yeniden belirir**.
+- `MafiaSignUI` + `MafiaPrefabBuilder` (**Editor**): `Kan Bagi > Tahsildar Prefabini Olustur` → kapsül gövde + üstünde `HARAC` / `500 TL` tabelası, hepsi bağlı.
+  - ⚠️ **Tahsildar tabelasında `Billboard` VAR** (insan, etrafından dolaşılır) — duvara asılı emlak tabelalarında **YOK** (binaya sabit). Billboard varken levha yazının **arkasında** (+Z) olmalı, sabit tabelada **önünde** (−Z). Karıştırılırsa yazı görünmez.
+- Günlük özete **"Harac"** satırı. Haraç da `TrySpendMoney`'den geçtiği için `Expenses`'tan düşülüp kendi satırına yazılır (kumar ile aynı çift-sayım çözümü).
+  - `NetProfit = Revenue + RentIncome + GamblingNet - Expenses - ProtectionPaid`
+- **Test sırasında yakalanan bug:** mafya barajı aştığın **gün** kapıya dayanıyordu (oyun daha oynanmadan). `firstVisitDelayDays` + `earliestVisitDay` ile çözüldü.
+
 ---
 
 ## 7. SAHNE KURULUMU (`Assets/Scenes/SampleScene.unity`)
@@ -320,7 +334,7 @@ Assets/_Project/
 | `Zemin` (Plane) | (0,0,0) | **NavMeshSurface** (bake edilmiş) |
 | `Player` (Empty) | (0, 1.1, 0) | CharacterController, PlayerController, PlayerInteractor, PlayerHands, PlayerLock |
 | └ `Main Camera` | (0, 0.6, 0) | — (child) |
-| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, **5 × UpgradeUnlocker** (YeniMasa→Masa3, KahveMakinesi→KahveMakinesi, Oralet→OraletSemaveri, Okey→OkeyTakimi1/2/3) |
+| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, **5 × UpgradeUnlocker** (YeniMasa→Masa3, KahveMakinesi→KahveMakinesi, Oralet→OraletSemaveri, Okey→OkeyTakimi1/2/3) |
 | `EventSystem` | — | **Input System UI Input Module** (butonlar bunsuz çalışmaz) |
 | `Canvas` | — | InteractionPromptUI, HeldItemUI, ProgressBarUI, **ComputerUI** |
 | ├ `MoneyText` | sol üst (Pos Y -20) | MoneyUI |
@@ -359,6 +373,7 @@ Assets/_Project/
 | └ `KirathaneBinasi` (Cube, scale 3) | (4, 1.5, -9) | PropertyBuilding (KirathaneMulk) |
 | `Depo` (Cube) | (-2, 0.5, 3.5) | StorageRack |
 | `KumarMasasi` (Cube) — **başta pasif** | (-4, 0.4, 3.5) | GamblingTable + tabela child'ı (Gizli Kumarhane upgrade'i açar) |
+| `MafyaNoktasi` (Empty) | (1.5, 0.9, -4) | — (tahsildar burada belirir, y=0.9 kapsül yere bassın diye) |
 
 **Prefab'lar:**
 - `CayBardagi` (Cylinder 0.08/0.05/0.08 + child `Sivi` + HoldableItem + TeaGlass)
@@ -367,6 +382,7 @@ Assets/_Project/
 - `GunlukOzetPaneli` — **elle kurulmaz**, `Kan Bagi > Gunluk Ozet Panelini Olustur` menüsü üretir
 - `EmlakTabelasi` — **elle kurulmaz/yerleştirilmez**, `Kan Bagi > Emlak Tabelasi Prefabini Olustur` + `Kan Bagi > Tabelalari Binalara Yerlestir`
 - `KumarTabelasi` — **elle kurulmaz**, `Kan Bagi > Kumar Tabelasini Olustur ve Yerlestir`
+- `Tahsildar` — **elle kurulmaz, sahneye elle konmaz**, `Kan Bagi > Tahsildar Prefabini Olustur`; MafiaManager runtime'da üretir/yok eder
 - `Koli` (Cube 0.35/0.3/0.35 + **Rigidbody** + HoldableItem + DeliveryBox) — Rigidbody olmazsa koli havada asılı kalır
 
 **ScriptableObject'ler:**
@@ -390,6 +406,8 @@ Assets/_Project/
 ---
 
 ## 8. ŞU AN NEREDE KALDIK
+
+**Adım 8b bitti ve test edildi.** Mafya itibar 30 + servet 2000 barajını aşınca haberdar oluyor, birkaç gün sonra tahsildar kapıya geliyor; ödenince para düşüyor ve adam gidiyor, ödenmeyince ertesi gün itibar/şüphe cezası uygulanıp haraç ×1.5 büyüyor. Günlük özette "Harac" satırı doğru, kayıt/yükleme sorunsuz.
 
 **Adım 8a bitti ve test edildi — FAZ 4 BAŞLADI.** Gizli kumarhane itibar 50 + 1500 TL ile açılıyor, sadece geceleri oynanıyor, tabela sonucu ve gecelik hesabı gösteriyor, günlük özette "Kumar" satırı doğru (bahisler giderde çift sayılmıyor), şüphe birikiyor ve kaydediliyor.
 
@@ -450,27 +468,21 @@ Faz 2'nin tamamı bitti: stok, PC, kurye, upgrade'ler (obje açma **ve** stat iy
 
 ---
 
-Kumarhane var, şüphe birikiyor — ama **kimse kapıyı çalmıyor.** Ne mafya ne polis.
+Mafya geldi, şüphe birikiyor — ama **şüphenin hâlâ bir sonucu yok.** `SuspicionManager` sayıyor, kimse okumuyor.
 
 ---
 
-## 9. SIRADAKİ ADIM — 8B: MAFYA VE HARAÇ
+## 9. SIRADAKİ ADIM — 8C: POLİS BASKINI
 
-**Amaç:** Belli bir itibar + servet barajı aşılınca mafyanın haraç istemeye gelmesi. Ödemek ya da reddetmek.
+**Amaç:** Şüphe biriktikçe polisin rutin kontrole gelmesi. Kumar masası açıkken yakalanırsan bedeli ağır.
 
 Planlanan (henüz onaylanmadı):
-1. `MafiaManager` (singleton, `ISaveable`, `KanBagi.Illegal`):
-   - Tetikleme: **itibar ≥ 30 VE para ≥ 2000** (gün başında kontrol edilir, bir kere tetiklenir)
-   - Tetiklendikten sonra her `visitIntervalDays` (3) günde bir haraç ister
-   - `CurrentDemand`, `IsDemandActive`, `event OnDemandArrived / OnDemandResolved`
-2. `MafiaCollector` (`IInteractable`): haraç aktifken kapının yanında belirir.
-   - İpucu `Haraci Ode (500 TL)` → E ile ödenir, kaybolur
-   - **Gün sonuna kadar ödenmezse reddedilmiş sayılır**: itibar −5, şüphe +10, sonraki haraç ×1.5
-   - Ayrı bir "reddet" tuşu yok; görmezden gelmek reddetmektir
-3. `MafiaSignUI` + Editor builder — tahsildarın üstünde `HARAC` / `500 TL` tabelası.
-4. Günlük özete **"Harac"** satırı.
+1. `PoliceManager` (singleton, `ISaveable`): gün başında `SuspicionManager.SuspicionRatio`'ya göre baskın ihtimali hesaplar. Baskın günü, dükkan açıkken bir memur gelir.
+2. `PoliceOfficer` (`IInteractable`): belli bir süre dükkanda dolaşır/bekler. Kumar masası **açıkken** görürse ceza: para cezası + itibar kaybı + şüphe sıfırlanmaz.
+3. **Gizleme mekaniği:** kumar masasının kapatılabilmesi (E ile örtü/kapak) — polis gelmeden fark edip saklamak. Master prompt'taki "oyuncu bunları gizlemek zorunda" maddesi.
+4. Baskın bildirimi + günlük özete "Ceza" satırı.
 
-**Sonrasında:** 8c — polis baskını (şüphe seviyesine göre rastgele kontrol; kumar masası açıkken yakalanma).
+**Sonrasında:** Faz 4'ün kalanı — mafya ile ilişkinin derinleşmesi (koruma karşılığı işbirliği, rakip dükkan baskını vb.) ve denge ayarı (`Starting Money` 250'ye, `Starting Reputation` 0'a geri).
 
 ---
 
@@ -495,5 +507,5 @@ Planlanan (henüz onaylanmadı):
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Adım 8b planını anlat, onay al**, sonra kod yaz.
+3. **Adım 8c planını anlat, onay al**, sonra kod yaz.
 4. Kod bittikten sonra Unity Editor talimatlarını adım adım ver.

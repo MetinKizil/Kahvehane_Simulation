@@ -33,7 +33,10 @@ namespace KanBagi.Core
         /// <summary>Bugunku kumar net sonucu (kazanc - bahis). Eksi olabilir.</summary>
         public int GamblingNet { get; private set; }
 
-        public int NetProfit => Revenue + RentIncome + GamblingNet - Expenses;
+        /// <summary>Bugun mafyaya odenen harac.</summary>
+        public int ProtectionPaid { get; private set; }
+
+        public int NetProfit => Revenue + RentIncome + GamblingNet - Expenses - ProtectionPaid;
 
         /// <summary>Gun basindaki itibar. Gun sonu farki bununla hesaplanir.</summary>
         public int ReputationAtDayStart { get; private set; }
@@ -72,6 +75,9 @@ namespace KanBagi.Core
             foreach (GamblingTable gamblingTable in gamblingTables)
                 gamblingTable.OnRoundPlayed += HandleGamblingRound;
 
+            if (MafiaManager.Instance != null)
+                MafiaManager.Instance.OnDemandPaid += HandleProtectionPaid;
+
             if (DayCycleManager.Instance != null)
                 DayCycleManager.Instance.OnDayStarted += HandleDayStarted;
 
@@ -91,6 +97,7 @@ namespace KanBagi.Core
             Revenue = 0;
             Expenses = 0;
             GamblingNet = 0;
+            ProtectionPaid = 0;
             ReputationAtDayStart = CurrentReputation;
         }
 
@@ -104,6 +111,13 @@ namespace KanBagi.Core
         {
             Expenses -= result.Stake;
             GamblingNet += result.Net;
+        }
+
+        /// <summary>Harac da TrySpendMoney'den gecer; kendi satirinda gosterilecegi icin giderden dusulur.</summary>
+        private void HandleProtectionPaid(int amount)
+        {
+            Expenses -= amount;
+            ProtectionPaid += amount;
         }
 
         private void HandleCustomerSpawned(Customer customer)
@@ -135,6 +149,7 @@ namespace KanBagi.Core
             if (EconomyManager.Instance != null) EconomyManager.Instance.OnMoneySpent -= HandleMoneySpent;
             if (DayCycleManager.Instance != null) DayCycleManager.Instance.OnDayStarted -= HandleDayStarted;
             if (SaveManager.Instance != null) SaveManager.Instance.OnLoaded -= ResetStats;
+            if (MafiaManager.Instance != null) MafiaManager.Instance.OnDemandPaid -= HandleProtectionPaid;
 
             if (gamblingTables == null) return;
 

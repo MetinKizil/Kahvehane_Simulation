@@ -25,6 +25,7 @@ namespace KanBagi.UI
         [SerializeField] private TMP_Text revenueText;
         [SerializeField] private TMP_Text rentText;
         [SerializeField] private TMP_Text gamblingText;
+        [SerializeField] private TMP_Text protectionText;
         [SerializeField] private TMP_Text expenseText;
         [SerializeField] private TMP_Text profitText;
         [SerializeField] private TMP_Text reputationText;
@@ -40,6 +41,7 @@ namespace KanBagi.UI
         [SerializeField] private string revenueFormat = "Ciro: {0} TL";
         [SerializeField] private string rentFormat = "Kira geliri: {0} TL";
         [SerializeField] private string gamblingFormat = "Kumar: {0} TL";
+        [SerializeField] private string protectionFormat = "Harac: {0} TL";
         [SerializeField] private string expenseFormat = "Gider: {0} TL";
         [SerializeField] private string profitFormat = "Net: {0} TL";
         [Tooltip("{0} gun sonu itibari, {1} o gunku degisim (+/-).")]
@@ -144,6 +146,9 @@ namespace KanBagi.UI
 
             SetText(gamblingText, string.Format(gamblingFormat, stats.GamblingNet));
             if (gamblingText != null) gamblingText.color = stats.GamblingNet >= 0 ? profitColor : lossColor;
+
+            SetText(protectionText, string.Format(protectionFormat, stats.ProtectionPaid));
+            if (protectionText != null) protectionText.color = stats.ProtectionPaid > 0 ? lossColor : profitColor;
 
             SetText(expenseText, string.Format(expenseFormat, stats.Expenses));
 
