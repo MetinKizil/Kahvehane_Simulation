@@ -15,4 +15,4 @@ MonoBehaviour:
   upgradeName: Gizli Kumarhane
   description: Arka odada kumar masasi. Geceleri acilir. Yuksek kazanc, yuksek risk.
   cost: 1500
-  requiredReputation: 50
+  requiredReputation: 180

@@ -385,6 +385,30 @@ Assets/_Project/
 - **Yakalanan bug:** `Managers`'ta **iki `DayCycleManager`** vardı; çalışan kopya `nightTimeScale 1` olanıydı → **geceler hiç hızlanmıyordu**. Komut fazlasını sildi, artık gece 4× akıyor.
 - Gerçek değerlerle zaman: 1 gün ≈ **4 gerçek dakika** (dükkan açık 3.5 dk, gece ~37 sn). Saat başına 15 sn (gündüz).
 
+### Adım 9a-3 — Denge düzeltmeleri ✅ (ölçümsüz, kağıt tahminle)
+**9a-3a — İflas koruması:**
+- `PoliceManager.protectedMoney` (150): ceza artık `Clamp(kasa − 150, 0, fineAmount)` → polis kasada **en az 150 TL bırakır**. Kasa 150'nin altındaysa ceza 0, ama itibar −10 ve şüphe sıfırlama yine uygulanır.
+- Veresiye/kurtarma mekaniği **bilinçli olarak yapılmadı** (basitlik). Polis dışındaki kilitler (kumarda batmak, stok 0 iken son parayla upgrade) oyuncunun kendi tercihi; ileride gerekirse gün başında "stok 0 + kasa < paket fiyatı" koşuluyla bedava paket yollayan küçük bir sınıf eklenebilir.
+
+**9a-3b — Değerler** (gerekçe: itibar günde ~13, upgrade'lerden sonra ~18 artıyor; barajlar paranın yetiştiği günün hemen arkasına kondu ki her açılış hem para hem itibar istesin):
+
+| Değer | Eski | Yeni | Nerede |
+|---|---|---|---|
+| Bakkal itibarı | 10 | **60** | `BakkalMulk.asset` |
+| Terzi itibarı | 20 | **140** | `TerziMulk.asset` |
+| Kıraathane itibarı | 30 | **240** | `KirathaneMulk.asset` |
+| Gizli Kumarhane itibarı | 50 | **180** | `GizliKumarhaneUpgrade.asset` |
+| Mafya barajı itibar / kasa | 30 / 2000 | **120 / 1000** | `BalancePresetApplier` |
+| Haraç | 500 | **300** | `BalancePresetApplier` |
+| Kızgın giden müşteri | −1 | **−2** | `Musteri` prefab (`reputationOnAngryLeave`) |
+| Test modu başlangıç itibarı | 70 | **300** | `BalancePresetApplier` |
+
+- `BalancePresetApplier` tablosuna `PoliceManager.fineAmount`, `protectedMoney` ve üç `MafiaManager` alanı eklendi.
+- ⚠️ **Applier sadece sahnedeki bileşenlere yazar.** ScriptableObject (mülk/upgrade itibarı) ve prefab (müşteri) değerleri asset dosyasında durur; bunları değiştirmek için asset'i düzenle.
+- Hedeflenen tahmini akış: Bakkal ~5–6. gün, Terzi ~9–10, mafya ilk ziyaret ~10, Kumarhane ~11, Kıraathane ~14. **Ölçülmedi** — `BalanceLogger` CSV'si ile doğrulanabilir.
+- Kumarda oyuncunun kendi oynadığı elin beklentisi (−10 TL) bilinçli olarak değiştirilmedi; 9a-2 (kumarhane işletmesi) bu dengeyi değiştirecek.
+- **Test:** tabelalar ve PC'de "Itibar 60 / 140 / 240 / 180 gerekli" görünüyor, kızgın müşteri −2 itibar düşürüyor (kullanıcı onayladı).
+
 ---
 
 ## 7. SAHNE KURULUMU (`Assets/Scenes/SampleScene.unity`)
@@ -439,7 +463,7 @@ Assets/_Project/
 
 **Prefab'lar:**
 - `CayBardagi` (Cylinder 0.08/0.05/0.08 + child `Sivi` + HoldableItem + TeaGlass)
-- `Musteri` (Capsule + NavMeshAgent + Customer + OrderBubbleUI + child `SiparisBalonu` (3D TMP + Billboard)) — **Desired Order BOŞ** (menüden rastgele seçilir), Drink Duration 6, Patience 25
+- `Musteri` (Capsule + NavMeshAgent + Customer + OrderBubbleUI + child `SiparisBalonu` (3D TMP + Billboard)) — **Desired Order BOŞ** (menüden rastgele seçilir), Drink Duration 6, Patience 25, itibar servis +1 / kızgın gidiş **−2**
 - `UrunSatiri`, `UpgradeSatiri`, `EmlakSatiri` — **elle kurulmaz**, `Kan Bagi > Satir Prefablarini Olustur` menüsü üretir
 - `GunlukOzetPaneli` — **elle kurulmaz**, `Kan Bagi > Gunluk Ozet Panelini Olustur` menüsü üretir
 - `EmlakTabelasi` — **elle kurulmaz/yerleştirilmez**, `Kan Bagi > Emlak Tabelasi Prefabini Olustur` + `Kan Bagi > Tabelalari Binalara Yerlestir`
@@ -460,9 +484,9 @@ Assets/_Project/
 | `OraletTozu` | Consumable | 0 | 3 | 0 |
 
 - `MalzemeKatalogu` (ShopCatalog) — CayYapragi ×10 (20 TL), KahveCekirdegi ×10 (40 TL, kilitli), OraletTozu ×10 (30 TL, kilitli)
-- `GelistirmeKatalogu` (UpgradeCatalog) — YeniMasaUpgrade (100), KahveMakinesiUpgrade (200), OraletUpgrade (100), SanayiOcagiUpgrade (250), OkeyTakimiUpgrade (150), GizliKumarhaneUpgrade (1500 + **itibar 50**)
+- `GelistirmeKatalogu` (UpgradeCatalog) — YeniMasaUpgrade (100), KahveMakinesiUpgrade (200), OraletUpgrade (100), SanayiOcagiUpgrade (250), OkeyTakimiUpgrade (150), GizliKumarhaneUpgrade (1500 + **itibar 180**)
 - `UrunVeritabani` (ItemDatabase) — 6 ItemData'nın tamamı (kayıt sistemi için, **yeni ürün eklenince buraya da eklenmeli**)
-- `BakkalMulk` (800 TL / 60 / itibar 10), `TerziMulk` (1200 / 90 / 20), `KirathaneMulk` (2000 / 160 / **30** — asset'teki gerçek değer)
+- `BakkalMulk` (800 TL / 60 / itibar **60**), `TerziMulk` (1200 / 90 / **140**), `KirathaneMulk` (2000 / 160 / **240**) — 9a-3'te güncellendi
 - `EmlakKatalogu` (PropertyCatalog) — üç mülkün tamamı (**kayıt eşlemesi buradan yapılır, boş bırakılamaz**)
 
 > ✅ **Sahne GERÇEK değerlerde** (Adım 9a-1). Hızlı test için `Kan Bagi > Denge > Test Degerlerini Uygula`, geri dönmek için `Gercek Degerleri Uygula`. Mod değiştirdikten sonra sahneyi kaydet; sıfırdan test için `Kan Bagi > Kaydi Sil`.
@@ -470,6 +494,8 @@ Assets/_Project/
 ---
 
 ## 8. ŞU AN NEREDE KALDIK
+
+**Adım 9a-3 bitti ve test edildi.** Polis cezası kasada en az 150 TL bırakıyor (iflas kilidi kapandı). İtibar barajları paranın yetiştiği günlerin arkasına çekildi (60 / 140 / 240, kumarhane 180), mafya itibar 120 + kasa 1000 ile geliyor ve 300 TL haraç istiyor, kızgın müşteri −2 itibar götürüyor. **Sıradaki iş: 9b — co-op hazırlığı (etkileşim katmanı).**
 
 **Adım 9a-1 bitti ve test edildi.** Sahne gerçek değerlere döndü (250 TL, itibar 0, 6 dk'lık gün, gece hızlı), kopya DayCycleManager silindi, `BalanceLogger` her oturumu/günü/kilometre taşını `DengeLog/denge_log.csv`'ye yazıyor. **Sıradaki iş:** kullanıcı sıfırdan 6–8 gün oynayacak, Claude CSV'yi okuyup analiz edecek.
 
@@ -542,9 +568,11 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 ---
 
-## 9. SIRADAKİ ADIM — 9A-3: DENGE DÜZELTMELERİ
+## 9. DENGE (9A) VE SIRADAKİ ADIM — 9B: CO-OP HAZIRLIĞI
 
-**Amaç:** Oyunu baştan sona oynanabilir hale getirmek. **Ölçüm atlandığı için** aşağıdaki kağıt üstü tahminler üzerinden gidilecek.
+> 9a-1 ve 9a-3 bitti (ayrıntı bölüm 6.7). Aşağıdaki 9a bölümü tarihçe olarak duruyor; **sıradaki iş 9b** (bu bölümün sonunda).
+
+**Amaç (9a):** Oyunu baştan sona oynanabilir hale getirmek. **Ölçüm atlandığı için** aşağıdaki kağıt üstü tahminler üzerinden gidildi.
 
 **En kritik iki sorun:**
 1. **İflas kilidi** — polis cezası parasızken kasadaki her şeyi alıyor; stok da bittiyse çay yapılamaz, para kazanılamaz, oyun kilitlenir. Çözüm gerekiyor (asgari kasa, ceza üst sınırı veya borç mekaniği).
@@ -557,8 +585,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 **Alt adımlar (sıra 2026-10-10'da güncellendi — bkz. bölüm 10 tablosu):**
 1. ✅ **9a-1** — Gerçek değerler + `BalancePresetApplier` + `BalanceLogger`.
 2. ❌ **Ölçüm — ATLANDI.** Kullanıcı 6–8 günlük ölçümlü oynamayı istemedi ("üşendim"). `BalanceLogger` yerinde duruyor, ileride istenirse kullanılabilir. **Denge düzeltmesi aşağıdaki kağıt tahminler üzerinden yapılacak.**
-3. **9a-3 — Denge düzeltmeleri (SIRADAKİ):** itibar barajları, upgrade/mülk fiyatları, kumar beklentisi, haraç ve özellikle **iflas koruması**. Değişiklikler önce tablo olarak sunulur, onay alınır.
-4. **9b — Co-op hazırlığı: etkileşim katmanı refactor.** (Yeni; gerekçesi bölüm 3 madde 5 ve bölüm 10.)
+3. ✅ **9a-3 — Denge düzeltmeleri:** iflas koruması (asgari kasa 150) + itibar barajları, mafya, haraç. Ayrıntı bölüm 6.7.
+4. **9b — Co-op hazırlığı: etkileşim katmanı refactor (SIRADAKİ).** (Gerekçesi bölüm 3 madde 5 ve bölüm 10.)
 5. **9a-2 — Kumarhane işletmesi** (NPC'ler oynar, kasa komisyon alır). **9b'den sonra** yapılır ki yeni kod doğuştan co-op uyumlu olsun. Plan ayrıca onaylanacak.
 
 **Kağıt üstü tahminler (ölçümle doğrulanacak):**
@@ -571,7 +599,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Sonraki adımların tam sırası bölüm 10'daki tabloda.**
 
-### 9b — Co-op hazırlığı: etkileşim katmanı (9a-3'ten sonra)
+### 9b — Co-op hazırlığı: etkileşim katmanı (SIRADAKİ)
 
 **Amaç:** Her etkileşimin "hangi oyuncu yaptı" bilgisini taşıması. Co-op'un tek gerçek engeli bu.
 
@@ -641,7 +669,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 | # | Adım | Neden bu sırada |
 |---|---|---|
-| **9a-3** | Denge düzeltmeleri (kağıt tahminlere göre) | İtibar barajları ve **iflas kilidi** gerçek sorunlar; ucuz ve küçük. Oynanabilirliğin önkoşulu. |
+| ~~**9a-3**~~ ✅ | Denge düzeltmeleri (kağıt tahminlere göre) — **bitti** | İtibar barajları ve **iflas kilidi** gerçek sorunlar; ucuz ve küçük. Oynanabilirliğin önkoşulu. |
 | **9b** | **Co-op hazırlığı: etkileşim katmanı refactor** | `PlayerHands.Instance` tüm etkileşimlerin tek engeli. Şu an 12 çağrı noktası var, **her yeni istasyonda artıyor**. Şimdi ucuz, sonra pahalı. Oyuncu tarafında Editor işi yok. |
 | **9a-2** | **Kumarhane işletmesi: NPC'ler oynar, oyuncu kasadır** | En büyük oynanış değişimi. **9b'den SONRA** yapılır ki yeni istasyon/NPC kodu doğuştan co-op uyumlu olsun. |
 | **10a** | Hikaye girişi (intikam tonu) | Oyuna kimlik katar, küçük iş |
@@ -668,6 +696,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum:** Commit'ler yerelde hazır ama **henüz push edilmedi** — `gh auth login` cihaz-kodu doğrulama maili gelmediği için giriş yapılamadı. **Push sorununu çözmeye çalışmadan önce kullanıcıya sor.**
 ```
+(yeni)   Adim 9a-3: iflas korumasi ve itibar barajlari
+b8f1c67  Adim 9a-1: gercek denge degerleri, BalancePresetApplier ve BalanceLogger
 3076ff4  DEVAM.md: git durumu ve proje dersleri bolumleri eklendi
 f329349  Adim 8c: polis baskini ve gizleme mekanigi
 f9dc2d3  Adim 8b: mafya ve harac sistemi
@@ -688,7 +718,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Adım 9a planını anlat, onay al**, sonra kod yaz.
+3. **Sıradaki adımın (9b) planını anlat, onay al**, sonra kod yaz.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.

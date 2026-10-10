@@ -1913,12 +1913,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe00d437bbdfb114cae39862ee958727, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Illegal.MafiaManager
-  requiredReputation: 30
-  requiredMoney: 2000
+  requiredReputation: 120
+  requiredMoney: 1000
   firstVisitDelayDays: 2
   earliestVisitDay: 3
   visitIntervalDays: 3
-  baseDemand: 500
+  baseDemand: 300
   refusalMultiplier: 1.5
   reputationPenalty: 5
   suspicionPenalty: 10
@@ -1942,6 +1942,7 @@ MonoBehaviour:
   inspectionSeconds: 12
   earliestRaidDay: 4
   fineAmount: 1000
+  protectedMoney: 150
   reputationPenalty: 10
   cleanInspectionRelief: 15
   officerPrefab: {fileID: 1110651108804802353, guid: 79e9c7e7ab6ea1547aa5187211b12817, type: 3}

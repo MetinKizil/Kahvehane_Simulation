@@ -16,4 +16,4 @@ MonoBehaviour:
   description: Kepenk kapali duruyor. Kirasi iyi.
   purchasePrice: 1200
   dailyIncome: 90
-  requiredReputation: 20
+  requiredReputation: 140

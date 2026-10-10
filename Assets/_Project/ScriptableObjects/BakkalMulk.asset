@@ -16,4 +16,4 @@ MonoBehaviour:
   description: Mahallenin eski bakkali. Kucuk ama duzenli.
   purchasePrice: 800
   dailyIncome: 60
-  requiredReputation: 10
+  requiredReputation: 60

@@ -36,6 +36,8 @@ namespace KanBagi.Illegal
         [Header("Ceza")]
         [Tooltip("Kumar masasi ortusuz yakalanirsa kesilen para cezasi.")]
         [SerializeField] private int fineAmount = 1000;
+        [Tooltip("Ceza kasada en az bu kadar para birakir. Malzeme alacak para kalsin, oyun kilitlenmesin.")]
+        [SerializeField] private int protectedMoney = 150;
         [SerializeField] private int reputationPenalty = 10;
         [Tooltip("Temiz gecen kontrolden sonra suphenin dusecegi miktar.")]
         [SerializeField] private int cleanInspectionRelief = 15;
@@ -156,8 +158,9 @@ namespace KanBagi.Illegal
 
             if (EconomyManager.Instance != null && fineAmount > 0)
             {
-                // Parasi yetmiyorsa elindeki kadarini alirlar.
-                fine = Mathf.Min(fineAmount, EconomyManager.Instance.CurrentMoney);
+                // Kasayi tamamen bosaltmazlar: protectedMoney kadari kalir (iflas kilidi olmasin).
+                int seizable = Mathf.Max(0, EconomyManager.Instance.CurrentMoney - protectedMoney);
+                fine = Mathf.Min(fineAmount, seizable);
                 if (fine > 0) EconomyManager.Instance.TrySpendMoney(fine);
             }
 

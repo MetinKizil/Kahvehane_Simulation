@@ -156,7 +156,7 @@ MonoBehaviour:
   drinkDuration: 6
   patienceDuration: 25
   reputationOnServed: 1
-  reputationOnAngryLeave: 1
+  reputationOnAngryLeave: 2
   arriveThreshold: 0.4
   moveTimeout: 30
 --- !u!114 &4420555464097672462

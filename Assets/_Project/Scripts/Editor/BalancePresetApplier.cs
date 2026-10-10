@@ -56,7 +56,7 @@ namespace KanBagi.EditorTools
         private static readonly Setting[] Settings =
         {
             new Setting(typeof(EconomyManager), "startingMoney", 250f, 10000f),
-            new Setting(typeof(ReputationManager), "startingReputation", 0f, 70f),
+            new Setting(typeof(ReputationManager), "startingReputation", 0f, 300f),
 
             new Setting(typeof(DayCycleManager), "dayDurationMinutes", 6f, 1f),
             new Setting(typeof(DayCycleManager), "nightTimeScale", 4f, 4f),
@@ -73,6 +73,12 @@ namespace KanBagi.EditorTools
             new Setting(typeof(PoliceManager), "warningSeconds", 20f, 20f),
             new Setting(typeof(PoliceManager), "inspectionSeconds", 12f, 3f),
             new Setting(typeof(PoliceManager), "earliestRaidDay", 4f, 1f),
+            new Setting(typeof(PoliceManager), "fineAmount", 1000f, 1000f),
+            new Setting(typeof(PoliceManager), "protectedMoney", 150f, 150f),
+
+            new Setting(typeof(MafiaManager), "requiredReputation", 120f, 120f),
+            new Setting(typeof(MafiaManager), "requiredMoney", 1000f, 1000f),
+            new Setting(typeof(MafiaManager), "baseDemand", 300f, 300f),
         };
 
         // Sahnede TEK olmasi gereken manager'lar. Fazlasi Awake'te kendini yok etse de

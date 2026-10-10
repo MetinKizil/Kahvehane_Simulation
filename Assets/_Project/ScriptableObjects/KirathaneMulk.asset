@@ -16,4 +16,4 @@ MonoBehaviour:
   description: Mahallenin en eski mekani. Herkes burayi bilir.
   purchasePrice: 2000
   dailyIncome: 160
-  requiredReputation: 30
+  requiredReputation: 240
