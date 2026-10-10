@@ -527,9 +527,44 @@ Planlanan (henüz onaylanmadı):
 
 ---
 
+## 10.5 GIT / GITHUB DURUMU
+
+| | |
+|---|---|
+| Repo (hedef) | `https://github.com/MetinKizil/Kahvehane_Simulation` |
+| Yerel repo kökü | `D:\KAHVE DENEME\KAHVEHANEDENEME` (Unity proje klasörü) |
+| Git kimliği | `MetinKizil` / `metinkizil210@gmail.com` |
+| Kurulu araçlar | Git 2.55 + GitHub CLI 2.101 (winget ile kuruldu, PATH'e elle eklenmesi gerekebilir) |
+
+**Durum:** 3 commit yerelde hazır ama **henüz push edilmedi** — `gh auth login` cihaz-kodu doğrulama maili gelmediği için giriş yapılamadı.
+```
+f329349  Adim 8c: polis baskini ve gizleme mekanigi
+f9dc2d3  Adim 8b: mafya ve harac sistemi
+7e6d8e1  Kan Bagi - Faz 1-2-3 ve Faz 4 basi
+```
+
+**Kurallar:**
+- Her tamamlanıp test edilen adımdan sonra DEVAM.md güncellenir, sonra commit + push.
+- ⚠️ **Commit mesajlarına Claude imzası (`Co-Authored-By`) EKLENMEZ**, PR açıklamalarına "Generated with Claude Code" yazılmaz. Kullanıcının açık talebi.
+- Commit mesajları Türkçe ama ASCII (şapkasız).
+- Giriş çözümü için öneri: tarayıcıda github.com'a girip **sonra** `gh auth login` çalıştırmak, ya da telefondan `github.com/login/device`, ya da `repo` yetkili Personal Access Token ile `gh auth login --with-token` (token kullanıcı kendi terminaline girer, sohbete yazılmaz).
+- PowerShell oturumunda PATH tazelemek gerekebilir:
+  `$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")`
+
+---
+
 ## 11. YENİ SOHBETTE İLK YAPILACAK
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
 3. **Adım 9a planını anlat, onay al**, sonra kod yaz.
+
+### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
+- **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.
+- **Sahne objelerine elle koordinat verme.** Tabela yerleştirme üç denemede de yanlış çıktı; çözüm hedefin `Renderer.bounds`'undan hesaplayan bir Editor komutu oldu.
+- **Billboard ayrımı:** insan üstündeki tabelalarda Billboard VAR (levha yazının arkasında, +Z), duvara/masaya sabit tabelalarda YOK (levha önde, −Z). Karıştırılırsa yazı görünmez veya ters döner.
+- **Prefab yeniden üretilince** o prefab'ı referans alan Inspector alanları kopar → yeniden bağlanmalı; sahnedeki kopyalar silinip yeniden konmalı.
+- **Panel kökü hep aktif kalmalı** (kapalı obje event dinleyemez); açılıp kapanan şey içerik çocuğu olmalı.
+- **`TrySpendMoney`'den geçen her özel harcama** (kumar bahsi, haraç) `Expenses`'a da yazılır → kendi satırında gösterilecekse giderden düşülmeli, yoksa çift sayılır.
+- **Gün sonu bekleyen sistemler** (`OnDayEnded` dinleyicisi) yoksa oyun sessizce kilitlenir — guard eklendi ama benzer beklemelerde dikkat.
 4. Kod bittikten sonra Unity Editor talimatlarını adım adım ver.
