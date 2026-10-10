@@ -9,9 +9,24 @@
 
 Sen kıdemli bir Unity (C#) oyun geliştiricisi ve sistem mimarısın. "Kan Bağı" adında, 3D URP tabanlı, hikaye ve işletme odaklı bir kahvehane/mahalle simülasyonu geliştiriyoruz.
 
-## 2. OYUNUN RUHU
+## 2. OYUNUN RUHU VE HİKAYESİ
 
-Karakterimiz hapisten yeni çıkmış ve amcasının bıraktığı izbe bir çay ocağını işleterek sıfırdan yükselmeye çalışıyor. Sadece bir dükkan değil, yaşayan küçük bir mahallemiz var. Mekanı işleterek, bilgisayardan stok ve dekorasyon yönetimi yaparak (Supermarket Simulator tarzı) dükkanı büyüteceğiz. Para ve "İtibar" (Reputation) kazandıkça mahalledeki diğer dükkanları satın alabilecek, en sonunda dükkanın arkasına gizli kumarhane açarak mafya/polis sarmalına gireceğiz.
+> **Bu metin oyunun tonunu belirler** (2026-10-10'da netleşti). Hikaye girişi, diyaloglar, menü metinleri ve bildirim dili buna göre yazılır: sıradan bir esnaflık oyunu değil, **intikam destanı.**
+
+Babamız ve amcamız, zamanında bu mahallenin temelini beraber atan, sırt sırta vermiş iki efsane ortaktı. Ancak babamızın şüpheli ölümüyle her şey tepetaklak oldu. Kan bağımız olan öz amcamız, babamızın taziye çayı bile soğumadan bize acımasızca tekmeyi bastı. Yetmezmiş gibi, kendi yediği pis bir haltı bizim üstümüze yıktı ve gençliğimizi demir parmaklıklar ardına gömdü. Yıllar sonra dört duvar arasından çıktığımızda, koca mirastan elimizde kalan tek şey; babamızın ilk göz ağrısı olan, köşede çürümeye yüz tutmuş izbe bir kıraathaneydi.
+
+Ama amcamızın hesaba katmadığı bir şey vardı: Biz o delikte sadece volta atmadık, sokağın kurallarını da öğrendik. Şimdi amacımız o yıkık dökük çay ocağını küllerinden doğurmak. PC'den stok yönetip çay demlerken bir yandan da mahallede para ve "İtibar" kazanacağız. Kazandığımız güçle diğer dükkanları tek tek satın alıp sokağın mutlak hakimi olacak, bizi sırtımızdan vuran amcamızın tahtını başına yıkacağız. İşler büyüdükçe dükkanın arka odasına gizli bir kumarhane açacak, mafyayla aynı masaya oturup polisle köşe kapmaca oynayacağız. Bu sıradan bir esnaflık serüveni değil; bu, kanla yazılmış bir intikam ve mahalleyi geri alma destanı.
+
+**Hikayenin oynanışa yansıması (henüz yapılmadı, yol haritasında):**
+- Amca bir **NPC/antagonist** olarak mahallede var olmalı; mülkleri satın almak onun gücünü kırmak anlamına gelmeli
+- Mahalleyi ele geçirmek bir **bitiş koşulu** sunmalı (amcanın tahtını yıkmak)
+- "İtibar" sadece bir sayı değil, mahallenin seni kabul etmesi
+
+## 2.5 NİHAİ HEDEF — CO-OP
+
+Oyun **eşli (co-op) oynanacak şekilde** çıkacak. Örnek senaryo: biri tezgahta çay dağıtıp bulaşık yıkarken diğeri arka odada kumarhaneyi yönetiyor veya mafyayla ilgileniyor.
+
+**Karar (2026-10-10): netcode EN SONA (Faz 5), ama mimari bugünden korunur.** Gerekçe ve kurallar bölüm 10'da.
 
 ## 3. YAZILIM ANAYASASI (KESİN KURALLAR)
 
@@ -19,6 +34,11 @@ Karakterimiz hapisten yeni çıkmış ve amcasının bıraktığı izbe bir çay
 2. **Observer Pattern** — Sistemler birbirine `Action` / `UnityEvent` ile bağlanır. `Update` içinde başka script'i sürekli kontrol etmek (polling) yasak.
 3. **Veri Yönetimi** — Ürünler, fiyatlar, envanter verileri kesinlikle **ScriptableObject** (`ItemData`) ile tutulur.
 4. **UI Yönetimi** — Arayüz için **TextMeshPro**. UI kodları oyun mantığından (Manager'lar vb.) tamamen ayrı tutulur.
+5. **CO-OP UYUMU** (2026-10-10 eklendi) — Nihai hedef eşli oynanış olduğu için:
+   - **Oyuncuya özel durum singleton olamaz.** İki oyuncunun ayrı eli, ayrı kilidi, ayrı bakışı olacak.
+   - **Dünya durumu singleton kalabilir** (Economy, Inventory, Day, Upgrade, Property, Mafia, Police) — co-op'ta bunlar server-authoritative tek kopya olur.
+   - Durum değişiklikleri **her zaman manager metodundan** geçer, UI veya istasyon doğrudan alan yazmaz. Bu metotlar ileride RPC sınırı olacak.
+   - Dükkan mantığı "tek oyuncu var" varsayamaz; `Camera.main` ve `PlayerHands.Instance` gibi tekil erişimlerden kaçınılır.
 
 ## 4. ÇALIŞMA AKIŞI (kullanıcının açık talebi)
 
@@ -522,20 +542,24 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 ---
 
-## 9. SIRADAKİ ADIM — 9A: DENGE VE İLK GERÇEK OYUN
+## 9. SIRADAKİ ADIM — 9A-3: DENGE DÜZELTMELERİ
 
-**Amaç:** Test için şişirilmiş değerleri gerçek oyuna çevirmek ve baştan sona oynanabilir bir denge kurmak.
+**Amaç:** Oyunu baştan sona oynanabilir hale getirmek. **Ölçüm atlandığı için** aşağıdaki kağıt üstü tahminler üzerinden gidilecek.
+
+**En kritik iki sorun:**
+1. **İflas kilidi** — polis cezası parasızken kasadaki her şeyi alıyor; stok da bittiyse çay yapılamaz, para kazanılamaz, oyun kilitlenir. Çözüm gerekiyor (asgari kasa, ceza üst sınırı veya borç mekaniği).
+2. **İtibar barajları fiilen kilit değil** — itibar paradan hızlı büyüdüğü için 10/20/30/50 barajları 1-4. günde aşılıyor; kumarhane ve mafya erken açılıyor.
 
 **Kullanıcı kararları (onaylandı):**
 - **Kumar:** Hem **kumarhane işletilecek** (gece NPC kumarbazlar oynar, kasa pay alır, şüphe artar) **hem de** oyuncu isterse masada kendisi oynayabilecek (mevcut mod kalır).
 - **Müşteri sıklığı:** kod varsayılanı (ilk 3 sn, aralık 6–14 sn).
 
-**Alt adımlar:**
+**Alt adımlar (sıra 2026-10-10'da güncellendi — bkz. bölüm 10 tablosu):**
 1. ✅ **9a-1** — Gerçek değerler + `BalancePresetApplier` + `BalanceLogger`.
-2. ⏳ **Ölçüm** — kullanıcı sıfırdan 6–8 gün oynar → Claude `DengeLog/denge_log.csv`'yi okur: ilk upgrade, itibar barajları, mülkler, mafya kaçıncı gün?
-3. **9a-2 — Kumarhane işletmesi** (ikiye bölünecek: mantık / NPC prefab + builder). Plan ayrıca onaylanacak.
-4. **9a-3 — Ölçüme göre ayar:** itibar barajları, upgrade/mülk fiyatları, kumar beklentisi, haraç, iflas koruması. Değişiklikler önce tablo olarak sunulur.
-5. **9b (isteğe bağlı)** — Builder'lardaki kopyala-yapıştır kodu ortak bir `SignFactory` editor yardımcısına çıkarmak.
+2. ❌ **Ölçüm — ATLANDI.** Kullanıcı 6–8 günlük ölçümlü oynamayı istemedi ("üşendim"). `BalanceLogger` yerinde duruyor, ileride istenirse kullanılabilir. **Denge düzeltmesi aşağıdaki kağıt tahminler üzerinden yapılacak.**
+3. **9a-3 — Denge düzeltmeleri (SIRADAKİ):** itibar barajları, upgrade/mülk fiyatları, kumar beklentisi, haraç ve özellikle **iflas koruması**. Değişiklikler önce tablo olarak sunulur, onay alınır.
+4. **9b — Co-op hazırlığı: etkileşim katmanı refactor.** (Yeni; gerekçesi bölüm 3 madde 5 ve bölüm 10.)
+5. **9a-2 — Kumarhane işletmesi** (NPC'ler oynar, kasa komisyon alır). **9b'den sonra** yapılır ki yeni kod doğuştan co-op uyumlu olsun. Plan ayrıca onaylanacak.
 
 **Kağıt üstü tahminler (ölçümle doğrulanacak):**
 - Tek oyuncu + 2 masa ≈ günde 12–15 servis ≈ **+190 TL** ve **+13 itibar**.
@@ -545,7 +569,21 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 - Haraç 500 TL / 3 gün ≈ günlük çay gelirinin tamamı.
 - **İflas kilidi riski:** polis cezası parasızken kasadaki her şeyi alıyor; stok da 0 ise çay yapılamaz → para kazanılamaz → oyun kilitlenir.
 
-**Sonraki fikirler (henüz planlanmadı):** kapı objesi ve dükkan içi/dışı ayrımı, müşteri çeşitliliği (farklı sabır/bahşiş), mafya ile işbirliği kolu, ses/müzik, ana menü.
+**Sonraki adımların tam sırası bölüm 10'daki tabloda.**
+
+### 9b — Co-op hazırlığı: etkileşim katmanı (9a-3'ten sonra)
+
+**Amaç:** Her etkileşimin "hangi oyuncu yaptı" bilgisini taşıması. Co-op'un tek gerçek engeli bu.
+
+**Sorun:** `IInteractable` şu an parametresiz (`InteractionPrompt`, `Interact()`), bu yüzden her istasyon `PlayerHands.Instance` singleton'ına soruyor → co-op'ta hep 1. oyuncuyu bulur. Etkilenen dosyalar: `GlassShelf`, `TeaStove`, `Sink`, `Table`, `StorageRack`, `ComputerStation`, `GamblingTable`, `MafiaCollector`, `PropertyBuilding`, `HoldableItem`, `PoliceOfficer`, `PlayerInteractor`.
+
+**Plan (henüz onaylanmadı):**
+1. `PlayerContext` — etkileşimi yapan oyuncunun ellerini/kilidini/transform'unu taşıyan küçük sınıf, Player objesinde durur.
+2. `IInteractable` → `string GetPrompt(PlayerContext)` + `void Interact(PlayerContext)`.
+3. `PlayerInteractor` kendi `PlayerContext`'ini bulup her çağrıda geçirir.
+4. İstasyonlar `PlayerHands.Instance` yerine `context.Hands` kullanır.
+5. `PlayerHands` ve `PlayerLock` **singleton olmaktan çıkar**; dünya manager'ları singleton kalır.
+6. **Editor işi yok, davranış birebir aynı kalmalı** — regresyon testi: Faz 1-4 akışlarının tamamı tekrar denenir.
 
 ---
 
@@ -593,26 +631,29 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 ---
 
-### ⏳ KALANLAR
+### ⏳ KALANLAR — KARARLAŞTIRILMIŞ SIRA (2026-10-10)
 
-**9a — Denge ve ilk gerçek oyun** (sıradaki adım, bkz. bölüm 9)
-Test için şişirilmiş değerleri gerçeğe çevirip baştan sona oynayarak ölçmek.
+> **Not:** 9a-1 (gerçek değerler + `BalancePresetApplier` + `BalanceLogger`) bitti.
+> **Ölçümlü oynama (9a adım 2) kullanıcı tarafından ATLANDI** — "üşendim" dedi.
+> Karar: formal ölçüm beklenmez, **bölüm 9'daki kağıt üstü tahminler** üzerinden
+> denge düzeltmesi yapılır. Tahminler iki gerçek sorunu zaten tespit etmiş durumda:
+> itibar barajları fiilen kilit değil, ve polis cezası sonrası **iflas kilidi** riski.
 
-**Master prompt'tan henüz yapılmayanlar:**
-- **Dükkanı genişletme** (Faz 2) — yeni oda/alan açan upgrade yok
-- **Mülkleri farklı işletmelere dönüştürme** (Faz 3) — şu an mülkler sadece pasif kira veriyor
-- **İskambil / domino** gibi diğer masa eşyaları (sadece okey takımı var)
-- **Masada aranan adam** senaryosu (Faz 4) — polis sadece kumar masasına bakıyor
+| # | Adım | Neden bu sırada |
+|---|---|---|
+| **9a-3** | Denge düzeltmeleri (kağıt tahminlere göre) | İtibar barajları ve **iflas kilidi** gerçek sorunlar; ucuz ve küçük. Oynanabilirliğin önkoşulu. |
+| **9b** | **Co-op hazırlığı: etkileşim katmanı refactor** | `PlayerHands.Instance` tüm etkileşimlerin tek engeli. Şu an 12 çağrı noktası var, **her yeni istasyonda artıyor**. Şimdi ucuz, sonra pahalı. Oyuncu tarafında Editor işi yok. |
+| **9a-2** | **Kumarhane işletmesi: NPC'ler oynar, oyuncu kasadır** | En büyük oynanış değişimi. **9b'den SONRA** yapılır ki yeni istasyon/NPC kodu doğuştan co-op uyumlu olsun. |
+| **10a** | Hikaye girişi (intikam tonu) | Oyuna kimlik katar, küçük iş |
+| **10c** | Dükkan genişletme + iskambil/domino + müşteri ve stok çeşitliliği | Faz 2'den kalan; mekan büyüdükçe kumarhane odası da anlam kazanır |
+| **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
+| **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
+| **11** | Görsel cila, ses, ana menü, kayıt slotları | **En sona**: mekanikler değişince geometri/model yeniden yapılır |
+| **FAZ 5** | **Co-op netcode** | Tek oyunculu her şey bitince |
 
-**Sonraki fikirler (planlanmadı, sıralama kullanıcıya ait):**
-- Kapı objesi ve dükkan içi/dışı ayrımı (7b'de bilinçli olarak atlandı)
-- Müşteri çeşitliliği: farklı sabır, bahşiş, zor müşteri tipleri
-- Mafya ile **işbirliği** kolu: haraç yerine ortaklık, rakip dükkan baskını
-- Stok çeşitliliği: şeker, su, bardak kırılması
-- Ses ve müzik, ambiyans
-- Ana menü + kayıt slotları (şu an tek kayıt, otomatik yükleniyor)
-- **Görsel cila:** her şey hâlâ küp/kapsül — gerçek modeller, materyaller, ışık
-- **Teknik temizlik:** 6 Editor builder arasında kopyala-yapıştır kod var, ortak bir `SignFactory`'ye çıkarılabilir
+**Sıralamanın mantığı:** önce oyunu oynanabilir kıl (9a-3), sonra ucuz-ve-koruyucu mimari hamlesi (9b), sonra en büyük oynanış değişimi (9a-2), sonra kimlik ve içerik (10a-e), en sonda cila (11) ve netcode (Faz 5).
+
+**Teknik temizlik (fırsat buldukça):** 6 Editor builder'da kopyala-yapıştır kod var, ortak bir `SignFactory` yardımcısına çıkarılabilir.
 
 ---
 
