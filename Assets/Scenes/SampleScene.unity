@@ -1561,7 +1561,6 @@ GameObject:
   - component: {fileID: 334363817}
   - component: {fileID: 334363816}
   - component: {fileID: 334363820}
-  - component: {fileID: 334363821}
   - component: {fileID: 334363822}
   - component: {fileID: 334363823}
   - component: {fileID: 334363824}
@@ -1569,6 +1568,7 @@ GameObject:
   - component: {fileID: 334363825}
   - component: {fileID: 334363827}
   - component: {fileID: 334363828}
+  - component: {fileID: 334363829}
   m_Layer: 0
   m_Name: Managers
   m_TagString: Untagged
@@ -1588,7 +1588,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46f2e3699196b5f4e9970f9929bd1be9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Core.ReputationManager
-  startingReputation: 70
+  startingReputation: 0
 --- !u!114 &334363805
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1601,7 +1601,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6c2c9b8360c5414abaa0a96e8d1759e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Economy.EconomyManager
-  startingMoney: 10000
+  startingMoney: 250
 --- !u!4 &334363806
 Transform:
   m_ObjectHideFlags: 0
@@ -1673,7 +1673,7 @@ MonoBehaviour:
   deliveryPoint: {fileID: 233533965}
   dropHeight: 0.6
   scatterRadius: 0.35
-  deliveryDelay: 8
+  deliveryDelay: 20
 --- !u!114 &334363811
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1824,26 +1824,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29e40df4bb3a2ea47afa84c7032d63a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Core.DayCycleManager
-  dayDurationMinutes: 1
-  nightTimeScale: 1
-  openHour: 8
-  closeHour: 22
-  lastCallHours: 1
-  waitForNextDayRequest: 1
-  startingDay: 1
---- !u!114 &334363821
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 334363803}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 29e40df4bb3a2ea47afa84c7032d63a7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Core.DayCycleManager
-  dayDurationMinutes: 1
+  dayDurationMinutes: 6
   nightTimeScale: 4
   openHour: 8
   closeHour: 22
@@ -1955,16 +1936,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0389c22f32fb03445a1ba19d38dd4470, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Illegal.PoliceManager
-  minimumSuspicionRatio: 0
-  maxRaidChance: 1
+  minimumSuspicionRatio: 0.2
+  maxRaidChance: 0.6
   warningSeconds: 20
-  inspectionSeconds: 3
-  earliestRaidDay: 1
+  inspectionSeconds: 12
+  earliestRaidDay: 4
   fineAmount: 1000
   reputationPenalty: 10
   cleanInspectionRelief: 15
   officerPrefab: {fileID: 1110651108804802353, guid: 79e9c7e7ab6ea1547aa5187211b12817, type: 3}
   spawnPoint: {fileID: 338896605}
+--- !u!114 &334363829
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 334363803}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f32a84a818df0134495b0515d5fafd67, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Core.BalanceLogger
+  fileName: denge_log.csv
+  writeToFile: 1
+  reputationMilestones: 0a000000140000001e00000032000000
 --- !u!1 &338849889
 GameObject:
   m_ObjectHideFlags: 0
@@ -7220,8 +7216,8 @@ MonoBehaviour:
   customerPrefab: {fileID: 946487281903710997, guid: 9c0b79a6c1a99d74e879dcc150eebc42, type: 3}
   spawnPoint: {fileID: 1822745117}
   exitPoint: {fileID: 1822745117}
-  firstSpawnDelay: 2
-  spawnDelayRange: {x: 4, y: 8}
+  firstSpawnDelay: 3
+  spawnDelayRange: {x: 6, y: 14}
   maxActiveCustomers: 4
 --- !u!4 &1974894605
 Transform:

@@ -44,3 +44,6 @@ crashlytics-build.properties
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Denge olcum loglari (BalanceLogger)
+[Dd]engeLog/

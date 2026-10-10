@@ -29,6 +29,8 @@ Karakterimiz hapisten yeni çıkmış ve amcasının bıraktığı izbe bir çay
 
 **İzinsiz kod yazılmaz.** Adımlar küçük tutulur (kullanıcı büyük adımları ikiye bölmeyi tercih ediyor).
 
+**Computer use kuralı (9a'dan itibaren):** Yapılacak her iş önce kullanıcıya sorulur. Onay gelirse Unity Editor adımlarını (derleme kontrolü, menü komutları, sahne kaydetme, kısa Play testi) Claude **computer use ile kendisi yapar**; kullanıcıya sadece sonucu kontrol etmek kalır. Unity `full` yetkiyle geliyor. Adımlar mümkün olduğunca **menü tıklamasıyla** yapılabilecek şekilde tasarlanır (builder/Editor komutları). Kumar/servis gibi oynanış testleri kullanıcıda kalır.
+
 ---
 
 ## 5. PROJE ORTAMI
@@ -52,13 +54,14 @@ Assets/_Project/
 ├── Materials/
 └── Scripts/
     ├── Core/          ReputationManager, UpgradeManager, UpgradeUnlocker, DayCycleManager,
-                       DailyStatsManager, ISaveable, SaveManager, PropertyManager
+                       DailyStatsManager, ISaveable, SaveManager, PropertyManager, BalanceLogger
     ├── Customers/     Customer, CustomerSpawner, CustomerModifiers, CustomerPatienceBoost
     ├── Data/          ItemData, ItemDatabase, ShopCatalog, UpgradeData, UpgradeCatalog,
                        PropertyData, PropertyCatalog
     ├── Delivery/      DeliveryManager
     ├── Editor/        RowPrefabBuilder, ReportPanelBuilder, SaveMenuItems, SignPrefabBuilder,
-                       GamblingSignBuilder, MafiaPrefabBuilder, PolicePrefabBuilder
+                       GamblingSignBuilder, MafiaPrefabBuilder, PolicePrefabBuilder,
+                       BalancePresetApplier
     ├── Illegal/       GamblingTable, SuspicionManager, MafiaManager, MafiaCollector,
                        PoliceManager, PoliceOfficer
     ├── Neighborhood/  PropertyBuilding, PropertyVisualSwitch
@@ -343,6 +346,27 @@ Assets/_Project/
 
 ---
 
+## 6.7 DENGE VE CİLA
+
+### Adım 9a-1 — Gerçek değerler + ölçüm aracı ✅
+- `BalancePresetApplier` (**Editor**, `KanBagi.EditorTools`): sahnedeki manager'lara tek tıkla değer yazar.
+  - `Kan Bagi > Denge > Gercek Degerleri Uygula` / `Kan Bagi > Denge > Test Degerlerini Uygula`
+  - Değerler dosyanın üstündeki **`Settings` tablosunda** (bileşen, alan, GERÇEK, TEST). Değiştirip menüye tekrar tıkla — Inspector gezmek yok.
+  - SerializedObject ile yazar (Undo destekli), Console'a `obje > Bilesen.alan: eski -> yeni` raporu basar.
+  - **Aynı singleton'dan birden fazla varsa** fazlasını siler (ilk objenin ilk bileşeni kalır).
+  - `Managers`'ta `BalanceLogger` yoksa **kendisi ekler**.
+  - Play modunda çalışmaz; diskte kayıt varsa "önce Kaydi Sil" uyarısı verir (kayıt başlangıç parasını ezer).
+- `BalanceLogger` (`KanBagi.Core`, `Managers` üzerinde, **`[DefaultExecutionOrder(200)]`**): sadece event dinler, CSV günlüğü tutar.
+  - `GUN` satırı (her `OnDayEnded`): para, itibar, şüphe, servis/kaçan, ciro, gider, kira, kumar, haraç, ceza, net.
+  - `OLAY` satırı: oturum başlangıcı, itibar 10/20/30/50 ilk geçiş, upgrade/mülk alımı, mafya geldi/ödendi/reddedildi, polis uyarısı/sonucu.
+  - Editor'de **`KAHVEHANEDENEME/DengeLog/denge_log.csv`** (proje kökü — Claude doğrudan okuyabilsin), build'de `persistentDataPath`. `DengeLog/` `.gitignore`'da.
+  - Order 200 sebebi: SaveManager (100) kaydı yükledikten **sonra** abone olsun; yoksa kayıttan geri gelen upgrade/mülkler "yeni alındı" diye loglanırdı. Geçilmiş itibar barajları da açılışta işaretlenir.
+- **Uygulanan GERÇEK değerler:** Starting Money 10000 → **250**, Starting Reputation 70 → **0**, Day Duration 1 → **6** dk, Delivery Delay 8 → **20**, Spawner ilk 2 → **3** sn / aralık (4,8) → **(6,14)**, Police: min şüphe 0 → **0.2**, max ihtimal 1 → **0.6**, denetim 3 → **12** sn, en erken gün 1 → **4**.
+- **Yakalanan bug:** `Managers`'ta **iki `DayCycleManager`** vardı; çalışan kopya `nightTimeScale 1` olanıydı → **geceler hiç hızlanmıyordu**. Komut fazlasını sildi, artık gece 4× akıyor.
+- Gerçek değerlerle zaman: 1 gün ≈ **4 gerçek dakika** (dükkan açık 3.5 dk, gece ~37 sn). Saat başına 15 sn (gündüz).
+
+---
+
 ## 7. SAHNE KURULUMU (`Assets/Scenes/SampleScene.unity`)
 
 | Obje | Konum | Üzerindeki script'ler |
@@ -350,7 +374,7 @@ Assets/_Project/
 | `Zemin` (Plane) | (0,0,0) | **NavMeshSurface** (bake edilmiş) |
 | `Player` (Empty) | (0, 1.1, 0) | CharacterController, PlayerController, PlayerInteractor, PlayerHands, PlayerLock |
 | └ `Main Camera` | (0, 0.6, 0) | — (child) |
-| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, PoliceManager, **5 × UpgradeUnlocker** (YeniMasa→Masa3, KahveMakinesi→KahveMakinesi, Oralet→OraletSemaveri, Okey→OkeyTakimi1/2/3) |
+| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, PoliceManager, **BalanceLogger**, **5 × UpgradeUnlocker** (YeniMasa→Masa3, KahveMakinesi→KahveMakinesi, Oralet→OraletSemaveri, Okey→OkeyTakimi1/2/3) |
 | `EventSystem` | — | **Input System UI Input Module** (butonlar bunsuz çalışmaz) |
 | `Canvas` | — | InteractionPromptUI, HeldItemUI, ProgressBarUI, **ComputerUI** |
 | ├ `MoneyText` | sol üst (Pos Y -20) | MoneyUI |
@@ -418,14 +442,16 @@ Assets/_Project/
 - `MalzemeKatalogu` (ShopCatalog) — CayYapragi ×10 (20 TL), KahveCekirdegi ×10 (40 TL, kilitli), OraletTozu ×10 (30 TL, kilitli)
 - `GelistirmeKatalogu` (UpgradeCatalog) — YeniMasaUpgrade (100), KahveMakinesiUpgrade (200), OraletUpgrade (100), SanayiOcagiUpgrade (250), OkeyTakimiUpgrade (150), GizliKumarhaneUpgrade (1500 + **itibar 50**)
 - `UrunVeritabani` (ItemDatabase) — 6 ItemData'nın tamamı (kayıt sistemi için, **yeni ürün eklenince buraya da eklenmeli**)
-- `BakkalMulk` (800 TL / 60 / itibar 10), `TerziMulk` (1200 / 90 / 20), `KirathaneMulk` (2000 / 160 / 35)
+- `BakkalMulk` (800 TL / 60 / itibar 10), `TerziMulk` (1200 / 90 / 20), `KirathaneMulk` (2000 / 160 / **30** — asset'teki gerçek değer)
 - `EmlakKatalogu` (PropertyCatalog) — üç mülkün tamamı (**kayıt eşlemesi buradan yapılır, boş bırakılamaz**)
 
-> ⚠️ **Test notu:** `Managers > EconomyManager > Starting Money` test için **2000** yapıldı. Denge ayarına gelince **250**'ye geri alınacak.
+> ✅ **Sahne GERÇEK değerlerde** (Adım 9a-1). Hızlı test için `Kan Bagi > Denge > Test Degerlerini Uygula`, geri dönmek için `Gercek Degerleri Uygula`. Mod değiştirdikten sonra sahneyi kaydet; sıfırdan test için `Kan Bagi > Kaydi Sil`.
 
 ---
 
 ## 8. ŞU AN NEREDE KALDIK
+
+**Adım 9a-1 bitti ve test edildi.** Sahne gerçek değerlere döndü (250 TL, itibar 0, 6 dk'lık gün, gece hızlı), kopya DayCycleManager silindi, `BalanceLogger` her oturumu/günü/kilometre taşını `DengeLog/denge_log.csv`'ye yazıyor. **Sıradaki iş:** kullanıcı sıfırdan 6–8 gün oynayacak, Claude CSV'yi okuyup analiz edecek.
 
 **Adım 8c bitti ve test edildi.** Şüphe biriktikçe polis baskın yapıyor: uyarı geliyor, oyuncunun masayı örtmek için ~20 saniyesi oluyor, örtmezse para cezası + itibar kaybı, örterse temiz geçip şüphe düşüyor. Faz 4'ün üç ayağı (kumarhane, mafya, polis) birbirine bağlandı.
 
@@ -500,11 +526,24 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Amaç:** Test için şişirilmiş değerleri gerçek oyuna çevirmek ve baştan sona oynanabilir bir denge kurmak.
 
-Planlanan (henüz onaylanmadı):
-1. **Test değerlerini geri al:** `Starting Money` 2000/5000 → **250**, `Starting Reputation` 40/60 → **0**, `Day Duration Minutes` → **6**, `Delivery Delay` → **20**, PoliceManager test değerleri → gerçek değerler.
-2. Sıfırdan oyna, her fazın **ne kadar sürdüğünü ölç**: ilk upgrade kaçıncı gün alınabiliyor? Kumarhane (itibar 50) kaçıncı gün? Mafya barajı (itibar 30 + 2000 TL) ne zaman?
-3. Tıkanan yerleri düzelt — fiyatlar, sabır, müşteri sıklığı, kira gelirleri.
-4. `MoneyTestInteractable` benzeri kalıntı yok; ama `RowPrefabBuilder`/`ReportPanelBuilder`/`SignPrefabBuilder`/`GamblingSignBuilder`/`MafiaPrefabBuilder`/`PolicePrefabBuilder` arasında **kopyala-yapıştır kod** birikti — ortak bir `SignFactory` editor yardımcısına çıkarılabilir (isteğe bağlı temizlik).
+**Kullanıcı kararları (onaylandı):**
+- **Kumar:** Hem **kumarhane işletilecek** (gece NPC kumarbazlar oynar, kasa pay alır, şüphe artar) **hem de** oyuncu isterse masada kendisi oynayabilecek (mevcut mod kalır).
+- **Müşteri sıklığı:** kod varsayılanı (ilk 3 sn, aralık 6–14 sn).
+
+**Alt adımlar:**
+1. ✅ **9a-1** — Gerçek değerler + `BalancePresetApplier` + `BalanceLogger`.
+2. ⏳ **Ölçüm** — kullanıcı sıfırdan 6–8 gün oynar → Claude `DengeLog/denge_log.csv`'yi okur: ilk upgrade, itibar barajları, mülkler, mafya kaçıncı gün?
+3. **9a-2 — Kumarhane işletmesi** (ikiye bölünecek: mantık / NPC prefab + builder). Plan ayrıca onaylanacak.
+4. **9a-3 — Ölçüme göre ayar:** itibar barajları, upgrade/mülk fiyatları, kumar beklentisi, haraç, iflas koruması. Değişiklikler önce tablo olarak sunulur.
+5. **9b (isteğe bağlı)** — Builder'lardaki kopyala-yapıştır kodu ortak bir `SignFactory` editor yardımcısına çıkarmak.
+
+**Kağıt üstü tahminler (ölçümle doğrulanacak):**
+- Tek oyuncu + 2 masa ≈ günde 12–15 servis ≈ **+190 TL** ve **+13 itibar**.
+- **İtibar paradan hızlı büyüyor** → 10/20/30/50 barajları 1–4. günde aşılır, fiilen kilit değiller.
+- Erken upgrade'lerin toplamı 800 TL → 4–5. günde hepsi alınır.
+- **Kumar EV negatif:** winChance 0.45 × payout 2 = el başına **−10 TL** (oyuncu kendi oynarken).
+- Haraç 500 TL / 3 gün ≈ günlük çay gelirinin tamamı.
+- **İflas kilidi riski:** polis cezası parasızken kasadaki her şeyi alıyor; stok da 0 ise çay yapılamaz → para kazanılamaz → oyun kilitlenir.
 
 **Sonraki fikirler (henüz planlanmadı):** kapı objesi ve dükkan içi/dışı ayrımı, müşteri çeşitliliği (farklı sabır/bahşiş), mafya ile işbirliği kolu, ses/müzik, ana menü.
 
@@ -536,8 +575,9 @@ Planlanan (henüz onaylanmadı):
 | Git kimliği | `MetinKizil` / `metinkizil210@gmail.com` |
 | Kurulu araçlar | Git 2.55 + GitHub CLI 2.101 (winget ile kuruldu, PATH'e elle eklenmesi gerekebilir) |
 
-**Durum:** 3 commit yerelde hazır ama **henüz push edilmedi** — `gh auth login` cihaz-kodu doğrulama maili gelmediği için giriş yapılamadı.
+**Durum:** Commit'ler yerelde hazır ama **henüz push edilmedi** — `gh auth login` cihaz-kodu doğrulama maili gelmediği için giriş yapılamadı. **Push sorununu çözmeye çalışmadan önce kullanıcıya sor.**
 ```
+3076ff4  DEVAM.md: git durumu ve proje dersleri bolumleri eklendi
 f329349  Adim 8c: polis baskini ve gizleme mekanigi
 f9dc2d3  Adim 8b: mafya ve harac sistemi
 7e6d8e1  Kan Bagi - Faz 1-2-3 ve Faz 4 basi
@@ -567,4 +607,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 - **Panel kökü hep aktif kalmalı** (kapalı obje event dinleyemez); açılıp kapanan şey içerik çocuğu olmalı.
 - **`TrySpendMoney`'den geçen her özel harcama** (kumar bahsi, haraç) `Expenses`'a da yazılır → kendi satırında gösterilecekse giderden düşülmeli, yoksa çift sayılır.
 - **Gün sonu bekleyen sistemler** (`OnDayEnded` dinleyicisi) yoksa oyun sessizce kilitlenir — guard eklendi ama benzer beklemelerde dikkat.
+- **Aynı manager'ı aynı objeye iki kez ekleme.** Singleton fazlasını sessizce yok eder ama hangisinin kalacağı belirsiz; Inspector'da yanlış kopyayı düzenlemek çok kolay (iki DayCycleManager yüzünden geceler hızlanmıyordu). `Gercek Degerleri Uygula` artık kopyaları temizliyor.
+- **Kayıt dosyası başlangıç değerlerini ezer.** `Starting Money`'yi değiştirdiysen ama eski kayıt duruyorsa değişiklik görünmez → önce `Kan Bagi > Kaydi Sil`.
+- **Denge değerlerini Inspector'da elle değiştirme** — `BalancePresetApplier`'ın `Settings` tablosuna yaz, menüden uygula. Değerler tek yerde ve izlenebilir kalır.
 4. Kod bittikten sonra Unity Editor talimatlarını adım adım ver.
