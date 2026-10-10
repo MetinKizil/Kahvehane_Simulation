@@ -549,20 +549,70 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 ---
 
-## 10. SONRAKİ FAZLAR (Master Prompt'tan)
+## 10. YOL HARİTASI — YAPILANLAR VE KALANLAR
 
-### Faz 2 — Bilgisayar, Stok, Dükkan Gelişimi
-- **Yönetim PC'si**: dükkanda etkileşilen bilgisayar arayüzü (Supermarket Simulator mantığı)
-- **Stok siparişi**: çay, şeker, kahve gibi sarf malzemeleri azalınca PC'den sipariş; kurye kapıya bırakır, oyuncu alıp depoya dizer
-- **Upgrade'ler**: yeni masalar, daha hızlı ocaklar, kahve makineleri; okey takımı / iskambil / domino gibi müşteri oyalayan masa eşyaları; dükkanı genişletme
+### ✅ FAZ 1 — Temel işletme döngüsü (BİTTİ)
+| Adım | İçerik |
+|---|---|
+| 1 | `ItemData` (SO), `EconomyManager`, `ReputationManager`, `MoneyUI` |
+| 2 | `PlayerController` (FPS), `IInteractable`, `PlayerInteractor`, `InteractionPromptUI` |
+| 3a | `HoldableItem`, `PlayerHands`, `TeaGlass`, `GlassShelf`, `HeldItemUI` |
+| 3b | `TimedStation`, `TeaStove`, `Sink`, `ProgressBarUI` — bulaşık döngüsü kapandı |
+| 4a | `Table`, `TableManager`, `Customer`, `CustomerSpawner`, `OrderBubbleUI`, `Billboard` |
+| 4b | Servis + para + itibar, kirli bardak masada kalır, `ReputationUI` |
 
-### Faz 3 — Mahalle ve Emlak
-- Mahalledeki boş/satılık dükkanları satın alma, pasif gelir, farklı işletmelere dönüştürme
+### ✅ FAZ 2 — Stok, PC, büyüme (BİTTİ)
+| Adım | İçerik |
+|---|---|
+| 5a | `InventoryManager`, `CayYapragi`, ocakta malzeme tüketimi, `StockUI` |
+| 5b | `ShopCatalog`, `PurchaseManager`, `PlayerLock`, `ComputerStation`, `ComputerUI` |
+| 5c | `DeliveryManager`, `DeliveryBox`, `StorageRack` — kurye koliyi kapıya bırakır |
+| 5d | `UpgradeData/Catalog/Manager/Unlocker`, `TabGroupUI`, sekmeli PC paneli, `RowPrefabBuilder` |
+| 5e | Kahve + Oralet, `MenuManager`, müşteri menüden rastgele sipariş, kilitli malzeme |
+| 5f | İstasyon hız çarpanı, `CustomerModifiers` — sanayi ocağı ve okey takımı upgrade'leri |
 
-### Faz 4 — İllegal İşler, Mafya, Polis
-- **Gizli kumarhane**: dükkan belli seviyeye gelince arka odada kumar; yüksek kazanç, yüksek risk
-- **Mafya**: ilk günden gelmez — belli bir **İtibar + servet barajı** aşılınca haraç/racon kesmeye gelir
-- **Polis**: rastgele "rutin kontrol"; arkada kumar varsa veya masada aranan adam varsa oyuncu bunları gizlemek zorunda
+### ✅ ALTYAPI (BİTTİ)
+| Adım | İçerik |
+|---|---|
+| 6a | `DayCycleManager` — 24 saat kesintisiz gün, gece hızlandırma, son müşteri saati, kapanışta çıkış; `ClockUI` |
+| 6b | `DailyStatsManager`, `DailyReportUI` — gün sonu muhasebe ekranı |
+| 6c | `ISaveable`, `SaveManager`, `ItemDatabase` — JSON kayıt/yükleme, PC'de Kaydet butonu |
+
+### ✅ FAZ 3 — Mahalle ve emlak (BİTTİ)
+| Adım | İçerik |
+|---|---|
+| 7a | `PropertyData/Catalog/Manager`, PC'de EMLAK sekmesi, günlük kira, **itibar barajı** |
+| 7b | Sokak + 3 bina, `PropertyBuilding` (yerinde satın alma), duvara asılı SATILIK tabelaları |
+
+### ✅ FAZ 4 — İllegal işler (İSKELET BİTTİ)
+| Adım | İçerik |
+|---|---|
+| 8a | `GizliKumarhaneUpgrade` (itibar 50), `GamblingTable` (sadece gece), `SuspicionManager` |
+| 8b | `MafiaManager` — itibar+servet barajı, haraç, ödeme/ret, ret cezası ve ×1.5 zam |
+| 8c | `PoliceManager` — şüpheye bağlı baskın, uyarı → memur → denetim; **örtü ile gizleme** |
+
+---
+
+### ⏳ KALANLAR
+
+**9a — Denge ve ilk gerçek oyun** (sıradaki adım, bkz. bölüm 9)
+Test için şişirilmiş değerleri gerçeğe çevirip baştan sona oynayarak ölçmek.
+
+**Master prompt'tan henüz yapılmayanlar:**
+- **Dükkanı genişletme** (Faz 2) — yeni oda/alan açan upgrade yok
+- **Mülkleri farklı işletmelere dönüştürme** (Faz 3) — şu an mülkler sadece pasif kira veriyor
+- **İskambil / domino** gibi diğer masa eşyaları (sadece okey takımı var)
+- **Masada aranan adam** senaryosu (Faz 4) — polis sadece kumar masasına bakıyor
+
+**Sonraki fikirler (planlanmadı, sıralama kullanıcıya ait):**
+- Kapı objesi ve dükkan içi/dışı ayrımı (7b'de bilinçli olarak atlandı)
+- Müşteri çeşitliliği: farklı sabır, bahşiş, zor müşteri tipleri
+- Mafya ile **işbirliği** kolu: haraç yerine ortaklık, rakip dükkan baskını
+- Stok çeşitliliği: şeker, su, bardak kırılması
+- Ses ve müzik, ambiyans
+- Ana menü + kayıt slotları (şu an tek kayıt, otomatik yükleniyor)
+- **Görsel cila:** her şey hâlâ küp/kapsül — gerçek modeller, materyaller, ışık
+- **Teknik temizlik:** 6 Editor builder arasında kopyala-yapıştır kod var, ortak bir `SignFactory`'ye çıkarılabilir
 
 ---
 
