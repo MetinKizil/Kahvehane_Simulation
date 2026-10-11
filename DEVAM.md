@@ -38,7 +38,7 @@ Oyun **eşli (co-op) oynanacak şekilde** çıkacak. Örnek senaryo: biri tezgah
    - **Oyuncuya özel durum singleton olamaz.** İki oyuncunun ayrı eli, ayrı kilidi, ayrı bakışı olacak.
    - **Dünya durumu singleton kalabilir** (Economy, Inventory, Day, Upgrade, Property, Mafia, Police) — co-op'ta bunlar server-authoritative tek kopya olur.
    - Durum değişiklikleri **her zaman manager metodundan** geçer, UI veya istasyon doğrudan alan yazmaz. Bu metotlar ileride RPC sınırı olacak.
-   - Dükkan mantığı "tek oyuncu var" varsayamaz; `Camera.main` ve `PlayerHands.Instance` gibi tekil erişimlerden kaçınılır.
+   - Dükkan mantığı "tek oyuncu var" varsayamaz. **9b'den beri:** etkileşim `IInteractable.GetPrompt/Interact(PlayerContext player)` ile gelir; oyuncunun eli/kilidi `player.Hands` / `player.Lock`'tan alınır. `PlayerHands`/`PlayerLock` singleton değil. `Camera.main` sadece her istemcinin kendi ekranında yaptığı işte (Billboard) kabul.
 
 ## 4. ÇALIŞMA AKIŞI (kullanıcının açık talebi)
 
@@ -89,7 +89,7 @@ Assets/_Project/
     ├── Interaction/   IInteractable, HoldableItem, PlayerInteractor
     ├── Inventory/     InventoryManager
     ├── Items/         TeaGlass, DeliveryBox
-    ├── Player/        PlayerController, PlayerHands, PlayerLock
+    ├── Player/        PlayerController, PlayerHands, PlayerLock, PlayerContext (düz sınıf, bileşen değil)
     ├── Shop/          TimedStation, TeaStove, Sink, GlassShelf, Table, TableManager,
                        ComputerStation, StorageRack, MenuManager, StationSpeedBoost
     └── UI/            MoneyUI, ReputationUI, StockUI, HeldItemUI, InteractionPromptUI, ProgressBarUI,
@@ -102,7 +102,7 @@ Assets/_Project/
 ### Kod konvansiyonları (mevcut koda uyulmalı)
 - Namespace'ler: `KanBagi.Core`, `KanBagi.Customers`, `KanBagi.Data`, `KanBagi.Economy`, `KanBagi.Interaction`, `KanBagi.Inventory`, `KanBagi.Items`, `KanBagi.Player`, `KanBagi.Shop`, `KanBagi.UI`
 - Yorumlar **Türkçe ama şapkasız/noktasız** (ASCII) — `cay`, `musteri`, `siparis` gibi. Kod içinde Türkçe karakter kullanılmıyor.
-- Manager'lar `public static X Instance { get; private set; }` singleton deseni kullanıyor (`EconomyManager`, `ReputationManager`, `PlayerHands`, `TableManager`).
+- Manager'lar `public static X Instance { get; private set; }` singleton deseni kullanıyor (`EconomyManager`, `ReputationManager`, `TableManager`...). **Oyuncuya özel bileşenler singleton olamaz** (9b).
 - Inspector alanları mümkün olduğunca **opsiyonel**: boşsa kod otomatik bulur (`GetComponentInChildren`, `FindFirstObjectByType`, ofset fallback'leri). Bulamazsa **Türkçe, adresi net `Debug.LogError`** basar ve component'i `enabled = false` yapar.
 - Durum makineleri `Update` yerine **coroutine** ile yazılıyor.
 
@@ -118,14 +118,14 @@ Assets/_Project/
 
 ### Adım 2 — Oyuncu ve etkileşim ✅
 - `PlayerController`: FPS yürüme + bakış (CharacterController + Input System "Player" map'i, `Move`/`Look`). Kamerayı ve input asset'ini otomatik bulur.
-- `IInteractable`: `string InteractionPrompt { get; }` + `void Interact()`
+- `IInteractable`: `string InteractionPrompt { get; }` + `void Interact()` → **9b'de `GetPrompt(PlayerContext)` + `Interact(PlayerContext)` oldu**
 - `PlayerInteractor`: kameradan raycast (2.5m), odak değişince `event Action<IInteractable> OnFocusChanged`, `Interact` action'ının `started`'ında `Interact()` çağırır. Etkileşim sonrası ipucunu tazeler; nesne yok edildiyse odağı null'lar. Oyuncunun kendi collider'ını yok sayar. **Tek raycast + `hit.collider.TryGetComponent`** kullanır → `IInteractable` script'i collider ile **aynı GameObject'te** olmalı.
 - `InteractionPromptUI`: Canvas üzerinde, `[E] ...` ipucu.
 - ~~`MoneyTestInteractable`~~: geçici test kutusuydu, **Adım 4b'de silindi**.
 
 ### Adım 3a — Taşıma sistemi ve bardak ✅
 - `HoldableItem` (`IInteractable`): `DisplayName`, `IsHeld`, `AttachTo(Transform)`, `Detach(pos, rot, restorePhysics)`, `SetPickupEnabled(bool)`. Ele alınınca collider/rigidbody kapanır.
-- `PlayerHands` (singleton): tek slot. `HeldItem`, `IsEmpty`, `TryHold(HoldableItem) : bool`, `ReleaseHeldItem() : HoldableItem`, `TryDropAt(...)`, `event Action<HoldableItem> OnHeldItemChanged`. Tutma noktasını (`HoldAnchor`) kameranın altında **otomatik oluşturur**.
+- `PlayerHands` (~~singleton~~ — 9b'de çıktı): tek slot. `HeldItem`, `IsEmpty`, `TryHold(HoldableItem) : bool`, `ReleaseHeldItem() : HoldableItem`, `TryDropAt(...)`, `event Action<HoldableItem> OnHeldItemChanged`. Tutma noktasını (`HoldAnchor`) kameranın altında **otomatik oluşturur**.
 - `TeaGlass`: `enum GlassState { Empty, Full, Dirty }`, `State`, `Content (ItemData)`, `TryFill(ItemData) : bool`, `MarkDirty()`, `Clean()`, `GetStateLabel()`, `event Action<GlassState> OnStateChanged`. Görselleri (`liquidVisual`, `dirtyVisual`) duruma göre açıp kapatır.
 - `GlassShelf` (`IInteractable`): temiz bardak stoğunun **tek sahibi**. `CleanGlassCount`, `AddCleanGlass()`, `event Action<int> OnCleanGlassCountChanged`. Bardak verir / boş bardağı geri alır.
 - `HeldItemUI`: elde ne olduğunu gösterir, bardağın durum değişimlerine de abone olur.
@@ -187,7 +187,7 @@ Assets/_Project/
   - `bool CanAfford(entry)` (buton aktifliği için), `bool TryBuy(entry)` → `TrySpendMoney` + `InventoryManager.Add`
   - `event Action<ItemData, int> OnPurchased`
   - **5c'de değişecek tek metot `TryBuy`** — malzeme depoya değil kuryeye gidecek.
-- `PlayerLock` (singleton, Player objesinde): `SetControlEnabled(bool)` → `PlayerController` + `PlayerInteractor` aç/kapa, `event Action<bool> OnControlEnabledChanged`. `PlayerController` zaten `OnEnable/OnDisable`'da imleci yönettiği için **imleç bedavaya doğru çalışıyor.** Faz 4'te kumar masası/polis diyaloğu da bunu kullanacak.
+- `PlayerLock` (~~singleton~~ — 9b'de çıktı, Player objesinde): `SetControlEnabled(bool)` → `PlayerController` + `PlayerInteractor` aç/kapa, `event Action<bool> OnControlEnabledChanged`. `PlayerController` zaten `OnEnable/OnDisable`'da imleci yönettiği için **imleç bedavaya doğru çalışıyor.** Faz 4'te kumar masası/polis diyaloğu da bunu kullanacak.
 - `ComputerStation` (`IInteractable`): ekranı açar/kapar, `event Action<bool> OnScreenToggled`. ESC için Input System'deki **`UI/Cancel`** action'ına ekran açıkken abone olur (asset'te yoksa sessizce atlar, Kapat butonu kalır).
 - `ComputerUI`: **Canvas üzerinde durur** (panelin üzerinde değil — panel kapalıyken `Start()` çalışmaz!). Katalogdan satırları `entryPrefab`'tan kodla üretir; ekran açıkken para/stok event'lerine abone olur, kapanınca aboneliği bırakır.
 - `CatalogEntryUI`: tek satır — ad, "10 adet - 20 TL (Depo: 30)", Satın Al butonu. Para yetmiyorsa buton `interactable = false`.
@@ -409,6 +409,27 @@ Assets/_Project/
 - Kumarda oyuncunun kendi oynadığı elin beklentisi (−10 TL) bilinçli olarak değiştirilmedi; 9a-2 (kumarhane işletmesi) bu dengeyi değiştirecek.
 - **Test:** tabelalar ve PC'de "Itibar 60 / 140 / 240 / 180 gerekli" görünüyor, kızgın müşteri −2 itibar düşürüyor (kullanıcı onayladı).
 
+### Adım 9b — Co-op hazırlığı: etkileşim katmanı ✅
+Davranış birebir aynı; amaç her etkileşimin "hangi oyuncu yaptı" bilgisini taşıması.
+
+**9b-1 — PlayerContext + yeni IInteractable:**
+- `PlayerContext` (`KanBagi.Player`, **düz C# sınıfı**, sahneye eklenmez): `Hands` (PlayerHands), `Lock` (PlayerLock).
+- `PlayerInteractor.Context` — `Awake`'te kendi objesindeki `PlayerHands` / `PlayerLock`'tan kurulur, her `Interact(Context)` çağrısına geçirilir.
+- `IInteractable` → `string GetPrompt(PlayerContext player)` + `void Interact(PlayerContext player)`.
+- 12 implementer güncellendi. İstasyonlar (`GlassShelf`, `TeaStove`, `Sink`, `Table`, `StorageRack`, `HoldableItem`) eli `player.Hands`'ten alır; oyuncuyla işi olmayanlar (`GamblingTable`, `MafiaCollector`, `PoliceOfficer`, `PropertyBuilding`) parametreyi yok sayar.
+- `InteractionPromptUI` → `interactable.GetPrompt(interactor.Context)`.
+
+**9b-2 — Singleton'lar kalktı:**
+- `PlayerHands` ve `PlayerLock`'tan `Instance` kaldırıldı.
+- `ComputerStation`: ekranı açanın kilidini (`screenUser`) hatırlar, sadece onu kilitler/açar. **Ekran açıkken başkası devralamaz.**
+- `HeldItemUI`: opsiyonel `hands` alanı; boşsa `FindFirstObjectByType<PlayerHands>()` (co-op'ta her HUD kendi oyuncusuna bağlanacak).
+- `DailyReportUI`: gün sonunda **sahnedeki tüm `PlayerLock`'ları** kilitler, "Yeni Gun"de hepsini açar.
+- `Billboard`'daki `Camera.main` **bilinçli olarak kaldı**: tabelayı kameraya çevirmek her istemcinin kendi ekranında yapılan iş.
+
+**⚠️ Yeni kural:** Yeni bir etkileşimli nesne yazarken `IInteractable`'ı `PlayerContext` ile uygula; oyuncunun eline/kilidine **asla** global erişimle değil `player.Hands` / `player.Lock` ile ulaş.
+
+**Test:** Faz 1-4 akışlarının tamamı (bardak, ocak, servis, lavabo, koli, PC + ESC, satın alma, sokakta mülk, kumar örtü/oyun, haraç, gün sonu kilidi, "Elinde" yazısı) kullanıcı tarafından denendi, çalışıyor.
+
 ---
 
 ## 7. SAHNE KURULUMU (`Assets/Scenes/SampleScene.unity`)
@@ -495,6 +516,8 @@ Assets/_Project/
 
 ## 8. ŞU AN NEREDE KALDIK
 
+**Adım 9b bitti ve test edildi.** Etkileşimler artık etkileşimi yapan oyuncuyu (`PlayerContext`) taşıyor; `PlayerHands`/`PlayerLock` singleton değil, bilgisayar sadece açanı kilitliyor, gün sonu herkesi kilitliyor. Davranış birebir aynı. **Sıradaki iş: 9a-2 — kumarhane işletmesi** (plan ayrıca onaylanacak).
+
 **Adım 9a-3 bitti ve test edildi.** Polis cezası kasada en az 150 TL bırakıyor (iflas kilidi kapandı). İtibar barajları paranın yetiştiği günlerin arkasına çekildi (60 / 140 / 240, kumarhane 180), mafya itibar 120 + kasa 1000 ile geliyor ve 300 TL haraç istiyor, kızgın müşteri −2 itibar götürüyor. **Sıradaki iş: 9b — co-op hazırlığı (etkileşim katmanı).**
 
 **Adım 9a-1 bitti ve test edildi.** Sahne gerçek değerlere döndü (250 TL, itibar 0, 6 dk'lık gün, gece hızlı), kopya DayCycleManager silindi, `BalanceLogger` her oturumu/günü/kilometre taşını `DengeLog/denge_log.csv`'ye yazıyor. **Sıradaki iş:** kullanıcı sıfırdan 6–8 gün oynayacak, Claude CSV'yi okuyup analiz edecek.
@@ -568,9 +591,9 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 ---
 
-## 9. DENGE (9A) VE SIRADAKİ ADIM — 9B: CO-OP HAZIRLIĞI
+## 9. DENGE (9A), CO-OP HAZIRLIĞI (9B) VE SIRADAKİ ADIM — 9A-2
 
-> 9a-1 ve 9a-3 bitti (ayrıntı bölüm 6.7). Aşağıdaki 9a bölümü tarihçe olarak duruyor; **sıradaki iş 9b** (bu bölümün sonunda).
+> 9a-1, 9a-3 ve 9b bitti (ayrıntı bölüm 6.7). Aşağısı tarihçe olarak duruyor; **sıradaki iş 9a-2** (kumarhane işletmesi).
 
 **Amaç (9a):** Oyunu baştan sona oynanabilir hale getirmek. **Ölçüm atlandığı için** aşağıdaki kağıt üstü tahminler üzerinden gidildi.
 
@@ -586,8 +609,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 1. ✅ **9a-1** — Gerçek değerler + `BalancePresetApplier` + `BalanceLogger`.
 2. ❌ **Ölçüm — ATLANDI.** Kullanıcı 6–8 günlük ölçümlü oynamayı istemedi ("üşendim"). `BalanceLogger` yerinde duruyor, ileride istenirse kullanılabilir. **Denge düzeltmesi aşağıdaki kağıt tahminler üzerinden yapılacak.**
 3. ✅ **9a-3 — Denge düzeltmeleri:** iflas koruması (asgari kasa 150) + itibar barajları, mafya, haraç. Ayrıntı bölüm 6.7.
-4. **9b — Co-op hazırlığı: etkileşim katmanı refactor (SIRADAKİ).** (Gerekçesi bölüm 3 madde 5 ve bölüm 10.)
-5. **9a-2 — Kumarhane işletmesi** (NPC'ler oynar, kasa komisyon alır). **9b'den sonra** yapılır ki yeni kod doğuştan co-op uyumlu olsun. Plan ayrıca onaylanacak.
+4. ✅ **9b — Co-op hazırlığı: etkileşim katmanı refactor.** Ayrıntı bölüm 6.7.
+5. **9a-2 — Kumarhane işletmesi (SIRADAKİ)** (NPC'ler oynar, kasa komisyon alır). **9b'den sonra** yapılır ki yeni kod doğuştan co-op uyumlu olsun. Plan ayrıca onaylanacak.
 
 **Kağıt üstü tahminler (ölçümle doğrulanacak):**
 - Tek oyuncu + 2 masa ≈ günde 12–15 servis ≈ **+190 TL** ve **+13 itibar**.
@@ -599,7 +622,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Sonraki adımların tam sırası bölüm 10'daki tabloda.**
 
-### 9b — Co-op hazırlığı: etkileşim katmanı (SIRADAKİ)
+### 9b — Co-op hazırlığı: etkileşim katmanı ✅ (BİTTİ — aşağısı ilk plan, uygulanan hali bölüm 6.7)
 
 **Amaç:** Her etkileşimin "hangi oyuncu yaptı" bilgisini taşıması. Co-op'un tek gerçek engeli bu.
 
@@ -670,7 +693,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | # | Adım | Neden bu sırada |
 |---|---|---|
 | ~~**9a-3**~~ ✅ | Denge düzeltmeleri (kağıt tahminlere göre) — **bitti** | İtibar barajları ve **iflas kilidi** gerçek sorunlar; ucuz ve küçük. Oynanabilirliğin önkoşulu. |
-| **9b** | **Co-op hazırlığı: etkileşim katmanı refactor** | `PlayerHands.Instance` tüm etkileşimlerin tek engeli. Şu an 12 çağrı noktası var, **her yeni istasyonda artıyor**. Şimdi ucuz, sonra pahalı. Oyuncu tarafında Editor işi yok. |
+| ~~**9b**~~ ✅ | **Co-op hazırlığı: etkileşim katmanı refactor** — **bitti** | `PlayerHands.Instance` tüm etkileşimlerin tek engeli. Şu an 12 çağrı noktası var, **her yeni istasyonda artıyor**. Şimdi ucuz, sonra pahalı. Oyuncu tarafında Editor işi yok. |
 | **9a-2** | **Kumarhane işletmesi: NPC'ler oynar, oyuncu kasadır** | En büyük oynanış değişimi. **9b'den SONRA** yapılır ki yeni istasyon/NPC kodu doğuştan co-op uyumlu olsun. |
 | **10a** | Hikaye girişi (intikam tonu) | Oyuna kimlik katar, küçük iş |
 | **10c** | Dükkan genişletme + iskambil/domino + müşteri ve stok çeşitliliği | Faz 2'den kalan; mekan büyüdükçe kumarhane odası da anlam kazanır |
@@ -696,7 +719,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum:** Commit'ler yerelde hazır ama **henüz push edilmedi** — `gh auth login` cihaz-kodu doğrulama maili gelmediği için giriş yapılamadı. **Push sorununu çözmeye çalışmadan önce kullanıcıya sor.**
 ```
-(yeni)   Adim 9a-3: iflas korumasi ve itibar barajlari
+(yeni)   Adim 9b: co-op hazirligi - PlayerContext ve etkilesim katmani
+2a83e0c  Adim 9a-3: iflas korumasi ve itibar barajlari
 b8f1c67  Adim 9a-1: gercek denge degerleri, BalancePresetApplier ve BalanceLogger
 3076ff4  DEVAM.md: git durumu ve proje dersleri bolumleri eklendi
 f329349  Adim 8c: polis baskini ve gizleme mekanigi
@@ -718,7 +742,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (9b) planını anlat, onay al**, sonra kod yaz.
+3. **Sıradaki adımın (9a-2) planını anlat, onay al**, sonra kod yaz.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.

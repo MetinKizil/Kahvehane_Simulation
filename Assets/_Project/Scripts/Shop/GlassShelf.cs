@@ -27,23 +27,20 @@ namespace KanBagi.Shop
 
         public int CleanGlassCount => cleanGlassCount;
 
-        public string InteractionPrompt
+        public string GetPrompt(PlayerContext player)
         {
-            get
-            {
-                PlayerHands hands = PlayerHands.Instance;
-                if (hands == null) return "Bardak Rafi";
+            PlayerHands hands = player.Hands;
+            if (hands == null) return "Bardak Rafi";
 
-                if (hands.IsEmpty)
-                    return cleanGlassCount > 0 ? $"Temiz Bardak Al ({cleanGlassCount})" : "Temiz bardak kalmadi";
+            if (hands.IsEmpty)
+                return cleanGlassCount > 0 ? $"Temiz Bardak Al ({cleanGlassCount})" : "Temiz bardak kalmadi";
 
-                return CanReturnHeldGlass(hands) ? "Bardagi Rafa Koy" : "Once elindekini birak";
-            }
+            return CanReturnHeldGlass(hands) ? "Bardagi Rafa Koy" : "Once elindekini birak";
         }
 
-        public void Interact()
+        public void Interact(PlayerContext player)
         {
-            PlayerHands hands = PlayerHands.Instance;
+            PlayerHands hands = player.Hands;
             if (hands == null) return;
 
             if (hands.IsEmpty)

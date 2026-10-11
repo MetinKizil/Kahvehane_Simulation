@@ -1,4 +1,5 @@
 using System;
+using KanBagi.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -8,7 +9,7 @@ namespace KanBagi.Interaction
     /// Kameradan kisa mesafeli isin atarak oyuncunun baktigi IInteractable'i bulur.
     /// Odak degistiginde OnFocusChanged event'i yayinlar (Observer Pattern);
     /// UI bu event'e abone olur, kimse Update'te bunu poll etmez.
-    /// E'ye basilinca odaktaki nesnenin Interact() metodunu cagirir.
+    /// E'ye basilinca odaktaki nesnenin Interact(Context) metodunu cagirir.
     /// </summary>
     public class PlayerInteractor : MonoBehaviour
     {
@@ -26,11 +27,19 @@ namespace KanBagi.Interaction
         private InputAction interactAction;
         private IInteractable currentFocus;
 
+        /// <summary>
+        /// Bu oyuncu (eli, kilidi). Her etkilesime gecirilir; ipucu UI'i da bununla sorar.
+        /// Ayni objedeki PlayerHands / PlayerLock'tan kurulur, sahneye ayrica eklenmez.
+        /// </summary>
+        public PlayerContext Context { get; private set; }
+
         /// <summary>Bakilan etkilesilebilir nesne degistiginde tetiklenir (odak yoksa null).</summary>
         public event Action<IInteractable> OnFocusChanged;
 
         private void Awake()
         {
+            Context = new PlayerContext(GetComponent<PlayerHands>(), GetComponent<PlayerLock>());
+
             if (!ResolveRayOrigin() || !ResolveInput())
                 enabled = false;
         }
@@ -124,7 +133,7 @@ namespace KanBagi.Interaction
         {
             if (currentFocus == null) return;
 
-            currentFocus.Interact();
+            currentFocus.Interact(Context);
 
             // Etkilesim nesneyi yok etmis olabilir (ornegin bardak rafa iade edildi).
             if (currentFocus is Component focusComponent && focusComponent == null)

@@ -24,13 +24,16 @@ namespace KanBagi.Shop
 
         private InputAction cancelAction;
 
+        /// <summary>Ekrani acan oyuncunun kilidi. Kapaninca yine o acilir; diger oyuncu yurumeye devam eder.</summary>
+        private PlayerLock screenUser;
+
         public ShopCatalog Catalog => catalog;
         public bool IsScreenOpen { get; private set; }
 
         /// <summary>Ekran acilip kapandiginda tetiklenir. ComputerUI buna abone olur.</summary>
         public event Action<bool> OnScreenToggled;
 
-        public string InteractionPrompt => catalog != null ? "Bilgisayari Kullan" : "Bilgisayar ayarlanmamis";
+        public string GetPrompt(PlayerContext player) => catalog != null ? "Bilgisayari Kullan" : "Bilgisayar ayarlanmamis";
 
         private void Awake()
         {
@@ -42,10 +45,12 @@ namespace KanBagi.Shop
             cancelAction = asset != null ? asset.FindActionMap("UI")?.FindAction("Cancel") : null;
         }
 
-        public void Interact()
+        public void Interact(PlayerContext player)
         {
-            if (catalog == null) return;
+            // Ekran biri tarafindan aciksa ikinci oyuncu devralamaz.
+            if (catalog == null || IsScreenOpen) return;
 
+            screenUser = player.Lock;
             SetScreen(true);
         }
 
@@ -58,8 +63,9 @@ namespace KanBagi.Shop
 
             IsScreenOpen = isOpen;
 
-            // Ekran acikken oyuncu yuruyemez, bakamaz ve etkilesemez; imlec serbest kalir.
-            if (PlayerLock.Instance != null) PlayerLock.Instance.SetControlEnabled(!isOpen);
+            // Ekran acikken ONU ACAN oyuncu yuruyemez, bakamaz ve etkilesemez; imlec serbest kalir.
+            if (screenUser != null) screenUser.SetControlEnabled(!isOpen);
+            if (!isOpen) screenUser = null;
 
             SetCancelListening(isOpen);
             OnScreenToggled?.Invoke(isOpen);

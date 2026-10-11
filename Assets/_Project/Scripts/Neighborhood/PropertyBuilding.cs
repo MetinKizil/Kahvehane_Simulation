@@ -2,6 +2,7 @@ using KanBagi.Core;
 using KanBagi.Data;
 using KanBagi.Economy;
 using KanBagi.Interaction;
+using KanBagi.Player;
 using UnityEngine;
 
 namespace KanBagi.Neighborhood
@@ -33,30 +34,27 @@ namespace KanBagi.Neighborhood
         /// <summary>Tabela UI'i bunu okur.</summary>
         public PropertyData Property => property;
 
-        public string InteractionPrompt
+        public string GetPrompt(PlayerContext player)
         {
-            get
-            {
-                if (property == null) return "Bos arsa";
+            if (property == null) return "Bos arsa";
 
-                PropertyManager manager = PropertyManager.Instance;
-                if (manager == null) return property.PropertyName;
+            PropertyManager manager = PropertyManager.Instance;
+            if (manager == null) return property.PropertyName;
 
-                if (manager.IsOwned(property)) return string.Format(ownedFormat, property.DailyIncome);
+            if (manager.IsOwned(property)) return string.Format(ownedFormat, property.DailyIncome);
 
-                // Neden alamadigini oyuncu ipucunda gorsun.
-                if (!manager.MeetsReputation(property))
-                    return string.Format(reputationLockedFormat, property.RequiredReputation);
+            // Neden alamadigini oyuncu ipucunda gorsun.
+            if (!manager.MeetsReputation(property))
+                return string.Format(reputationLockedFormat, property.RequiredReputation);
 
-                int money = EconomyManager.Instance != null ? EconomyManager.Instance.CurrentMoney : 0;
-                if (money < property.PurchasePrice)
-                    return string.Format(notEnoughMoneyFormat, property.PurchasePrice);
+            int money = EconomyManager.Instance != null ? EconomyManager.Instance.CurrentMoney : 0;
+            if (money < property.PurchasePrice)
+                return string.Format(notEnoughMoneyFormat, property.PurchasePrice);
 
-                return string.Format(forSaleFormat, property.PropertyName, property.PurchasePrice);
-            }
+            return string.Format(forSaleFormat, property.PropertyName, property.PurchasePrice);
         }
 
-        public void Interact()
+        public void Interact(PlayerContext player)
         {
             if (property == null || PropertyManager.Instance == null) return;
             if (PropertyManager.Instance.IsOwned(property)) return;

@@ -1,4 +1,5 @@
 using KanBagi.Interaction;
+using KanBagi.Player;
 using UnityEngine;
 
 namespace KanBagi.Illegal
@@ -13,9 +14,9 @@ namespace KanBagi.Illegal
         [Header("Ipucu")]
         [SerializeField] private string idlePrompt = "Memur etrafa bakiyor";
 
-        public string InteractionPrompt => idlePrompt;
+        public string GetPrompt(PlayerContext player) => idlePrompt;
 
-        public void Interact()
+        public void Interact(PlayerContext player)
         {
             // Bilincli olarak bos: memurla pazarlik yok.
         }

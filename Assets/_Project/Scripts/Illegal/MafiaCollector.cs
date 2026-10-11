@@ -1,5 +1,6 @@
 using KanBagi.Economy;
 using KanBagi.Interaction;
+using KanBagi.Player;
 using UnityEngine;
 
 namespace KanBagi.Illegal
@@ -19,21 +20,18 @@ namespace KanBagi.Illegal
         [SerializeField] private string noMoneyFormat = "{0} TL gerekli";
         [SerializeField] private string idlePrompt = "Adam sana bakiyor";
 
-        public string InteractionPrompt
+        public string GetPrompt(PlayerContext player)
         {
-            get
-            {
-                MafiaManager mafia = MafiaManager.Instance;
-                if (mafia == null || !mafia.IsDemandActive) return idlePrompt;
+            MafiaManager mafia = MafiaManager.Instance;
+            if (mafia == null || !mafia.IsDemandActive) return idlePrompt;
 
-                int money = EconomyManager.Instance != null ? EconomyManager.Instance.CurrentMoney : 0;
-                if (money < mafia.CurrentDemand) return string.Format(noMoneyFormat, mafia.CurrentDemand);
+            int money = EconomyManager.Instance != null ? EconomyManager.Instance.CurrentMoney : 0;
+            if (money < mafia.CurrentDemand) return string.Format(noMoneyFormat, mafia.CurrentDemand);
 
-                return string.Format(payFormat, mafia.CurrentDemand);
-            }
+            return string.Format(payFormat, mafia.CurrentDemand);
         }
 
-        public void Interact()
+        public void Interact(PlayerContext player)
         {
             if (MafiaManager.Instance == null) return;
 

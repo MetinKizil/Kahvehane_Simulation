@@ -22,7 +22,7 @@ namespace KanBagi.Interaction
         public string DisplayName => displayName;
         public bool IsHeld { get; private set; }
 
-        public string InteractionPrompt => PlayerHands.Instance != null && !PlayerHands.Instance.IsEmpty
+        public string GetPrompt(PlayerContext player) => player.Hands != null && !player.Hands.IsEmpty
             ? "Ellerin dolu"
             : pickupPrompt;
 
@@ -32,10 +32,10 @@ namespace KanBagi.Interaction
             colliders = GetComponentsInChildren<Collider>();
         }
 
-        public void Interact()
+        public void Interact(PlayerContext player)
         {
-            if (PlayerHands.Instance != null)
-                PlayerHands.Instance.TryHold(this);
+            if (player.Hands != null)
+                player.Hands.TryHold(this);
         }
 
         /// <summary>

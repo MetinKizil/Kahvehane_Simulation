@@ -48,32 +48,29 @@ namespace KanBagi.Shop
 
         public Quaternion GlassRotation => glassPoint != null ? glassPoint.rotation : Quaternion.identity;
 
-        public string InteractionPrompt
+        public string GetPrompt(PlayerContext player)
         {
-            get
+            if (Occupant != null && Occupant.IsWaitingForOrder)
             {
-                if (Occupant != null && Occupant.IsWaitingForOrder)
-                {
-                    PlayerHands hands = PlayerHands.Instance;
+                PlayerHands hands = player.Hands;
 
-                    if (hands == null || hands.IsEmpty) return "Siparisi getir";
-                    if (!hands.HeldItem.TryGetComponent(out TeaGlass glass)) return "Bu masaya konmaz";
-                    if (!Occupant.CanAcceptOrder(glass)) return "Musteri bunu istemiyor";
+                if (hands == null || hands.IsEmpty) return "Siparisi getir";
+                if (!hands.HeldItem.TryGetComponent(out TeaGlass glass)) return "Bu masaya konmaz";
+                if (!Occupant.CanAcceptOrder(glass)) return "Musteri bunu istemiyor";
 
-                    return HasGlass ? "Once masadaki bardagi kaldir" : "Siparisi Ver";
-                }
-
-                if (Occupant != null) return "Musteri oturuyor";
-
-                return HasGlass ? "Masada bardak var" : "Bos masa";
+                return HasGlass ? "Once masadaki bardagi kaldir" : "Siparisi Ver";
             }
+
+            if (Occupant != null) return "Musteri oturuyor";
+
+            return HasGlass ? "Masada bardak var" : "Bos masa";
         }
 
-        public void Interact()
+        public void Interact(PlayerContext player)
         {
             if (HasGlass || Occupant == null || !Occupant.IsWaitingForOrder) return;
 
-            PlayerHands hands = PlayerHands.Instance;
+            PlayerHands hands = player.Hands;
             if (hands == null || hands.IsEmpty) return;
 
             if (!hands.HeldItem.TryGetComponent(out TeaGlass glass)) return;

@@ -8,11 +8,10 @@ namespace KanBagi.Player
     /// Oyuncunun elleri: ayni anda TEK bir nesne tasinabilir.
     /// Elindeki nesne degistiginde OnHeldItemChanged event'i yayinlanir (Observer Pattern);
     /// UI ve dukkan istasyonlari bu event'e abone olur, kimse Update'te poll etmez.
+    /// Singleton DEGIL: co-op'ta her oyuncunun kendi eli var. Istasyonlar eli PlayerContext'ten alir.
     /// </summary>
     public class PlayerHands : MonoBehaviour
     {
-        public static PlayerHands Instance { get; private set; }
-
         [Header("Tutma Noktasi")]
         [Tooltip("Bos birakilirsa kameranin altinda otomatik olusturulur.")]
         [SerializeField] private Transform holdAnchor;
@@ -27,13 +26,6 @@ namespace KanBagi.Player
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(this);
-                return;
-            }
-
-            Instance = this;
             EnsureHoldAnchor();
         }
 
@@ -84,11 +76,6 @@ namespace KanBagi.Player
 
             released.Detach(position, rotation, restorePhysics);
             return true;
-        }
-
-        private void OnDestroy()
-        {
-            if (Instance == this) Instance = null;
         }
     }
 }

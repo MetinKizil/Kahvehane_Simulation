@@ -34,7 +34,8 @@ Aşağıdaki dört ilke [andrej-karpathy-skills](https://github.com/multica-ai/a
    - Oyuncuya özel durum (eller, kilit, bakış) **singleton olamaz**.
    - Dünya durumu (Economy, Inventory, Day, Upgrade, Property, Mafia, Police) singleton kalabilir — server-authoritative olacak.
    - Durum değişiklikleri **her zaman manager metodundan** geçer; bu metotlar ileride RPC sınırı olacak.
-   - `Camera.main` ve `PlayerHands.Instance` gibi tekil erişimlerden kaçın.
+   - Etkileşim `IInteractable.GetPrompt/Interact(PlayerContext player)` ile gelir; oyuncunun eline/kilidine `player.Hands` / `player.Lock` ile ulaş (9b). `PlayerHands`/`PlayerLock` singleton değil.
+   - `Camera.main` gibi tekil erişimlerden kaçın (istisna: her istemcinin kendi ekranındaki iş, ör. Billboard).
 
 ## 4. Kod konvansiyonları
 

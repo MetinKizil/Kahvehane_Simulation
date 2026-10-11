@@ -2,6 +2,7 @@ using System;
 using KanBagi.Core;
 using KanBagi.Economy;
 using KanBagi.Interaction;
+using KanBagi.Player;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -106,23 +107,20 @@ namespace KanBagi.Illegal
             }
         }
 
-        public string InteractionPrompt
+        public string GetPrompt(PlayerContext player)
         {
-            get
-            {
-                // Gunduz kumar oynanmaz; o yuzden E tusu gunduz ORTUYU yonetir.
-                if (!IsOpen) return IsHidden ? revealMessage : hideMessage;
+            // Gunduz kumar oynanmaz; o yuzden E tusu gunduz ORTUYU yonetir.
+            if (!IsOpen) return IsHidden ? revealMessage : hideMessage;
 
-                if (IsHidden) return revealMessage;
+            if (IsHidden) return revealMessage;
 
-                int money = EconomyManager.Instance != null ? EconomyManager.Instance.CurrentMoney : 0;
-                if (money < betAmount) return string.Format(noMoneyFormat, betAmount);
+            int money = EconomyManager.Instance != null ? EconomyManager.Instance.CurrentMoney : 0;
+            if (money < betAmount) return string.Format(noMoneyFormat, betAmount);
 
-                return string.Format(playFormat, betAmount);
-            }
+            return string.Format(playFormat, betAmount);
         }
 
-        public void Interact()
+        public void Interact(PlayerContext player)
         {
             // Gunduz: sadece ortuyu ac/kapat. Gece: ortu kapaliysa once ac, sonra oyna.
             if (!IsOpen || IsHidden)

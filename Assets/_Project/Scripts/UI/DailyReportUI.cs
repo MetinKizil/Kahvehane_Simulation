@@ -128,7 +128,14 @@ namespace KanBagi.UI
             Fill(day);
             contentRoot.SetActive(true);
 
-            if (PlayerLock.Instance != null) PlayerLock.Instance.SetControlEnabled(false);
+            SetAllPlayersControl(false);
+        }
+
+        /// <summary>Gun sonu herkes icin ayni anda gelir: sahnedeki TUM oyuncular kilitlenir / acilir.</summary>
+        private static void SetAllPlayersControl(bool isEnabled)
+        {
+            foreach (PlayerLock playerLock in FindObjectsByType<PlayerLock>(FindObjectsSortMode.None))
+                playerLock.SetControlEnabled(isEnabled);
         }
 
         private void Fill(int day)
@@ -174,7 +181,7 @@ namespace KanBagi.UI
         {
             contentRoot.SetActive(false);
 
-            if (PlayerLock.Instance != null) PlayerLock.Instance.SetControlEnabled(true);
+            SetAllPlayersControl(true);
 
             dayCycle.RequestNextDay();
         }

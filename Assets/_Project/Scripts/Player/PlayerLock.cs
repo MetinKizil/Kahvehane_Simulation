@@ -9,11 +9,10 @@ namespace KanBagi.Player
     /// polis diyalogu...). Kilitleyen sistemler PlayerController'i tek tek aramaz, buraya soyler.
     /// PlayerController zaten OnEnable/OnDisable'da imleci kilitleyip serbest biraktigi icin
     /// imlec yonetimi icin ekstra kod gerekmez.
+    /// Singleton DEGIL: co-op'ta her oyuncunun kendi kilidi var (PlayerContext.Lock).
     /// </summary>
     public class PlayerLock : MonoBehaviour
     {
-        public static PlayerLock Instance { get; private set; }
-
         [Header("Kilitlenecek Bilesenler")]
         [Tooltip("Bos birakilirsa ayni objedeki PlayerController bulunur.")]
         [SerializeField] private PlayerController playerController;
@@ -27,14 +26,6 @@ namespace KanBagi.Player
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(this);
-                return;
-            }
-
-            Instance = this;
-
             if (playerController == null) playerController = GetComponent<PlayerController>();
             if (playerInteractor == null) playerInteractor = GetComponent<PlayerInteractor>();
 
@@ -53,11 +44,6 @@ namespace KanBagi.Player
             if (playerInteractor != null) playerInteractor.enabled = isEnabled;
 
             OnControlEnabledChanged?.Invoke(isEnabled);
-        }
-
-        private void OnDestroy()
-        {
-            if (Instance == this) Instance = null;
         }
     }
 }

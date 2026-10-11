@@ -14,19 +14,32 @@ namespace KanBagi.UI
     public class HeldItemUI : MonoBehaviour
     {
         [SerializeField] private TMP_Text heldItemText;
+        [Tooltip("Gosterilecek oyuncunun elleri. Bos birakilirsa sahnedeki oyuncu bulunur. " +
+                 "Co-op'ta her ekran kendi oyuncusuna baglanir.")]
+        [SerializeField] private PlayerHands hands;
 
         private TeaGlass trackedGlass;
 
         private void Start()
         {
-            PlayerHands.Instance.OnHeldItemChanged += HandleHeldItemChanged;
-            HandleHeldItemChanged(PlayerHands.Instance.HeldItem);
+            if (hands == null) hands = FindFirstObjectByType<PlayerHands>();
+
+            if (hands == null)
+            {
+                Debug.LogError("[HeldItemUI] PlayerHands bulunamadi. 'Player' objesinde PlayerHands olmali " +
+                               "veya Inspector'daki 'Hands' alanina surukle.", this);
+                enabled = false;
+                return;
+            }
+
+            hands.OnHeldItemChanged += HandleHeldItemChanged;
+            HandleHeldItemChanged(hands.HeldItem);
         }
 
         private void OnDestroy()
         {
-            if (PlayerHands.Instance != null)
-                PlayerHands.Instance.OnHeldItemChanged -= HandleHeldItemChanged;
+            if (hands != null)
+                hands.OnHeldItemChanged -= HandleHeldItemChanged;
 
             UnsubscribeFromGlass();
         }
@@ -43,7 +56,7 @@ namespace KanBagi.UI
 
         private void HandleGlassStateChanged(GlassState state)
         {
-            Refresh(PlayerHands.Instance.HeldItem);
+            Refresh(hands.HeldItem);
         }
 
         private void Refresh(HoldableItem item)

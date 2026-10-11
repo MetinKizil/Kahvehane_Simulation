@@ -13,23 +13,20 @@ namespace KanBagi.Shop
     /// </summary>
     public class StorageRack : MonoBehaviour, IInteractable
     {
-        public string InteractionPrompt
+        public string GetPrompt(PlayerContext player)
         {
-            get
-            {
-                PlayerHands hands = PlayerHands.Instance;
-                if (hands == null || hands.IsEmpty) return "Koli getir";
+            PlayerHands hands = player.Hands;
+            if (hands == null || hands.IsEmpty) return "Koli getir";
 
-                if (!hands.HeldItem.TryGetComponent(out DeliveryBox box)) return "Bu depoya konmaz";
-                if (box.IsEmpty) return "Koli bos";
+            if (!hands.HeldItem.TryGetComponent(out DeliveryBox box)) return "Bu depoya konmaz";
+            if (box.IsEmpty) return "Koli bos";
 
-                return $"Koliyi Bosalt ({box.Amount} {box.Content.ItemName})";
-            }
+            return $"Koliyi Bosalt ({box.Amount} {box.Content.ItemName})";
         }
 
-        public void Interact()
+        public void Interact(PlayerContext player)
         {
-            PlayerHands hands = PlayerHands.Instance;
+            PlayerHands hands = player.Hands;
             if (hands == null || hands.IsEmpty) return;
 
             if (!hands.HeldItem.TryGetComponent(out DeliveryBox box) || box.IsEmpty) return;

@@ -49,29 +49,26 @@ namespace KanBagi.Shop
                 Debug.LogError("[TeaStove] InventoryManager bulunamadi. 'Managers' objesine InventoryManager ekle.", this);
         }
 
-        public override string InteractionPrompt
+        public override string GetPrompt(PlayerContext player)
         {
-            get
-            {
-                if (beverageData == null) return "Ocak ayarlanmamis";
-                if (IsBusy) return WorkLabel;
-                if (glassOnStove != null) return "Bardagi Al";
+            if (beverageData == null) return "Ocak ayarlanmamis";
+            if (IsBusy) return WorkLabel;
+            if (glassOnStove != null) return "Bardagi Al";
 
-                // Stok uyarisi elde bardak olmasa da gorunsun: oyuncu bosuna bardak tasimasin.
-                if (!HasConsumableStock) return $"{requiredConsumable.ItemName} bitti";
+            // Stok uyarisi elde bardak olmasa da gorunsun: oyuncu bosuna bardak tasimasin.
+            if (!HasConsumableStock) return $"{requiredConsumable.ItemName} bitti";
 
-                PlayerHands hands = PlayerHands.Instance;
-                if (hands == null || hands.IsEmpty) return "Once bos bardak al";
+            PlayerHands hands = player.Hands;
+            if (hands == null || hands.IsEmpty) return "Once bos bardak al";
 
-                return TryGetEmptyHeldGlass(hands, out _) ? $"{beverageData.ItemName} Doldur" : "Elinde bos bardak olmali";
-            }
+            return TryGetEmptyHeldGlass(hands, out _) ? $"{beverageData.ItemName} Doldur" : "Elinde bos bardak olmali";
         }
 
-        public override void Interact()
+        public override void Interact(PlayerContext player)
         {
             if (beverageData == null || IsBusy) return;
 
-            PlayerHands hands = PlayerHands.Instance;
+            PlayerHands hands = player.Hands;
             if (hands == null) return;
 
             if (glassOnStove != null)

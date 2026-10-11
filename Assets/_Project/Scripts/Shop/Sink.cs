@@ -38,31 +38,28 @@ namespace KanBagi.Shop
                 Debug.LogError("[Sink] Temiz bardak rafi bulunamadi. Sahneye GlassShelf ekle.", this);
         }
 
-        public override string InteractionPrompt
+        public override string GetPrompt(PlayerContext player)
         {
-            get
+            if (IsBusy) return WorkLabel;
+
+            PlayerHands hands = player.Hands;
+            if (hands == null || hands.IsEmpty) return "Kirli bardak getir";
+
+            if (!hands.HeldItem.TryGetComponent(out TeaGlass glass)) return "Bu yikanmaz";
+
+            return glass.State switch
             {
-                if (IsBusy) return WorkLabel;
-
-                PlayerHands hands = PlayerHands.Instance;
-                if (hands == null || hands.IsEmpty) return "Kirli bardak getir";
-
-                if (!hands.HeldItem.TryGetComponent(out TeaGlass glass)) return "Bu yikanmaz";
-
-                return glass.State switch
-                {
-                    GlassState.Dirty => "Bulasigi Yika",
-                    GlassState.Full => "Dok ve Yika",
-                    _ => "Bardak zaten temiz"
-                };
-            }
+                GlassState.Dirty => "Bulasigi Yika",
+                GlassState.Full => "Dok ve Yika",
+                _ => "Bardak zaten temiz"
+            };
         }
 
-        public override void Interact()
+        public override void Interact(PlayerContext player)
         {
             if (IsBusy || targetShelf == null) return;
 
-            PlayerHands hands = PlayerHands.Instance;
+            PlayerHands hands = player.Hands;
             if (hands == null || hands.IsEmpty) return;
 
             if (!hands.HeldItem.TryGetComponent(out TeaGlass glass)) return;

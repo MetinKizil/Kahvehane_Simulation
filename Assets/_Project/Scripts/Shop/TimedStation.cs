@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using KanBagi.Interaction;
+using KanBagi.Player;
 using UnityEngine;
 
 namespace KanBagi.Shop
@@ -33,8 +34,8 @@ namespace KanBagi.Shop
         /// <summary>Is bittiginde tetiklenir.</summary>
         public event Action<TimedStation> OnWorkFinished;
 
-        public abstract string InteractionPrompt { get; }
-        public abstract void Interact();
+        public abstract string GetPrompt(PlayerContext player);
+        public abstract void Interact(PlayerContext player);
 
         /// <summary>Hiz upgrade'leri bunu cagirir. Cok kucuk/buyuk degerler kirpilir.</summary>
         public void SetDurationMultiplier(float multiplier)

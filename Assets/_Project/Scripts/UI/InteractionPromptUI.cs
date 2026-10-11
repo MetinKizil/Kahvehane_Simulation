@@ -34,7 +34,7 @@ namespace KanBagi.UI
             promptText.gameObject.SetActive(hasFocus);
 
             if (hasFocus)
-                promptText.text = $"[E] {interactable.InteractionPrompt}";
+                promptText.text = $"[E] {interactable.GetPrompt(interactor.Context)}";
         }
     }
 }
