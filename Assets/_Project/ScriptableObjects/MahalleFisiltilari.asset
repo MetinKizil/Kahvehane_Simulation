@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c88dc045862743d2a86bb5a10da67558, type: 3}
+  m_Name: MahalleFisiltilari
+  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.WhisperData
+  firstMorning: "Babanın ocağı soğuk. Bardakları al, çayı demle. Mahalle seni izliyor."
+  mafiaArrived: "Kapıda takım elbiseli biri var. Mahallede para dönüyorsa, payını istiyorlar."
+  mafiaPaid: "Ödedin. Şimdilik. Bu adamlar doymaz."
+  mafiaRefused: "Haracı ödemedin. Bu mahallede bunun bir bedeli olur."
+  propertyPurchasedFormat: "{0} artık bizim. Amcanın sokağından bir taş daha söküldü."
+  gamblingHallUpgrade: {fileID: 11400000, guid: ec9dfc1e91e92d1489f7e092bbe7231b, type: 2}
+  gamblingHallOpened: "Arka oda hazır. Kepenk inince masa açılır."
+  reputationWhispers:
+  - threshold: 60
+    message: "Esnaf artık selam veriyor."
+  - threshold: 140
+    message: "Kahvede adın konuşuluyor."
+  - threshold: 240
+    message: "Amcanın kulağına adın gitmiş."

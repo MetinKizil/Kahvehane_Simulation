@@ -19,6 +19,7 @@ Ama amcamızın hesaba katmadığı bir şey vardı: Biz o delikte sadece volta 
 
 **Hikayenin oynanışa yansıması:**
 - ✅ Yeni oyunda bu hikaye 5 sayfalık **giriş ekranıyla** anlatılıyor (Adım 10a-1, metin `GirisHikayesi.asset`'te)
+- ✅ Oyun içi olaylara intikam tonunda **"mahalle fısıltıları"** eşlik ediyor (Adım 10a-2a, metin `MahalleFisiltilari.asset`'te)
 
 **Henüz yapılmadı, yol haritasında:**
 - Amca bir **NPC/antagonist** olarak mahallede var olmalı; mülkleri satın almak onun gücünü kırmak anlamına gelmeli
@@ -80,12 +81,12 @@ Assets/_Project/
                        DailyStatsManager, ISaveable, SaveManager, PropertyManager, BalanceLogger
     ├── Customers/     Customer, CustomerSpawner, CustomerModifiers, CustomerPatienceBoost
     ├── Data/          ItemData, ItemDatabase, ShopCatalog, UpgradeData, UpgradeCatalog,
-                       PropertyData, PropertyCatalog, StoryData
+                       PropertyData, PropertyCatalog, StoryData, WhisperData
     ├── Delivery/      DeliveryManager
     ├── Editor/        RowPrefabBuilder, ReportPanelBuilder, SaveMenuItems, SignPrefabBuilder,
                        GamblingSignBuilder, MafiaPrefabBuilder, PolicePrefabBuilder,
                        BalancePresetApplier, GamblerPrefabBuilder, NavMeshChecker,
-                       StoryPanelBuilder
+                       StoryPanelBuilder, WhisperLineBuilder
     ├── Illegal/       GamblingTable, SuspicionManager, MafiaManager, MafiaCollector,
                        PoliceManager, PoliceOfficer, Gambler, GamblerSpawner
     ├── Neighborhood/  PropertyBuilding, PropertyVisualSwitch
@@ -100,7 +101,7 @@ Assets/_Project/
                        OrderBubbleUI, Billboard, ComputerUI, CatalogEntryUI, DeliveryNotificationUI,
                        TabGroupUI, UpgradeListUI, UpgradeEntryUI, ClockUI, DailyReportUI,
                        PropertyListUI, PropertyEntryUI, PropertySignUI, GamblingSignUI, MafiaSignUI,
-                       PoliceNotificationUI, StoryIntroUI
+                       PoliceNotificationUI, StoryIntroUI, WhisperUI
 ```
 
 ### Kod konvansiyonları (mevcut koda uyulmalı)
@@ -471,6 +472,25 @@ Yeni oyunda (diskte kayıt yokken) intikam hikayesi siyah tam ekranda sayfa sayf
 
 **Test:** `Kaydi Sil` → Play: ekran açılıyor, saat 00:00'da duruyor, oyuncu kilitli; 5 sayfa geçiliyor, "Ocağı Yak" ile oyun başlıyor; "Atla" direkt başlatıyor; kayıt varken ekran gelmiyor. Kullanıcı onayladı.
 
+### Adım 10a-2a — Mahalle fısıltıları ✅
+Ekranın üst ortasında, intikam tonunda kısa bir satır belirir (italik, amber, 6 sn). Sadece event dinler, hiçbir oyun durumunu değiştirmez.
+
+| Olay (event) | Fısıltı |
+|---|---|
+| Gün 1 dükkan açılınca (`OnShopOpened`, day == 1) | Babanın ocağı soğuk. Bardakları al, çayı demle. Mahalle seni izliyor. |
+| Tahsildar gelince (`OnDemandArrived`) — **her gelişte** | Kapıda takım elbiseli biri var. Mahallede para dönüyorsa, payını istiyorlar. |
+| Haraç ödenince / reddedilince | Ödedin. Şimdilik. Bu adamlar doymaz. / Haracı ödemedin. Bu mahallede bunun bir bedeli olur. |
+| Mülk alınınca (`{0}` mülk adı) | {0} artık bizim. Amcanın sokağından bir taş daha söküldü. |
+| Gizli Kumarhane upgrade'i alınınca | Arka oda hazır. Kepenk inince masa açılır. |
+| İtibar 60 / 140 / 240'ı **aşağıdan yukarı** geçince | Esnaf artık selam veriyor. / Kahvede adın konuşuluyor. / Amcanın kulağına adın gitmiş. |
+
+- `WhisperData` (`KanBagi.Data`, `Create > Kan Bagi > Whisper Data`) + `MahalleFisiltilari.asset`: tüm metinler (Türkçe karakterli), kumarhane `UpgradeData` referansı, itibar barajı listesi (`threshold` + `message`).
+- `WhisperUI` (`KanBagi.UI`, **`[DefaultExecutionOrder(200)]`**): DayCycle, Mafia, Property, Upgrade ve Reputation event'lerini dinler; eksik manager sadece kendi fısıltısını susturur. Mesajlar **kuyrukla** sırayla gösterilir. Order 200 sayesinde kayıt yüklendikten **sonra** abone olur → kayıttan geri gelen mülk/upgrade ve önceden geçilmiş itibar barajları tekrar fısıldanmaz (BalanceLogger ile aynı yöntem).
+- `Kan Bagi > Fisilti Satirini Olustur` (`WhisperLineBuilder`): `FisiltiText`'i ana Canvas'a kurar (üst orta, Pos Y −70, 1000×60), veriyi bağlar, eskisini siler; **giriş ve gün sonu panellerinin altına** sıralar ki onlar açıkken üste binmesin.
+- **Bilinçli sapma:** mafya mesajı planda "ilk kez" idi, her gelişte gösteriliyor (sadece ilk seferi ayırmak kayda bayrak yazmayı gerektiriyordu; cümle her ziyarete oturuyor). Gerekirse ileride kayda bayrak eklenir.
+
+**Test:** ilk sabah mesajı, mülk ve kumarhane alımı, tahsildar geliş/ödeme/ret mesajları görünüyor; kayıttan devam edince eski olaylar tekrar fısıldanmıyor. Kullanıcı onayladı. (Test modunda itibar 300'le başladığı için baraj mesajları gelmez — gerçek değerlerle görülür.)
+
 ---
 
 ## 7. SAHNE KURULUMU (`Assets/Scenes/SampleScene.unity`)
@@ -493,6 +513,7 @@ Yeni oyunda (diskte kayıt yokken) intikam hikayesi siyah tam ekranda sayfa sayf
 | ├ `PolisUyariText` | üst-orta (Pos Y -90) | PoliceNotificationUI |
 | ├ `GunlukOzetPaneli` (**Canvas'ın son çocuğu**) | tam ekran | DailyReportUI (kök hep aktif) |
 | &nbsp;&nbsp;└ `Icerik` → `Panel` (560×460, VLG) | orta | 7 satır + `YeniGunButton` |
+| ├ `FisiltiText` (panellerden önce) | üst orta (Pos Y −70) | WhisperUI — `Kan Bagi > Fisilti Satirini Olustur` kurar |
 | ├ `HikayeGirisPaneli` (prefab, **Canvas'ın son çocuğu**) | tam ekran | StoryIntroUI (kök hep aktif) — `Kan Bagi > Hikaye Giris Panelini Olustur` kurar |
 | ├ `ProgressBar` → `Dolum` (Image/Filled) + `ProgressLabel` | orta-alt | — |
 | └ `BilgisayarPaneli` (700×450, **Vertical Layout Group**, sahnede PASİF) | orta | TabGroupUI |
@@ -554,6 +575,7 @@ Yeni oyunda (diskte kayıt yokken) intikam hikayesi siyah tam ekranda sayfa sayf
 - `BakkalMulk` (800 TL / 60 / itibar **60**), `TerziMulk` (1200 / 90 / **140**), `KirathaneMulk` (2000 / 160 / **240**) — 9a-3'te güncellendi
 - `EmlakKatalogu` (PropertyCatalog) — üç mülkün tamamı (**kayıt eşlemesi buradan yapılır, boş bırakılamaz**)
 - `GirisHikayesi` (StoryData) — giriş ekranının 5 sayfası ve buton yazıları
+- `MahalleFisiltilari` (WhisperData) — fısıltı metinleri, kumarhane upgrade referansı, itibar barajları (60/140/240)
 
 > ✅ **Sahne GERÇEK değerlerde** (Adım 9a-1). Hızlı test için `Kan Bagi > Denge > Test Degerlerini Uygula`, geri dönmek için `Gercek Degerleri Uygula`. Mod değiştirdikten sonra sahneyi kaydet; sıfırdan test için `Kan Bagi > Kaydi Sil`.
 
@@ -561,7 +583,9 @@ Yeni oyunda (diskte kayıt yokken) intikam hikayesi siyah tam ekranda sayfa sayf
 
 ## 8. ŞU AN NEREDE KALDIK
 
-**Adım 10a-1 bitti ve test edildi.** Yeni oyunda siyah ekranda 5 sayfalık intikam hikayesi anlatılıyor; okunurken saat duruyor ve oyuncu kilitli, "Ocağı Yak" ile oyun başlıyor, "Atla" çalışıyor, kayıtlı oyunda ekran gelmiyor. **Sıradaki iş: kullanıcı seçecek** — 10a-2 (bildirim metinlerini intikam tonuna çekmek + ilk sabah yönlendirmesi) **veya** 10c (dükkan genişletme).
+**Adım 10a-2a bitti ve test edildi.** Mahalle fısıltıları çalışıyor: ilk sabah, tahsildar geliş/ödeme/ret, mülk ve kumarhane alımı, itibar barajlarında üst ortada intikam tonunda bir satır beliriyor; kayıttan devam edince eski olaylar tekrar fısıldanmıyor. **Sıradaki iş: kullanıcı seçecek** — 10a-2b (mevcut polis/teslimat/tahsildar/mülk/gün sonu metinlerini tona çekmek, metin asset'i + `Kan Bagi > Metinleri Uygula` komutu; Türkçe karakter kapsamı kararı bekliyor) **veya** 10c (dükkan genişletme).
+
+**Adım 10a-1 bitti ve test edildi.** Yeni oyunda siyah ekranda 5 sayfalık intikam hikayesi anlatılıyor; okunurken saat duruyor ve oyuncu kilitli, "Ocağı Yak" ile oyun başlıyor, "Atla" çalışıyor, kayıtlı oyunda ekran gelmiyor.
 
 **Adım 9a-2 bitti ve test edildi — 9. BÖLÜM (DENGE + CO-OP HAZIRLIĞI) KAPANDI.** Gece kumarhanesine NPC kumarbazlar geliyor, masanın etrafından dolaşıp oturuyor, el oynuyor; kasa her elden 25 TL pay alıyor, şüphe artıyor, tabela ve günlük özet doğru. Kumarbazların masanın üstünden yürüme bug'ı NavMesh'in kilitli eşyalarla yeniden bake edilmesiyle çözüldü. **Sıradaki iş: 10a — hikaye girişi** (plan ayrıca onaylanacak).
 
@@ -745,7 +769,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**9b**~~ ✅ | **Co-op hazırlığı: etkileşim katmanı refactor** — **bitti** | `PlayerHands.Instance` tüm etkileşimlerin tek engeli. Şu an 12 çağrı noktası var, **her yeni istasyonda artıyor**. Şimdi ucuz, sonra pahalı. Oyuncu tarafında Editor işi yok. |
 | ~~**9a-2**~~ ✅ | **Kumarhane işletmesi: NPC'ler oynar, oyuncu kasadır** — **bitti** | En büyük oynanış değişimi. **9b'den SONRA** yapılır ki yeni istasyon/NPC kodu doğuştan co-op uyumlu olsun. |
 | ~~**10a-1**~~ ✅ | Hikaye giriş ekranı — **bitti** | Oyuna kimlik katar, küçük iş |
-| **10a-2** | Tonun oyuna sızması: mafya/polis/gün sonu/teslimat metinleri intikam tonunda + ilk sabah tek satırlık yönlendirme. Neredeyse sadece metin. **(Seçenek — kullanıcı 10a-2 mi 10c mi karar verecek)** | Ucuz, kimliği oyunun içine taşır |
+| ~~**10a-2a**~~ ✅ | Mahalle fısıltıları (olaylara eşlik eden ton satırı + ilk sabah yönlendirmesi) — **bitti** | Ucuz, kimliği oyunun içine taşır |
+| **10a-2b** | Mevcut metinlerin tonu: polis/teslimat/tahsildar/kumar/mülk/gün sonu. Metinler bir asset'te, `Kan Bagi > Metinleri Uygula` sahne + prefab'lara yazar (`BalancePresetApplier` gibi). **Karar bekliyor:** sadece değişen metinler mi Türkçe karakterli, yoksa tüm Inspector metinleri mi ("Itibar" → "İtibar"). Koddaki istemler ("Temiz Bardak Al", "Elinde: ...") ASCII kalır → 11'de. **(Seçenek — kullanıcı 10a-2b mi 10c mi karar verecek)** | Fısıltılarla aynı tonu mevcut arayüze yayar |
 | **10c** | Dükkan genişletme + iskambil/domino + müşteri ve stok çeşitliliği | Faz 2'den kalan; mekan büyüdükçe kumarhane odası da anlam kazanır |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
@@ -769,7 +794,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum:** Commit'ler yerelde hazır ama **henüz push edilmedi** — `gh auth login` cihaz-kodu doğrulama maili gelmediği için giriş yapılamadı. **Push sorununu çözmeye çalışmadan önce kullanıcıya sor.**
 ```
-(yeni)   Adim 10a-1: hikaye giris ekrani
+(yeni)   Adim 10a-2a: mahalle fisiltilari
+2de9851  Adim 10a-1: hikaye giris ekrani
 97b0438  Adim 9a-2: kumarhane isletmesi - NPC kumarbazlar ve NavMesh duzeltmesi
 3a5287c  Adim 9b: co-op hazirligi - PlayerContext ve etkilesim katmani
 2a83e0c  Adim 9a-3: iflas korumasi ve itibar barajlari
@@ -794,7 +820,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Kullanıcıya sıradaki adımı sor: 10a-2 (ton metinleri) mi, 10c (dükkan genişletme) mi?** Seçilenin planını anlat, onay al, sonra kod yaz.
+3. **Kullanıcıya sıradaki adımı sor: 10a-2b (mevcut metinlerin tonu) mi, 10c (dükkan genişletme) mi?** 10a-2b seçilirse önce Türkçe karakter kapsamını sor. Seçilenin planını anlat, onay al, sonra kod yaz.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.
