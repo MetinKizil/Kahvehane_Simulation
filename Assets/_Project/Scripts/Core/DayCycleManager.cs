@@ -76,6 +76,9 @@ namespace KanBagi.Core
         /// <summary>Gun bitti ve oyuncunun "Yeni Gun" demesi bekleniyor mu?</summary>
         public bool IsWaitingForNextDay { get; private set; }
 
+        /// <summary>Zaman durduruldu mu? (Hikaye girisi okunurken saat akmaz.)</summary>
+        public bool IsPaused { get; private set; }
+
         /// <summary>Saat ilerledikce gunun orani (0-1) ile tetiklenir.</summary>
         public event Action<float> OnTimeChanged;
 
@@ -110,6 +113,12 @@ namespace KanBagi.Core
         public void RequestNextDay()
         {
             isNextDayRequested = true;
+        }
+
+        /// <summary>Saati durdurur/devam ettirir. Hikaye girisi bunu cagirir (co-op'ta RPC siniri).</summary>
+        public void SetPaused(bool isPaused)
+        {
+            IsPaused = isPaused;
         }
 
         private IEnumerator DayRoutine()
@@ -165,6 +174,12 @@ namespace KanBagi.Core
 
             while (TimeOfDay < 24f)
             {
+                if (IsPaused)
+                {
+                    yield return null;
+                    continue;
+                }
+
                 float scale = IsShopOpen ? 1f : Mathf.Max(1f, nightTimeScale);
                 TimeOfDay = Mathf.Min(24f, TimeOfDay + Time.deltaTime * hoursPerSecond * scale);
 

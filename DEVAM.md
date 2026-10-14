@@ -17,7 +17,10 @@ Babamız ve amcamız, zamanında bu mahallenin temelini beraber atan, sırt sır
 
 Ama amcamızın hesaba katmadığı bir şey vardı: Biz o delikte sadece volta atmadık, sokağın kurallarını da öğrendik. Şimdi amacımız o yıkık dökük çay ocağını küllerinden doğurmak. PC'den stok yönetip çay demlerken bir yandan da mahallede para ve "İtibar" kazanacağız. Kazandığımız güçle diğer dükkanları tek tek satın alıp sokağın mutlak hakimi olacak, bizi sırtımızdan vuran amcamızın tahtını başına yıkacağız. İşler büyüdükçe dükkanın arka odasına gizli bir kumarhane açacak, mafyayla aynı masaya oturup polisle köşe kapmaca oynayacağız. Bu sıradan bir esnaflık serüveni değil; bu, kanla yazılmış bir intikam ve mahalleyi geri alma destanı.
 
-**Hikayenin oynanışa yansıması (henüz yapılmadı, yol haritasında):**
+**Hikayenin oynanışa yansıması:**
+- ✅ Yeni oyunda bu hikaye 5 sayfalık **giriş ekranıyla** anlatılıyor (Adım 10a-1, metin `GirisHikayesi.asset`'te)
+
+**Henüz yapılmadı, yol haritasında:**
 - Amca bir **NPC/antagonist** olarak mahallede var olmalı; mülkleri satın almak onun gücünü kırmak anlamına gelmeli
 - Mahalleyi ele geçirmek bir **bitiş koşulu** sunmalı (amcanın tahtını yıkmak)
 - "İtibar" sadece bir sayı değil, mahallenin seni kabul etmesi
@@ -77,11 +80,12 @@ Assets/_Project/
                        DailyStatsManager, ISaveable, SaveManager, PropertyManager, BalanceLogger
     ├── Customers/     Customer, CustomerSpawner, CustomerModifiers, CustomerPatienceBoost
     ├── Data/          ItemData, ItemDatabase, ShopCatalog, UpgradeData, UpgradeCatalog,
-                       PropertyData, PropertyCatalog
+                       PropertyData, PropertyCatalog, StoryData
     ├── Delivery/      DeliveryManager
     ├── Editor/        RowPrefabBuilder, ReportPanelBuilder, SaveMenuItems, SignPrefabBuilder,
                        GamblingSignBuilder, MafiaPrefabBuilder, PolicePrefabBuilder,
-                       BalancePresetApplier, GamblerPrefabBuilder, NavMeshChecker
+                       BalancePresetApplier, GamblerPrefabBuilder, NavMeshChecker,
+                       StoryPanelBuilder
     ├── Illegal/       GamblingTable, SuspicionManager, MafiaManager, MafiaCollector,
                        PoliceManager, PoliceOfficer, Gambler, GamblerSpawner
     ├── Neighborhood/  PropertyBuilding, PropertyVisualSwitch
@@ -96,7 +100,7 @@ Assets/_Project/
                        OrderBubbleUI, Billboard, ComputerUI, CatalogEntryUI, DeliveryNotificationUI,
                        TabGroupUI, UpgradeListUI, UpgradeEntryUI, ClockUI, DailyReportUI,
                        PropertyListUI, PropertyEntryUI, PropertySignUI, GamblingSignUI, MafiaSignUI,
-                       PoliceNotificationUI
+                       PoliceNotificationUI, StoryIntroUI
 ```
 
 ### Kod konvansiyonları (mevcut koda uyulmalı)
@@ -454,6 +458,21 @@ Gece arka odaya NPC kumarbazlar gelir, masaya oturup el oynar; **kasa her elden 
 
 ---
 
+## 6.8 KİMLİK VE İÇERİK
+
+### Adım 10a-1 — Hikaye giriş ekranı ✅
+Yeni oyunda (diskte kayıt yokken) intikam hikayesi siyah tam ekranda sayfa sayfa anlatılır. Kayıtlı oyunda hiç görünmez.
+
+- `StoryData` (`KanBagi.Data`, ScriptableObject, `Create > Kan Bagi > Story Data`): `StoryPage` listesi (başlık + metin) ve buton yazıları (`continueLabel`, `skipLabel`, `finishLabel`).
+- `GirisHikayesi.asset`: 5 sayfa — **İki Ortak, Taziye Çayı, Dört Duvar, Miras, Hesap**. Anlatıcı "biz" (co-op'ta iki kardeşe de oturuyor). Butonlar **Devam / Atla / Ocağı Yak**. **Türkçe metin kodda değil bu asset'te** (kod ASCII kuralı korunuyor); değiştirmek için Inspector'dan düzenle.
+- `DayCycleManager.SetPaused(bool)` + `IsPaused`: duraklatılınca saat ilerlemez (co-op'ta RPC sınırı).
+- `StoryIntroUI` (`KanBagi.UI`, panel kökünde, kök hep aktif): `Start`'ta `SaveManager.HasSave` yoksa açılır → saati durdurur, sahnedeki **tüm** `PlayerLock`'ları kilitler. **Devam** sonraki sayfa, **Atla** direkt başlatır (son sayfada gizlenir), son sayfadaki **Ocağı Yak** paneli kapatır, saati ve oyuncuları serbest bırakır. Sayfa numarası "1 / 5".
+- `Kan Bagi > Hikaye Giris Panelini Olustur` (`StoryPanelBuilder`): `HikayeGirisPaneli` prefab'ını kodla üretir, `GirisHikayesi`'ni bağlar, **sahnedeki ana Canvas'ın son çocuğu olarak kendisi yerleştirir** (eskisi varsa siler). Panel 1300×720, başlık 60 / metin 38 punto (Canvas 1920×1080 referansla ölçekleniyor).
+
+**Test:** `Kaydi Sil` → Play: ekran açılıyor, saat 00:00'da duruyor, oyuncu kilitli; 5 sayfa geçiliyor, "Ocağı Yak" ile oyun başlıyor; "Atla" direkt başlatıyor; kayıt varken ekran gelmiyor. Kullanıcı onayladı.
+
+---
+
 ## 7. SAHNE KURULUMU (`Assets/Scenes/SampleScene.unity`)
 
 | Obje | Konum | Üzerindeki script'ler |
@@ -474,6 +493,7 @@ Gece arka odaya NPC kumarbazlar gelir, masaya oturup el oynar; **kasa her elden 
 | ├ `PolisUyariText` | üst-orta (Pos Y -90) | PoliceNotificationUI |
 | ├ `GunlukOzetPaneli` (**Canvas'ın son çocuğu**) | tam ekran | DailyReportUI (kök hep aktif) |
 | &nbsp;&nbsp;└ `Icerik` → `Panel` (560×460, VLG) | orta | 7 satır + `YeniGunButton` |
+| ├ `HikayeGirisPaneli` (prefab, **Canvas'ın son çocuğu**) | tam ekran | StoryIntroUI (kök hep aktif) — `Kan Bagi > Hikaye Giris Panelini Olustur` kurar |
 | ├ `ProgressBar` → `Dolum` (Image/Filled) + `ProgressLabel` | orta-alt | — |
 | └ `BilgisayarPaneli` (700×450, **Vertical Layout Group**, sahnede PASİF) | orta | TabGroupUI |
 | &nbsp;&nbsp;├ `UstBar` (HLG, pref. height 44) → `Baslik`, `KayitDurumText`, `KasaText`, `KaydetButton`, `KapatButton` | — | — |
@@ -516,6 +536,7 @@ Gece arka odaya NPC kumarbazlar gelir, masaya oturup el oynar; **kasa her elden 
 - `KumarMasasi > Ortu` — `Kan Bagi > Kumar Ortusunu Olustur ve Bagla` menüsü üretip bağlar
 - `Koli` (Cube 0.35/0.3/0.35 + **Rigidbody** + HoldableItem + DeliveryBox) — Rigidbody olmazsa koli havada asılı kalır
 - `Kumarbaz` — **elle kurulmaz, sahneye elle konmaz**, `Kan Bagi > Kumarhaneyi Kur`; GamblerSpawner gece runtime'da üretir
+- `HikayeGirisPaneli` — **elle kurulmaz**, `Kan Bagi > Hikaye Giris Panelini Olustur` üretir ve Canvas'a yerleştirir
 
 **ScriptableObject'ler:**
 | ItemData | Tür | SellPrice | PurchaseCost | PrepareDuration |
@@ -532,12 +553,15 @@ Gece arka odaya NPC kumarbazlar gelir, masaya oturup el oynar; **kasa her elden 
 - `UrunVeritabani` (ItemDatabase) — 6 ItemData'nın tamamı (kayıt sistemi için, **yeni ürün eklenince buraya da eklenmeli**)
 - `BakkalMulk` (800 TL / 60 / itibar **60**), `TerziMulk` (1200 / 90 / **140**), `KirathaneMulk` (2000 / 160 / **240**) — 9a-3'te güncellendi
 - `EmlakKatalogu` (PropertyCatalog) — üç mülkün tamamı (**kayıt eşlemesi buradan yapılır, boş bırakılamaz**)
+- `GirisHikayesi` (StoryData) — giriş ekranının 5 sayfası ve buton yazıları
 
 > ✅ **Sahne GERÇEK değerlerde** (Adım 9a-1). Hızlı test için `Kan Bagi > Denge > Test Degerlerini Uygula`, geri dönmek için `Gercek Degerleri Uygula`. Mod değiştirdikten sonra sahneyi kaydet; sıfırdan test için `Kan Bagi > Kaydi Sil`.
 
 ---
 
 ## 8. ŞU AN NEREDE KALDIK
+
+**Adım 10a-1 bitti ve test edildi.** Yeni oyunda siyah ekranda 5 sayfalık intikam hikayesi anlatılıyor; okunurken saat duruyor ve oyuncu kilitli, "Ocağı Yak" ile oyun başlıyor, "Atla" çalışıyor, kayıtlı oyunda ekran gelmiyor. **Sıradaki iş: kullanıcı seçecek** — 10a-2 (bildirim metinlerini intikam tonuna çekmek + ilk sabah yönlendirmesi) **veya** 10c (dükkan genişletme).
 
 **Adım 9a-2 bitti ve test edildi — 9. BÖLÜM (DENGE + CO-OP HAZIRLIĞI) KAPANDI.** Gece kumarhanesine NPC kumarbazlar geliyor, masanın etrafından dolaşıp oturuyor, el oynuyor; kasa her elden 25 TL pay alıyor, şüphe artıyor, tabela ve günlük özet doğru. Kumarbazların masanın üstünden yürüme bug'ı NavMesh'in kilitli eşyalarla yeniden bake edilmesiyle çözüldü. **Sıradaki iş: 10a — hikaye girişi** (plan ayrıca onaylanacak).
 
@@ -720,7 +744,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**9a-3**~~ ✅ | Denge düzeltmeleri (kağıt tahminlere göre) — **bitti** | İtibar barajları ve **iflas kilidi** gerçek sorunlar; ucuz ve küçük. Oynanabilirliğin önkoşulu. |
 | ~~**9b**~~ ✅ | **Co-op hazırlığı: etkileşim katmanı refactor** — **bitti** | `PlayerHands.Instance` tüm etkileşimlerin tek engeli. Şu an 12 çağrı noktası var, **her yeni istasyonda artıyor**. Şimdi ucuz, sonra pahalı. Oyuncu tarafında Editor işi yok. |
 | ~~**9a-2**~~ ✅ | **Kumarhane işletmesi: NPC'ler oynar, oyuncu kasadır** — **bitti** | En büyük oynanış değişimi. **9b'den SONRA** yapılır ki yeni istasyon/NPC kodu doğuştan co-op uyumlu olsun. |
-| **10a** | **Hikaye girişi (intikam tonu) — SIRADAKİ** | Oyuna kimlik katar, küçük iş |
+| ~~**10a-1**~~ ✅ | Hikaye giriş ekranı — **bitti** | Oyuna kimlik katar, küçük iş |
+| **10a-2** | Tonun oyuna sızması: mafya/polis/gün sonu/teslimat metinleri intikam tonunda + ilk sabah tek satırlık yönlendirme. Neredeyse sadece metin. **(Seçenek — kullanıcı 10a-2 mi 10c mi karar verecek)** | Ucuz, kimliği oyunun içine taşır |
 | **10c** | Dükkan genişletme + iskambil/domino + müşteri ve stok çeşitliliği | Faz 2'den kalan; mekan büyüdükçe kumarhane odası da anlam kazanır |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
@@ -744,7 +769,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum:** Commit'ler yerelde hazır ama **henüz push edilmedi** — `gh auth login` cihaz-kodu doğrulama maili gelmediği için giriş yapılamadı. **Push sorununu çözmeye çalışmadan önce kullanıcıya sor.**
 ```
-(yeni)   Adim 9a-2: kumarhane isletmesi - NPC kumarbazlar ve NavMesh duzeltmesi
+(yeni)   Adim 10a-1: hikaye giris ekrani
+97b0438  Adim 9a-2: kumarhane isletmesi - NPC kumarbazlar ve NavMesh duzeltmesi
 3a5287c  Adim 9b: co-op hazirligi - PlayerContext ve etkilesim katmani
 2a83e0c  Adim 9a-3: iflas korumasi ve itibar barajlari
 b8f1c67  Adim 9a-1: gercek denge degerleri, BalancePresetApplier ve BalanceLogger
@@ -768,7 +794,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (10a — hikaye girişi) planını anlat, onay al**, sonra kod yaz.
+3. **Kullanıcıya sıradaki adımı sor: 10a-2 (ton metinleri) mi, 10c (dükkan genişletme) mi?** Seçilenin planını anlat, onay al, sonra kod yaz.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.
@@ -782,5 +808,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 - **Kayıt dosyası başlangıç değerlerini ezer.** `Starting Money`'yi değiştirdiysen ama eski kayıt duruyorsa değişiklik görünmez → önce `Kan Bagi > Kaydi Sil`.
 - **Denge değerlerini Inspector'da elle değiştirme** — `BalancePresetApplier`'ın `Settings` tablosuna yaz, menüden uygula. Değerler tek yerde ve izlenebilir kalır.
 - **NavMesh'i elle bake etme.** Pasif (kilitli) eşyalar bake'e girmez, `NavMeshObstacle`'lı objeler de NavMeshSurface ayarı yüzünden girmezdi → NPC'ler eşyanın içinden/üstünden yürür. Her zaman `Kan Bagi > NavMesh'i Yeniden Bake Et` + sahneyi kaydet + `NavMesh Kontrol Et`. Yeni eşya kök obje olarak ve collider'lı eklenmeli ki komut onu bulsun.
+- **Türkçe oyun metni koda yazılmaz** — ScriptableObject asset'ine yazılır (kod ASCII kuralı). TMP fontu Türkçe karakterleri gösteriyor.
+- **Builder menüsünü kod değişikliğinden hemen sonra çalıştırma** — Unity derlemeyi bitirmeden tıklanırsa ESKİ kodla kurar (10a-1'de panel eski boyutla kuruldu). Console temizlenene / derleme çubuğu kaybolana kadar bekle, gerekirse `Ctrl+R`.
 - **Oturum yarıda kalırsa** (DEVAM.md güncellenmeden), yeni oturumda önce `git status` ile commitlenmemiş işi kontrol et — 9a-2 kodu böyle bulundu.
 4. Kod bittikten sonra Unity Editor talimatlarını adım adım ver.

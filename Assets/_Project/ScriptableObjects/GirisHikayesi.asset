@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd2e745d18a0424396518a8e514d5ce0, type: 3}
+  m_Name: GirisHikayesi
+  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.StoryData
+  pages:
+  - title: "İki Ortak"
+    body: "Bu mahallenin temelini iki adam attı: babamız ve amcamız. Sırt sırta verdiler, aynı ocaktan çay içtiler, aynı kepengi birlikte kaldırdılar. Sokak onların adını anarken sesini alçaltırdı."
+  - title: "Taziye Çayı"
+    body: "Sonra babamız öldü. Nasıl öldüğünü kimse sormadı, soranın da ağzı kapandı. Taziye çayı daha soğumadan amcamız kapıyı yüzümüze çarptı. Meğer kan bağı onun için bir tapu kâğıdından ibaretmiş."
+  - title: "Dört Duvar"
+    body: "Yetmedi. Kendi yediği pis haltı bizim üstümüze yıktı. Gençliğimiz demir parmaklıkların ardında çürüdü. Ama biz orada sadece volta atmadık: kimin konuştuğunu, kimin sustuğunu, kimin kime borçlu olduğunu öğrendik. Sokağın kurallarını öğrendik."
+  - title: "Miras"
+    body: "Yıllar sonra kapıdan çıktığımızda koca mirastan elimizde tek bir şey kalmıştı: babamızın ilk göz ağrısı, köşede çürümeye yüz tutmuş izbe bir kıraathane. Kırık sandalyeler, soğumuş bir ocak ve duvarlara sinmiş eski bir çay kokusu."
+  - title: "Hesap"
+    body: "Ocağı yeniden yakacağız. Çay demleyip itibar toplayacak, bu sokaktaki dükkanları tek tek alacağız. Gerekirse arka odada kumar dönecek, mafyayla aynı masaya oturacağız. Ve günü geldiğinde amcamızın tahtını başına yıkacağız.\n\nBu bir esnaflık hikayesi değil. <b>Bu bir hesaplaşma.</b>"
+  continueLabel: "Devam"
+  skipLabel: "Atla"
+  finishLabel: "Ocağı Yak"
