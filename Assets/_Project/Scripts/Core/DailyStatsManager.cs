@@ -80,7 +80,10 @@ namespace KanBagi.Core
             gamblingTables = FindObjectsByType<GamblingTable>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
             foreach (GamblingTable gamblingTable in gamblingTables)
+            {
                 gamblingTable.OnRoundPlayed += HandleGamblingRound;
+                gamblingTable.OnHouseRound += HandleHouseRound;
+            }
 
             if (MafiaManager.Instance != null)
                 MafiaManager.Instance.OnDemandPaid += HandleProtectionPaid;
@@ -119,6 +122,12 @@ namespace KanBagi.Core
             Expenses -= result.Stake;
             GamblingNet += result.Net;
         }
+
+        /// <summary>
+        /// Kumarhane masa parasi da "Kumar" satirina eklenir. AddMoney ile girdigi icin
+        /// Expenses'a hic yazilmaz; cift sayim duzeltmesi gerekmez.
+        /// </summary>
+        private void HandleHouseRound(int rake) => GamblingNet += rake;
 
         /// <summary>Harac da TrySpendMoney'den gecer; kendi satirinda gosterilecegi icin giderden dusulur.</summary>
         private void HandleProtectionPaid(int amount)
@@ -162,7 +171,10 @@ namespace KanBagi.Core
 
             foreach (GamblingTable gamblingTable in gamblingTables)
             {
-                if (gamblingTable != null) gamblingTable.OnRoundPlayed -= HandleGamblingRound;
+                if (gamblingTable == null) continue;
+
+                gamblingTable.OnRoundPlayed -= HandleGamblingRound;
+                gamblingTable.OnHouseRound -= HandleHouseRound;
             }
 
             if (Instance == this) Instance = null;

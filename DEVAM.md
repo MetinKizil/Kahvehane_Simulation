@@ -68,7 +68,7 @@ Oyun **eşli (co-op) oynanacak şekilde** çıkacak. Örnek senaryo: biri tezgah
 ### Klasör yapısı
 ```
 Assets/_Project/
-├── Prefabs/           (CayBardagi, Musteri)
+├── Prefabs/           (CayBardagi, Musteri, Kumarbaz, ...)
 ├── ScriptableObjects/ (Cay)
 ├── Scenes/            (Dukkan)
 ├── Materials/
@@ -81,9 +81,9 @@ Assets/_Project/
     ├── Delivery/      DeliveryManager
     ├── Editor/        RowPrefabBuilder, ReportPanelBuilder, SaveMenuItems, SignPrefabBuilder,
                        GamblingSignBuilder, MafiaPrefabBuilder, PolicePrefabBuilder,
-                       BalancePresetApplier
+                       BalancePresetApplier, GamblerPrefabBuilder, NavMeshChecker
     ├── Illegal/       GamblingTable, SuspicionManager, MafiaManager, MafiaCollector,
-                       PoliceManager, PoliceOfficer
+                       PoliceManager, PoliceOfficer, Gambler, GamblerSpawner
     ├── Neighborhood/  PropertyBuilding, PropertyVisualSwitch
     ├── Economy/       EconomyManager, PurchaseManager
     ├── Interaction/   IInteractable, HoldableItem, PlayerInteractor
@@ -430,13 +430,35 @@ Davranış birebir aynı; amaç her etkileşimin "hangi oyuncu yaptı" bilgisini
 
 **Test:** Faz 1-4 akışlarının tamamı (bardak, ocak, servis, lavabo, koli, PC + ESC, satın alma, sokakta mülk, kumar örtü/oyun, haraç, gün sonu kilidi, "Elinde" yazısı) kullanıcı tarafından denendi, çalışıyor.
 
+### Adım 9a-2 — Kumarhane işletmesi ✅ (NPC kumarbazlar)
+Gece arka odaya NPC kumarbazlar gelir, masaya oturup el oynar; **kasa her elden pay alır**, şüphe artar. Oyuncunun kendi oynadığı mod aynen duruyor.
+
+- `Gambler` (`KanBagi.Illegal`, coroutine durum makinesi): kapıdan girer → sandalyeye yürür → oturur (agent kapanır, masaya döner) → **4–8 el**, el arası **4 sn** → kalkıp çıkar, kendini yok eder. Para/şüpheye dokunmaz, sadece `table.PlayHouseRound()` çağırır. Oyuncuya özel hiçbir şey yok (co-op uyumlu).
+- `GamblerSpawner` (**KumarMasasi'nın üzerinde**, `[RequireComponent(GamblingTable)]`): masa upgrade'le açılana kadar pasif olduğu için kumarhane açılmadan kimse gelmez. Gece + örtü açık + boş sandalye + gün sonu paneli kapalıysa **3–6 sn**'de bir kumarbaz yollar. **Örtü kapanınca, gün bitince ve sabah dükkan açılınca herkes kalkar.**
+- `GamblingTable` eklemeleri:
+  - `PlayHouseRound()` — kumarhane parasının **tek geçiş noktası** (ileride RPC sınırı): `houseRakePerRound` (**25 TL**) kasaya, `suspicionPerHouseRound` (**+1**) şüpheye, `NightNet`'e eklenir, `OnHouseRound` tetiklenir. Örtü kapalıysa veya sabahsa el sayılmaz.
+  - Sandalyeler **elle verilmez**: masanın collider'ının dört kenarında aday noktalar üretilir, NavMesh'te yürünebilir olanlardan en fazla `maxSeats` (**2**) tanesi seçilir. Mevcut sahnede sandalyeler masanın **güney kenarında** (duvar/Depo tarafı dolu). Seçili masada mor küre gizmo'su.
+- `GamblingSignUI`: kumarbaz eli gelince "KASA +25 TL" yazar, gecelik toplam güncellenir.
+- `DailyStatsManager`: kumarhane payı günlük özetteki **"Kumar"** satırına eklenir (`AddMoney` ile girdiği için `Expenses` düzeltmesi gerekmez).
+- **Gece hızı 4× → 2×** (`DayCycleManager.nightTimeScale`, test modunda 1): gece kumarhanesi için geceler uzadı. `BalancePresetApplier` tablosuna gece hızı, spawn aralığı (gerçek 3–6 / test 2–3), masa payı ve şüphe eklendi.
+
+**Editor komutları:**
+- `Kan Bagi > Kumarhaneyi Kur` (`GamblerPrefabBuilder`): `Kumarbaz` prefab'ını kodla üretir (koyu yeşil kapsül + NavMeshAgent + Gambler, müşteriyle aynı yürüme ayarları), sahnedeki her kumar masasına `GamblerSpawner` ekleyip prefab'ı ve giriş noktasını (müşteri spawner'ının `GirisNoktasi`) bağlar.
+- `Kan Bagi > NavMesh Kontrol Et` (`NavMeshChecker`): her eşyanın altında NavMesh deliği var mı raporlar.
+- `Kan Bagi > NavMesh'i Yeniden Bake Et` (**asıl çözüm**): her eşyaya "Not Walkable" `NavMeshModifier` ekler, kilitli (pasif) eşyaları **sadece bake anında** açar, engelli objeleri de bake'e alır (`ignoreNavMeshObstacle = false`). Delikler NavMesh dosyasına kalıcı yazılır. **Eşya taşınınca/eklenince tekrar çalıştır + sahneyi kaydet.**
+- `Kan Bagi > NavMesh Deliklerini Duzelt`: eski yöntem (oyma yapan `NavMeshObstacle`). Artık gerekmiyor; eklediği engeller sahnede zararsız duruyor.
+
+**Yakalanan bug:** Kumarbazlar kumar masasının **üstünden yürüyordu**. Sebep: masa bake sırasında pasifti → altı yürünebilir kalmıştı; sonradan eklenen oyma engeli ise NavMeshSurface "engelli objeleri bake'e alma" ayarı yüzünden bake'e hiç girmiyordu, delik tamamen çalışma anındaki oymaya kalmıştı. Yeniden bake komutu ile çözüldü; `NavMesh Kontrol Et` 11 eşyanın hepsinde delik raporluyor. (Bake'te "TextMeshPro Mesh has invalid vertex data" uyarıları zararsız — tabela yazıları atlanıyor.)
+
+**Test:** kumarbazlar gece geliyor, masanın etrafından dolaşıp oturuyor, el oynuyor; kasa ve şüphe artıyor, günlük özette "Kumar" satırı doğru (test gününde 4 el → +100 TL, şüphe +4). Kullanıcı onayladı.
+
 ---
 
 ## 7. SAHNE KURULUMU (`Assets/Scenes/SampleScene.unity`)
 
 | Obje | Konum | Üzerindeki script'ler |
 |---|---|---|
-| `Zemin` (Plane) | (0,0,0) | **NavMeshSurface** (bake edilmiş) |
+| `Zemin` (Plane) | (0,0,0) | **NavMeshSurface** — `Kan Bagi > NavMesh'i Yeniden Bake Et` ile bake edilir (elle Bake'e basma: kilitli eşyaların deliği açılmaz). Tüm eşyalarda "Not Walkable" `NavMeshModifier` var |
 | `Player` (Empty) | (0, 1.1, 0) | CharacterController, PlayerController, PlayerInteractor, PlayerHands, PlayerLock |
 | └ `Main Camera` | (0, 0.6, 0) | — (child) |
 | `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, PoliceManager, **BalanceLogger**, **5 × UpgradeUnlocker** (YeniMasa→Masa3, KahveMakinesi→KahveMakinesi, Oralet→OraletSemaveri, Okey→OkeyTakimi1/2/3) |
@@ -478,7 +500,7 @@ Davranış birebir aynı; amaç her etkileşimin "hangi oyuncu yaptı" bilgisini
 | ├ `TerziBinasi` (Cube, scale 3) | (0, 1.5, -12.5) | PropertyBuilding (TerziMulk) |
 | └ `KirathaneBinasi` (Cube, scale 3) | (4, 1.5, -9) | PropertyBuilding (KirathaneMulk) |
 | `Depo` (Cube) | (-2, 0.5, 3.5) | StorageRack |
-| `KumarMasasi` (Cube) — **başta pasif** | (-4, 0.4, 3.5) | GamblingTable + tabela child'ı (Gizli Kumarhane upgrade'i açar) |
+| `KumarMasasi` (Cube) — **başta pasif** | (-4, 0.4, 3.5) | GamblingTable + **GamblerSpawner** + tabela child'ı (Gizli Kumarhane upgrade'i açar) |
 | `MafyaNoktasi` (Empty) | (1.5, 0.9, -4) | — (tahsildar burada belirir, y=0.9 kapsül yere bassın diye) |
 | `PolisNoktasi` (Empty) | (-1.5, 0.9, -4) | — (memur burada belirir) |
 
@@ -493,6 +515,7 @@ Davranış birebir aynı; amaç her etkileşimin "hangi oyuncu yaptı" bilgisini
 - `PolisMemuru` — aynı şekilde `Kan Bagi > Polis Prefabini Olustur`; PoliceManager runtime'da üretir/yok eder
 - `KumarMasasi > Ortu` — `Kan Bagi > Kumar Ortusunu Olustur ve Bagla` menüsü üretip bağlar
 - `Koli` (Cube 0.35/0.3/0.35 + **Rigidbody** + HoldableItem + DeliveryBox) — Rigidbody olmazsa koli havada asılı kalır
+- `Kumarbaz` — **elle kurulmaz, sahneye elle konmaz**, `Kan Bagi > Kumarhaneyi Kur`; GamblerSpawner gece runtime'da üretir
 
 **ScriptableObject'ler:**
 | ItemData | Tür | SellPrice | PurchaseCost | PrepareDuration |
@@ -515,6 +538,8 @@ Davranış birebir aynı; amaç her etkileşimin "hangi oyuncu yaptı" bilgisini
 ---
 
 ## 8. ŞU AN NEREDE KALDIK
+
+**Adım 9a-2 bitti ve test edildi — 9. BÖLÜM (DENGE + CO-OP HAZIRLIĞI) KAPANDI.** Gece kumarhanesine NPC kumarbazlar geliyor, masanın etrafından dolaşıp oturuyor, el oynuyor; kasa her elden 25 TL pay alıyor, şüphe artıyor, tabela ve günlük özet doğru. Kumarbazların masanın üstünden yürüme bug'ı NavMesh'in kilitli eşyalarla yeniden bake edilmesiyle çözüldü. **Sıradaki iş: 10a — hikaye girişi** (plan ayrıca onaylanacak).
 
 **Adım 9b bitti ve test edildi.** Etkileşimler artık etkileşimi yapan oyuncuyu (`PlayerContext`) taşıyor; `PlayerHands`/`PlayerLock` singleton değil, bilgisayar sadece açanı kilitliyor, gün sonu herkesi kilitliyor. Davranış birebir aynı. **Sıradaki iş: 9a-2 — kumarhane işletmesi** (plan ayrıca onaylanacak).
 
@@ -593,7 +618,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 ## 9. DENGE (9A), CO-OP HAZIRLIĞI (9B) VE SIRADAKİ ADIM — 9A-2
 
-> 9a-1, 9a-3 ve 9b bitti (ayrıntı bölüm 6.7). Aşağısı tarihçe olarak duruyor; **sıradaki iş 9a-2** (kumarhane işletmesi).
+> 9a-1, 9a-3, 9b ve 9a-2 bitti (ayrıntı bölüm 6.7). Aşağısı tarihçe olarak duruyor; **sıradaki iş 10a** (hikaye girişi, bölüm 10).
 
 **Amaç (9a):** Oyunu baştan sona oynanabilir hale getirmek. **Ölçüm atlandığı için** aşağıdaki kağıt üstü tahminler üzerinden gidildi.
 
@@ -610,7 +635,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 2. ❌ **Ölçüm — ATLANDI.** Kullanıcı 6–8 günlük ölçümlü oynamayı istemedi ("üşendim"). `BalanceLogger` yerinde duruyor, ileride istenirse kullanılabilir. **Denge düzeltmesi aşağıdaki kağıt tahminler üzerinden yapılacak.**
 3. ✅ **9a-3 — Denge düzeltmeleri:** iflas koruması (asgari kasa 150) + itibar barajları, mafya, haraç. Ayrıntı bölüm 6.7.
 4. ✅ **9b — Co-op hazırlığı: etkileşim katmanı refactor.** Ayrıntı bölüm 6.7.
-5. **9a-2 — Kumarhane işletmesi (SIRADAKİ)** (NPC'ler oynar, kasa komisyon alır). **9b'den sonra** yapılır ki yeni kod doğuştan co-op uyumlu olsun. Plan ayrıca onaylanacak.
+5. ✅ **9a-2 — Kumarhane işletmesi** (NPC'ler oynar, kasa pay alır). Ayrıntı bölüm 6.7.
 
 **Kağıt üstü tahminler (ölçümle doğrulanacak):**
 - Tek oyuncu + 2 masa ≈ günde 12–15 servis ≈ **+190 TL** ve **+13 itibar**.
@@ -694,8 +719,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 |---|---|---|
 | ~~**9a-3**~~ ✅ | Denge düzeltmeleri (kağıt tahminlere göre) — **bitti** | İtibar barajları ve **iflas kilidi** gerçek sorunlar; ucuz ve küçük. Oynanabilirliğin önkoşulu. |
 | ~~**9b**~~ ✅ | **Co-op hazırlığı: etkileşim katmanı refactor** — **bitti** | `PlayerHands.Instance` tüm etkileşimlerin tek engeli. Şu an 12 çağrı noktası var, **her yeni istasyonda artıyor**. Şimdi ucuz, sonra pahalı. Oyuncu tarafında Editor işi yok. |
-| **9a-2** | **Kumarhane işletmesi: NPC'ler oynar, oyuncu kasadır** | En büyük oynanış değişimi. **9b'den SONRA** yapılır ki yeni istasyon/NPC kodu doğuştan co-op uyumlu olsun. |
-| **10a** | Hikaye girişi (intikam tonu) | Oyuna kimlik katar, küçük iş |
+| ~~**9a-2**~~ ✅ | **Kumarhane işletmesi: NPC'ler oynar, oyuncu kasadır** — **bitti** | En büyük oynanış değişimi. **9b'den SONRA** yapılır ki yeni istasyon/NPC kodu doğuştan co-op uyumlu olsun. |
+| **10a** | **Hikaye girişi (intikam tonu) — SIRADAKİ** | Oyuna kimlik katar, küçük iş |
 | **10c** | Dükkan genişletme + iskambil/domino + müşteri ve stok çeşitliliği | Faz 2'den kalan; mekan büyüdükçe kumarhane odası da anlam kazanır |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
@@ -719,7 +744,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum:** Commit'ler yerelde hazır ama **henüz push edilmedi** — `gh auth login` cihaz-kodu doğrulama maili gelmediği için giriş yapılamadı. **Push sorununu çözmeye çalışmadan önce kullanıcıya sor.**
 ```
-(yeni)   Adim 9b: co-op hazirligi - PlayerContext ve etkilesim katmani
+(yeni)   Adim 9a-2: kumarhane isletmesi - NPC kumarbazlar ve NavMesh duzeltmesi
+3a5287c  Adim 9b: co-op hazirligi - PlayerContext ve etkilesim katmani
 2a83e0c  Adim 9a-3: iflas korumasi ve itibar barajlari
 b8f1c67  Adim 9a-1: gercek denge degerleri, BalancePresetApplier ve BalanceLogger
 3076ff4  DEVAM.md: git durumu ve proje dersleri bolumleri eklendi
@@ -742,7 +768,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (9a-2) planını anlat, onay al**, sonra kod yaz.
+3. **Sıradaki adımın (10a — hikaye girişi) planını anlat, onay al**, sonra kod yaz.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.
@@ -755,4 +781,6 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 - **Aynı manager'ı aynı objeye iki kez ekleme.** Singleton fazlasını sessizce yok eder ama hangisinin kalacağı belirsiz; Inspector'da yanlış kopyayı düzenlemek çok kolay (iki DayCycleManager yüzünden geceler hızlanmıyordu). `Gercek Degerleri Uygula` artık kopyaları temizliyor.
 - **Kayıt dosyası başlangıç değerlerini ezer.** `Starting Money`'yi değiştirdiysen ama eski kayıt duruyorsa değişiklik görünmez → önce `Kan Bagi > Kaydi Sil`.
 - **Denge değerlerini Inspector'da elle değiştirme** — `BalancePresetApplier`'ın `Settings` tablosuna yaz, menüden uygula. Değerler tek yerde ve izlenebilir kalır.
+- **NavMesh'i elle bake etme.** Pasif (kilitli) eşyalar bake'e girmez, `NavMeshObstacle`'lı objeler de NavMeshSurface ayarı yüzünden girmezdi → NPC'ler eşyanın içinden/üstünden yürür. Her zaman `Kan Bagi > NavMesh'i Yeniden Bake Et` + sahneyi kaydet + `NavMesh Kontrol Et`. Yeni eşya kök obje olarak ve collider'lı eklenmeli ki komut onu bulsun.
+- **Oturum yarıda kalırsa** (DEVAM.md güncellenmeden), yeni oturumda önce `git status` ile commitlenmemiş işi kontrol et — 9a-2 kodu böyle bulundu.
 4. Kod bittikten sonra Unity Editor talimatlarını adım adım ver.

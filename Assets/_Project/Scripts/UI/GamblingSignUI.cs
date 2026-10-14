@@ -28,6 +28,8 @@ namespace KanBagi.UI
         [Tooltip("{0} kaybedilen tutar.")]
         [SerializeField] private string loseFormat = "KAYBETTIN  -{0} TL";
         [SerializeField] private string idleResult = "-";
+        [Tooltip("{0} kumarbazlardan gelen masa parasi.")]
+        [SerializeField] private string houseFormat = "KASA  +{0} TL";
         [Tooltip("{0} gecelik net.")]
         [SerializeField] private string totalFormat = "Gece: {0} TL";
 
@@ -50,6 +52,7 @@ namespace KanBagi.UI
             }
 
             table.OnRoundPlayed += HandleRoundPlayed;
+            table.OnHouseRound += HandleHouseRound;
 
             dayCycle = DayCycleManager.Instance;
 
@@ -71,6 +74,12 @@ namespace KanBagi.UI
             else
                 SetText(resultText, string.Format(loseFormat, result.Stake), loseColor);
 
+            RefreshTotal();
+        }
+
+        private void HandleHouseRound(int rake)
+        {
+            SetText(resultText, string.Format(houseFormat, rake), winColor);
             RefreshTotal();
         }
 
@@ -107,7 +116,11 @@ namespace KanBagi.UI
 
         private void OnDestroy()
         {
-            if (table != null) table.OnRoundPlayed -= HandleRoundPlayed;
+            if (table != null)
+            {
+                table.OnRoundPlayed -= HandleRoundPlayed;
+                table.OnHouseRound -= HandleHouseRound;
+            }
 
             if (dayCycle == null) return;
 

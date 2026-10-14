@@ -59,7 +59,13 @@ namespace KanBagi.EditorTools
             new Setting(typeof(ReputationManager), "startingReputation", 0f, 300f),
 
             new Setting(typeof(DayCycleManager), "dayDurationMinutes", 6f, 1f),
-            new Setting(typeof(DayCycleManager), "nightTimeScale", 4f, 4f),
+            // 9a-2: gece kumarhanesi icin geceler uzun (2x). Testte 1: kisa gunde gece yine ~25 sn surer.
+            new Setting(typeof(DayCycleManager), "nightTimeScale", 2f, 1f),
+
+            new Setting(typeof(GamblerSpawner), "spawnDelayRange.x", 3f, 2f),
+            new Setting(typeof(GamblerSpawner), "spawnDelayRange.y", 6f, 3f),
+            new Setting(typeof(GamblingTable), "houseRakePerRound", 25f, 25f),
+            new Setting(typeof(GamblingTable), "suspicionPerHouseRound", 1f, 1f),
 
             new Setting(typeof(DeliveryManager), "deliveryDelay", 20f, 8f),
 

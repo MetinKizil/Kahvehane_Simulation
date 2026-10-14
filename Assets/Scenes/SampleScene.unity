@@ -728,6 +728,7 @@ GameObject:
   - component: {fileID: 149640481}
   - component: {fileID: 149640480}
   - component: {fileID: 149640479}
+  - component: {fileID: 149640484}
   m_Layer: 0
   m_Name: Masa1
   m_TagString: Untagged
@@ -845,6 +846,26 @@ Transform:
   - {fileID: 559454222}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &149640484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 149640478}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 1
+  m_Area: 1
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 0
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &178853579
 GameObject:
   m_ObjectHideFlags: 0
@@ -1284,6 +1305,8 @@ GameObject:
   - component: {fileID: 287167339}
   - component: {fileID: 287167338}
   - component: {fileID: 287167337}
+  - component: {fileID: 287167342}
+  - component: {fileID: 287167343}
   m_Layer: 0
   m_Name: BardakRafi
   m_TagString: Untagged
@@ -1399,6 +1422,42 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!208 &287167342
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 287167336}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.5, y: 0.5, z: 0.5}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0, z: 0}
+  m_TimeToStationary: 0.5
+--- !u!114 &287167343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 287167336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 1
+  m_Area: 1
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 0
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -1588,7 +1647,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46f2e3699196b5f4e9970f9929bd1be9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Core.ReputationManager
-  startingReputation: 0
+  startingReputation: 300
 --- !u!114 &334363805
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1601,7 +1660,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6c2c9b8360c5414abaa0a96e8d1759e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Economy.EconomyManager
-  startingMoney: 250
+  startingMoney: 10000
 --- !u!4 &334363806
 Transform:
   m_ObjectHideFlags: 0
@@ -1673,7 +1732,7 @@ MonoBehaviour:
   deliveryPoint: {fileID: 233533965}
   dropHeight: 0.6
   scatterRadius: 0.35
-  deliveryDelay: 20
+  deliveryDelay: 8
 --- !u!114 &334363811
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1824,8 +1883,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29e40df4bb3a2ea47afa84c7032d63a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Core.DayCycleManager
-  dayDurationMinutes: 6
-  nightTimeScale: 4
+  dayDurationMinutes: 1
+  nightTimeScale: 1
   openHour: 8
   closeHour: 22
   lastCallHours: 1
@@ -1936,11 +1995,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0389c22f32fb03445a1ba19d38dd4470, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Illegal.PoliceManager
-  minimumSuspicionRatio: 0.2
-  maxRaidChance: 0.6
+  minimumSuspicionRatio: 0
+  maxRaidChance: 1
   warningSeconds: 20
-  inspectionSeconds: 12
-  earliestRaidDay: 4
+  inspectionSeconds: 3
+  earliestRaidDay: 1
   fineAmount: 1000
   protectedMoney: 150
   reputationPenalty: 10
@@ -3116,6 +3175,8 @@ GameObject:
   - component: {fileID: 717441088}
   - component: {fileID: 717441087}
   - component: {fileID: 717441086}
+  - component: {fileID: 717441091}
+  - component: {fileID: 717441092}
   m_Layer: 0
   m_Name: Masa3
   m_TagString: Untagged
@@ -3233,6 +3294,42 @@ Transform:
   - {fileID: 1172214800}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!208 &717441091
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 717441085}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.5, y: 0.5, z: 0.5}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0, z: 0}
+  m_TimeToStationary: 0.5
+--- !u!114 &717441092
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 717441085}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 1
+  m_Area: 1
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 0
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &790602138
 GameObject:
   m_ObjectHideFlags: 0
@@ -3246,6 +3343,8 @@ GameObject:
   - component: {fileID: 790602141}
   - component: {fileID: 790602140}
   - component: {fileID: 790602139}
+  - component: {fileID: 790602144}
+  - component: {fileID: 790602145}
   m_Layer: 0
   m_Name: OraletSemaveri
   m_TagString: Untagged
@@ -3364,6 +3463,42 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!208 &790602144
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 790602138}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.5, y: 0.5, z: 0.5}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0, z: 0}
+  m_TimeToStationary: 0.5
+--- !u!114 &790602145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 790602138}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 1
+  m_Area: 1
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 0
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -3457,6 +3592,9 @@ GameObject:
   - component: {fileID: 940122829}
   - component: {fileID: 940122828}
   - component: {fileID: 940122827}
+  - component: {fileID: 940122832}
+  - component: {fileID: 940122833}
+  - component: {fileID: 940122834}
   m_Layer: 0
   m_Name: KumarMasasi
   m_TagString: Untagged
@@ -3480,6 +3618,8 @@ MonoBehaviour:
   winChance: 0.45
   payoutMultiplier: 2
   suspicionPerRound: 3
+  houseRakePerRound: 25
+  suspicionPerHouseRound: 1
   coverVisual: {fileID: 1069694715}
   exposedVisuals:
   - {fileID: 1416222798}
@@ -3487,6 +3627,9 @@ MonoBehaviour:
   noMoneyFormat: '{0} TL gerekli'
   hideMessage: Masayi Gizle
   revealMessage: Ortuyu Ac
+  maxSeats: 2
+  seatClearance: 0.6
+  seatSpacing: 1
 --- !u!65 &940122828
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3582,6 +3725,57 @@ Transform:
   - {fileID: 1069694718}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &940122832
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 940122826}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed1abe320050b8f48ad47a670966289b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Illegal.GamblerSpawner
+  gamblerPrefab: {fileID: 807908938986674379, guid: b15f66e3a7bf92e4a8b1b5f37e135704, type: 3}
+  entryPoint: {fileID: 1822745117}
+  spawnDelayRange: {x: 2, y: 3}
+--- !u!208 &940122833
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 940122826}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.5, y: 0.5, z: 0.5}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0, z: 0}
+  m_TimeToStationary: 0.5
+--- !u!114 &940122834
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 940122826}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 1
+  m_Area: 1
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 0
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &966341314
 GameObject:
   m_ObjectHideFlags: 0
@@ -3595,6 +3789,7 @@ GameObject:
   - component: {fileID: 966341317}
   - component: {fileID: 966341316}
   - component: {fileID: 966341315}
+  - component: {fileID: 966341320}
   m_Layer: 0
   m_Name: Masa2
   m_TagString: Untagged
@@ -3712,6 +3907,26 @@ Transform:
   - {fileID: 1156651286}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &966341320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 966341314}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 1
+  m_Area: 1
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 0
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &986678884
 GameObject:
   m_ObjectHideFlags: 0
@@ -3838,6 +4053,7 @@ GameObject:
   - component: {fileID: 1050724893}
   - component: {fileID: 1050724892}
   - component: {fileID: 1050724891}
+  - component: {fileID: 1050724896}
   m_Layer: 0
   m_Name: Depo
   m_TagString: Untagged
@@ -3950,6 +4166,26 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1050724896
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1050724890}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 1
+  m_Area: 1
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 0
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &1069694715
 GameObject:
   m_ObjectHideFlags: 0
@@ -4558,6 +4794,7 @@ GameObject:
   - component: {fileID: 1207579633}
   - component: {fileID: 1207579632}
   - component: {fileID: 1207579631}
+  - component: {fileID: 1207579636}
   m_Layer: 0
   m_Name: YonetimPC
   m_TagString: Untagged
@@ -4672,6 +4909,26 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1207579636
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1207579630}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 1
+  m_Area: 1
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 0
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &1254080127
 GameObject:
   m_ObjectHideFlags: 0
@@ -5369,6 +5626,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.UI.HeldItemUI
   heldItemText: {fileID: 1387650471}
+  hands: {fileID: 0}
 --- !u!114 &1387650471
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6057,6 +6315,7 @@ GameObject:
   - component: {fileID: 1650263173}
   - component: {fileID: 1650263172}
   - component: {fileID: 1650263171}
+  - component: {fileID: 1650263176}
   m_Layer: 0
   m_Name: CayOcagi
   m_TagString: Untagged
@@ -6175,6 +6434,26 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1650263176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1650263170}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 1
+  m_Area: 1
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 0
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &1676251973
 GameObject:
   m_ObjectHideFlags: 0
@@ -6342,6 +6621,7 @@ GameObject:
   - component: {fileID: 1732855973}
   - component: {fileID: 1732855972}
   - component: {fileID: 1732855971}
+  - component: {fileID: 1732855976}
   m_Layer: 0
   m_Name: Lavabo
   m_TagString: Untagged
@@ -6459,6 +6739,26 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1732855976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1732855970}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 1
+  m_Area: 1
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 0
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &1735352821
 GameObject:
   m_ObjectHideFlags: 0
@@ -6597,7 +6897,7 @@ MonoBehaviour:
   m_DefaultArea: 0
   m_GenerateLinks: 0
   m_IgnoreNavMeshAgent: 1
-  m_IgnoreNavMeshObstacle: 1
+  m_IgnoreNavMeshObstacle: 0
   m_OverrideTileSize: 0
   m_TileSize: 256
   m_OverrideVoxelSize: 0
@@ -6845,6 +7145,8 @@ GameObject:
   - component: {fileID: 1876898588}
   - component: {fileID: 1876898587}
   - component: {fileID: 1876898586}
+  - component: {fileID: 1876898591}
+  - component: {fileID: 1876898592}
   m_Layer: 0
   m_Name: KahveMakinesi
   m_TagString: Untagged
@@ -6963,6 +7265,42 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!208 &1876898591
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1876898585}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.5, y: 0.5, z: 0.5}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0, z: 0}
+  m_TimeToStationary: 0.5
+--- !u!114 &1876898592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1876898585}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 1
+  m_Area: 1
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 0
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1001 &1932007965
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7217,8 +7555,8 @@ MonoBehaviour:
   customerPrefab: {fileID: 946487281903710997, guid: 9c0b79a6c1a99d74e879dcc150eebc42, type: 3}
   spawnPoint: {fileID: 1822745117}
   exitPoint: {fileID: 1822745117}
-  firstSpawnDelay: 3
-  spawnDelayRange: {x: 6, y: 14}
+  firstSpawnDelay: 2
+  spawnDelayRange: {x: 4, y: 8}
   maxActiveCustomers: 4
 --- !u!4 &1974894605
 Transform:
@@ -7860,7 +8198,16 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3525340771454152625, guid: eb751d7214bc5cf4995a2df9830ff7e4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 2068569434295001685, guid: eb751d7214bc5cf4995a2df9830ff7e4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 5955787135239599926, guid: eb751d7214bc5cf4995a2df9830ff7e4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: eb751d7214bc5cf4995a2df9830ff7e4, type: 3}
 --- !u!4 &2112407430 stripped
 Transform:
