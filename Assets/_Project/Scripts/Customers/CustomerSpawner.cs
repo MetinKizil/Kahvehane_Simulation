@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using KanBagi.Core;
+using KanBagi.Data;
 using KanBagi.Shop;
 using UnityEngine;
 
@@ -17,6 +18,9 @@ namespace KanBagi.Customers
     {
         [Header("Musteri")]
         [SerializeField] private GameObject customerPrefab;
+        [Tooltip("Gelebilecek musteri tipleri. Itibari yetenler arasindan agirlikli secilir. " +
+                 "Bos birakilirsa herkes prefab'daki varsayilan musteri olur.")]
+        [SerializeField] private List<CustomerProfile> profiles = new List<CustomerProfile>();
 
         [Header("Noktalar")]
         [Tooltip("Musterinin dukkana girdigi nokta. Bos birakilirsa spawner'in kendi konumu.")]
@@ -94,10 +98,38 @@ namespace KanBagi.Customers
 
             activeCustomers.Add(customer);
             customer.OnLeft += HandleCustomerLeft;
-            customer.Initialize(ExitPosition);
+            customer.Initialize(ExitPosition, PickProfile());
 
             OnCustomerSpawned?.Invoke(customer);
         }
+
+        /// <summary>Itibari yeten profiller arasindan agirlikli secim. Uygun profil yoksa null (varsayilan musteri).</summary>
+        private CustomerProfile PickProfile()
+        {
+            int reputation = ReputationManager.Instance != null ? ReputationManager.Instance.CurrentReputation : 0;
+
+            int totalWeight = 0;
+            foreach (CustomerProfile profile in profiles)
+            {
+                if (IsEligible(profile, reputation)) totalWeight += profile.SpawnWeight;
+            }
+
+            if (totalWeight == 0) return null;
+
+            int roll = UnityEngine.Random.Range(0, totalWeight);
+            foreach (CustomerProfile profile in profiles)
+            {
+                if (!IsEligible(profile, reputation)) continue;
+
+                roll -= profile.SpawnWeight;
+                if (roll < 0) return profile;
+            }
+
+            return null;
+        }
+
+        private static bool IsEligible(CustomerProfile profile, int reputation) =>
+            profile != null && profile.SpawnWeight > 0 && reputation >= profile.RequiredReputation;
 
         private void HandleCustomerLeft(Customer customer)
         {

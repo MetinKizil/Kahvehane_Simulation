@@ -8034,6 +8034,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Customers.CustomerSpawner
   customerPrefab: {fileID: 946487281903710997, guid: 9c0b79a6c1a99d74e879dcc150eebc42, type: 3}
+  profiles:
+  - {fileID: 11400000, guid: 6f13d2d00bb3449a9051419d0d0ce47d, type: 2}
+  - {fileID: 11400000, guid: 0786cff8510744a4be41b45b2877e1f3, type: 2}
+  - {fileID: 11400000, guid: 8722406ea0f0480e8336aa506d9c6342, type: 2}
+  - {fileID: 11400000, guid: e017a91b770444e7bc119fa70c976c0f, type: 2}
   spawnPoint: {fileID: 1822745117}
   exitPoint: {fileID: 1822745117}
   firstSpawnDelay: 3

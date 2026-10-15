@@ -52,12 +52,20 @@ namespace KanBagi.Customers
         [Tooltip("Yol bulunamazsa bu sure sonunda takilip kalmamak icin devam edilir.")]
         [SerializeField] private float moveTimeout = 30f;
 
+        // URP Lit ve Standard shader'larin ana renk ozellikleri.
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
+
         private NavMeshAgent agent;
         private Table reservedTable;
         private Vector3 exitPosition;
         private TeaGlass servedGlass;
+        private CustomerProfile profile;
 
         public CustomerState State { get; private set; } = CustomerState.Arriving;
+
+        /// <summary>Musterinin tipi (atanmamissa null: prefab'daki varsayilan degerler kullanilir).</summary>
+        public CustomerProfile Profile => profile;
         public bool IsWaitingForOrder => State == CustomerState.WaitingForOrder;
 
         /// <summary>Siparisi teslim edildi mi? Gunluk ozet bunu okur.</summary>
@@ -84,16 +92,31 @@ namespace KanBagi.Customers
         }
 
         /// <summary>Spawner tarafindan cagrilir; musterinin yasam dongusunu baslatir.</summary>
-        public void Initialize(Vector3 exit)
+        public void Initialize(Vector3 exit, CustomerProfile customerProfile = null)
         {
             exitPosition = exit;
+            profile = customerProfile;
+
+            ApplyBodyColor();
             ResolveOrder();
             StartCoroutine(LifeRoutine());
         }
 
+        /// <summary>Profilin rengini govdeye verir. Malzeme kopyalanmaz (MaterialPropertyBlock).</summary>
+        private void ApplyBodyColor()
+        {
+            if (profile == null || !TryGetComponent(out Renderer body)) return;
+
+            var block = new MaterialPropertyBlock();
+            body.GetPropertyBlock(block);
+            block.SetColor(BaseColorId, profile.BodyColor);
+            block.SetColor(ColorId, profile.BodyColor);
+            body.SetPropertyBlock(block);
+        }
+
         /// <summary>
-        /// Inspector'da siparis atanmamissa dukkanin menusunden rastgele secer.
-        /// Menu kilitli icecekleri icermez; yani sadece YAPABILDIGIMIZ seyler istenir.
+        /// Inspector'da siparis atanmamissa once profilin favorilerinden (menude olanlar), yoksa
+        /// dukkanin menusunden rastgele secer. Menu kilitli icecekleri icermez; sadece YAPABILDIGIMIZ seyler istenir.
         /// </summary>
         private void ResolveOrder()
         {
@@ -105,7 +128,33 @@ namespace KanBagi.Customers
                 return;
             }
 
-            desiredOrder = MenuManager.Instance.GetRandomBeverage();
+            desiredOrder = PickFavoriteOnMenu() ?? MenuManager.Instance.GetRandomBeverage();
+        }
+
+        /// <summary>Profilin menude bulunan favorileri arasindan agirlikli secim. Hicbiri yoksa null.</summary>
+        private ItemData PickFavoriteOnMenu()
+        {
+            if (profile == null) return null;
+
+            int totalWeight = 0;
+            foreach (DrinkPreference preference in profile.FavoriteDrinks)
+            {
+                if (preference.Weight > 0 && MenuManager.Instance.IsOnMenu(preference.Beverage))
+                    totalWeight += preference.Weight;
+            }
+
+            if (totalWeight == 0) return null;
+
+            int roll = UnityEngine.Random.Range(0, totalWeight);
+            foreach (DrinkPreference preference in profile.FavoriteDrinks)
+            {
+                if (preference.Weight <= 0 || !MenuManager.Instance.IsOnMenu(preference.Beverage)) continue;
+
+                roll -= preference.Weight;
+                if (roll < 0) return preference.Beverage;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -178,12 +227,14 @@ namespace KanBagi.Customers
             }
         }
 
-        /// <summary>Temel sabir x dukkandaki sabir carpani (okey takimi vb.).</summary>
+        /// <summary>Temel sabir x profilin sabri x dukkandaki sabir carpani (okey takimi vb.).</summary>
         private float GetEffectivePatience()
         {
             float multiplier = CustomerModifiers.Instance != null
                 ? CustomerModifiers.Instance.PatienceMultiplier
                 : 1f;
+
+            if (profile != null) multiplier *= profile.PatienceMultiplier;
 
             return Mathf.Max(0.1f, patienceDuration * multiplier);
         }
@@ -210,7 +261,8 @@ namespace KanBagi.Customers
             // Musteri icerken bardak masadan alinamaz.
             SetServedGlassPickupEnabled(false);
 
-            yield return new WaitForSeconds(drinkDuration);
+            float duration = profile != null ? drinkDuration * profile.DrinkDurationMultiplier : drinkDuration;
+            yield return new WaitForSeconds(duration);
 
             FinishDrink();
         }
@@ -277,7 +329,8 @@ namespace KanBagi.Customers
         {
             if (product != null && EconomyManager.Instance != null)
             {
-                PaidAmount = product.SellPrice;
+                // Bahsis de ciroya girer: gunluk ozet PaidAmount'u okur.
+                PaidAmount = product.SellPrice + (profile != null ? profile.Tip : 0);
                 EconomyManager.Instance.AddMoney(PaidAmount);
             }
 
@@ -285,12 +338,13 @@ namespace KanBagi.Customers
                 ReputationManager.Instance.AddReputation(reputationOnServed);
         }
 
-        /// <summary>Siparisi gelmedi: mahalledeki itibarimiz zarar gorur.</summary>
+        /// <summary>Siparisi gelmedi: mahalledeki itibarimiz zarar gorur (profil varsa onun cezasi gecerli).</summary>
         private void LosePatience()
         {
-            if (reputationOnAngryLeave <= 0 || ReputationManager.Instance == null) return;
+            int penalty = profile != null ? profile.ReputationOnAngryLeave : reputationOnAngryLeave;
+            if (penalty <= 0 || ReputationManager.Instance == null) return;
 
-            ReputationManager.Instance.AddReputation(-reputationOnAngryLeave);
+            ReputationManager.Instance.AddReputation(-penalty);
         }
 
         /// <summary>Masaya oturur: agent kapatilir ve masaya donulur.</summary>

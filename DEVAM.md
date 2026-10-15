@@ -73,7 +73,7 @@ Oyun **eşli (co-op) oynanacak şekilde** çıkacak. Örnek senaryo: biri tezgah
 ```
 Assets/_Project/
 ├── Prefabs/           (CayBardagi, Musteri, Kumarbaz, ...)
-├── ScriptableObjects/ (Cay)
+├── ScriptableObjects/ (Cay, ..., MusteriProfilleri/)
 ├── Scenes/            (Dukkan)
 ├── Materials/
 └── Scripts/
@@ -81,12 +81,14 @@ Assets/_Project/
                        DailyStatsManager, ISaveable, SaveManager, PropertyManager, BalanceLogger
     ├── Customers/     Customer, CustomerSpawner, CustomerModifiers, CustomerPatienceBoost
     ├── Data/          ItemData, ItemDatabase, ShopCatalog, UpgradeData, UpgradeCatalog,
-                       PropertyData, PropertyCatalog, StoryData, WhisperData, TextPreset
+                       PropertyData, PropertyCatalog, StoryData, WhisperData, TextPreset,
+                       CustomerProfile
     ├── Delivery/      DeliveryManager
     ├── Editor/        RowPrefabBuilder, ReportPanelBuilder, SaveMenuItems, SignPrefabBuilder,
                        GamblingSignBuilder, MafiaPrefabBuilder, PolicePrefabBuilder,
                        BalancePresetApplier, GamblerPrefabBuilder, NavMeshChecker,
-                       StoryPanelBuilder, WhisperLineBuilder, TextPresetApplier
+                       StoryPanelBuilder, WhisperLineBuilder, TextPresetApplier,
+                       CustomerProfileLinker
     ├── Illegal/       GamblingTable, SuspicionManager, MafiaManager, MafiaCollector,
                        PoliceManager, PoliceOfficer, Gambler, GamblerSpawner
     ├── Neighborhood/  PropertyBuilding, PropertyVisualSwitch
@@ -517,6 +519,39 @@ Polis, teslimat, tahsildar, kumar, mülk ve gün sonu metinleri fısıltılarla 
 
 **Test:** gün sonu başlığı, teslimat bildirimleri, kumar masası istemleri ve tabela, tahsildar, polis baskını mesajları ve sahip olunan bina istemi yeni metinlerle görünüyor. Kullanıcı onayladı.
 
+### 10c planı — Dükkan genişletme ve çeşitlilik (onaylandı, 2026-10-15)
+| Adım | İçerik |
+|---|---|
+| **10c-1** ✅ | Müşteri profilleri (renk, sabır, zevk, bahşiş, itibarla açılma) |
+| **10c-2** | Masa oyunları: İskambil ve Domino upgrade'leri okey gibi masada belirir; oyunlu masadaki müşteri içtikten sonra **bir tur daha** sipariş verebilir |
+| **10c-3** | Yeni içecek: Sahlep (Sahlep Makinesi upgrade'i + Sahlep Tozu) — tamamen veri, `TeaStove` deseni |
+| **10c-4** | Dükkan genişletme: "Bahçe" upgrade'i yeni zemin + 2 masa açar; builder ile kurulur, `NavMesh'i Yeniden Bake Et` ile bake. Geometri primitive, görsel 11'de |
+
+Sıranın mantığı: profiller her şeyin temeli → masa başı gelir (ikinci tur) → menü çeşitliliği → en son fazla masa (talep oluştuktan sonra anlamlı).
+
+### Adım 10c-1 — Müşteri profilleri ✅
+Bütün müşteriler artık aynı değil: her birinin tipi var, tipine göre renk, sabır, zevk ve bahşiş değişiyor; bazı tipler itibarla açılıyor.
+
+| Profil (asset) | Renk | Sabır | Zevk (ağırlık) | Bahşiş | Kızarsa | Görünür | Gelme ağırlığı |
+|---|---|---|---|---|---|---|---|
+| `EmekliDayi` | gri | ×1.5 | Çay 4, Oralet 1 | 0 | −1 | baştan | 3 |
+| `Ogrenci` | mavi | ×1.0 | Oralet 3, Çay 2 | 0 | −1 | baştan | 3 |
+| `Esnaf` | kahverengi | ×0.7 | Kahve 3, Çay 1 | +5 TL | −2 | itibar 60 | 2 |
+| `Kabadayi` | siyah | ×0.6 | Çay 1 | +10 TL | **−4** | itibar 140 | 1 |
+
+- `CustomerProfile` (`KanBagi.Data`, `Create > Kan Bagi > Customer Profile`): `bodyColor`, `patienceMultiplier`, `drinkDurationMultiplier` (hepsinde 1), `favoriteDrinks` (`DrinkPreference`: içecek + ağırlık), `tip`, `reputationOnAngryLeave`, `requiredReputation`, `spawnWeight`. Asset'ler `ScriptableObjects/MusteriProfilleri/`.
+- `CustomerSpawner.profiles`: itibarı yeten profiller arasından **ağırlıklı** seçim, `customer.Initialize(exit, profile)`. Liste boşsa / uygun profil yoksa eski davranış (prefab varsayılanları).
+- `Customer`:
+  - Renk `MaterialPropertyBlock` ile (`_BaseColor` + `_Color`) — malzeme kopyalanmaz.
+  - Sipariş: profilin favorilerinden **menüde olanlar** arasında ağırlıklı; hiçbiri menüde yoksa `MenuManager.GetRandomBeverage()`.
+  - Sabır = temel × profil × `CustomerModifiers` (okey). İçme süresi × profil çarpanı.
+  - `PaidAmount = fiyat + bahşiş` → **bahşiş günlük cironun içinde**.
+  - Kızgın gidiş cezası profilden gelir (prefab'daki `reputationOnAngryLeave` sadece profilsiz müşteride kullanılır).
+- `Kan Bagi > Musteri Profillerini Bagla` (`CustomerProfileLinker`): projedeki **tüm** `CustomerProfile` asset'lerini Spawner'a itibar sırasıyla bağlar. **Yeni profil eklenince tekrar çalıştır + kaydet.**
+- ⚠️ **Denge etkisi:** 9a-3'te kızgın müşteri herkes için −2 yapılmıştı; artık profilden geliyor → erken oyunda (Dayı/Öğrenci) −1. Erken oyun biraz daha affedici.
+
+**Test:** gerçek değerlerde sadece gri/mavi geliyor, oralet yokken öğrenci çay istiyor, dayı daha sabırlı; test değerlerinde kahverengi ve siyah da geliyor, esnaf kahve istiyor, kabadayı 25 TL ödüyor ve bekletilince −4 itibar; ciro bahşişi içeriyor. Kullanıcı onayladı.
+
 ---
 
 ## 7. SAHNE KURULUMU (`Assets/Scenes/SampleScene.unity`)
@@ -558,7 +593,7 @@ Polis, teslimat, tahsildar, kumar, mülk ve gün sonu metinleri fısıltılarla 
 | `Masa3` (Cube) — **başta pasif** | (0, 0.4, -2) | Table (Yeni Masa upgrade'i açar; NavMesh **açıkken** bake edildi) |
 | `OkeyTakimi1/2/3` — masaların child'ı, **başta pasif** | yerel (0.3, 0.5, 0) | — (Box Collider **yok**) |
 | `GirisNoktasi` (Empty) | (0, 0, -4.5) | — (spawn + exit) |
-| `Spawner` (Empty) | — | CustomerSpawner |
+| `Spawner` (Empty) | — | CustomerSpawner (**profiles**: EmekliDayi, Ogrenci, Esnaf, Kabadayi — `Musteri Profillerini Bagla` bağlar) |
 | `YonetimPC` (Cube) | (2, 0.5, 2) | ComputerStation (catalog: MalzemeKatalogu) |
 | `TeslimatNoktasi` (Empty) | (2, 0, -3.5) | — (kapının yanı, koliler buraya düşer) |
 | `Mahalle` (Empty) | — | — |
@@ -573,7 +608,7 @@ Polis, teslimat, tahsildar, kumar, mülk ve gün sonu metinleri fısıltılarla 
 
 **Prefab'lar:**
 - `CayBardagi` (Cylinder 0.08/0.05/0.08 + child `Sivi` + HoldableItem + TeaGlass)
-- `Musteri` (Capsule + NavMeshAgent + Customer + OrderBubbleUI + child `SiparisBalonu` (3D TMP + Billboard)) — **Desired Order BOŞ** (menüden rastgele seçilir), Drink Duration 6, Patience 25, itibar servis +1 / kızgın gidiş **−2**
+- `Musteri` (Capsule + NavMeshAgent + Customer + OrderBubbleUI + child `SiparisBalonu` (3D TMP + Billboard)) — **Desired Order BOŞ** (menüden rastgele seçilir), Drink Duration 6, Patience 25, itibar servis +1 / kızgın gidiş **−2** (10c-1'den beri sabır/içme süresi profil çarpanıyla, kızgın gidiş cezası **profilden** gelir; prefab değerleri temel ve profilsiz müşteri için)
 - `UrunSatiri`, `UpgradeSatiri`, `EmlakSatiri` — **elle kurulmaz**, `Kan Bagi > Satir Prefablarini Olustur` menüsü üretir
 - `GunlukOzetPaneli` — **elle kurulmaz**, `Kan Bagi > Gunluk Ozet Panelini Olustur` menüsü üretir
 - `EmlakTabelasi` — **elle kurulmaz/yerleştirilmez**, `Kan Bagi > Emlak Tabelasi Prefabini Olustur` + `Kan Bagi > Tabelalari Binalara Yerlestir`
@@ -603,6 +638,7 @@ Polis, teslimat, tahsildar, kumar, mülk ve gün sonu metinleri fısıltılarla 
 - `GirisHikayesi` (StoryData) — giriş ekranının 5 sayfası ve buton yazıları
 - `MahalleFisiltilari` (WhisperData) — fısıltı metinleri, kumarhane upgrade referansı, itibar barajları (60/140/240)
 - `ArayuzMetinleri` (TextPreset) — sahne/prefab metin alanlarının yeni değerleri; `Kan Bagi > Metinleri Uygula` yazar
+- `MusteriProfilleri/` (CustomerProfile) — `EmekliDayi`, `Ogrenci`, `Esnaf`, `Kabadayi` (değerler bölüm 6.8, 10c-1)
 
 > ✅ **Sahne GERÇEK değerlerde** (Adım 9a-1). Hızlı test için `Kan Bagi > Denge > Test Degerlerini Uygula`, geri dönmek için `Gercek Degerleri Uygula`. Mod değiştirdikten sonra sahneyi kaydet; sıfırdan test için `Kan Bagi > Kaydi Sil`.
 
@@ -610,7 +646,9 @@ Polis, teslimat, tahsildar, kumar, mülk ve gün sonu metinleri fısıltılarla 
 
 ## 8. ŞU AN NEREDE KALDIK
 
-**Adım 10a-2b bitti ve test edildi — 10a (HİKAYE VE TON) KAPANDI.** Polis, teslimat, tahsildar, kumar, mülk ve gün sonu metinleri intikam tonunda; metinler `ArayuzMetinleri.asset`'te, `Kan Bagi > Metinleri Uygula` ile sahne ve prefab'lara yazılıyor. **Sıradaki iş: 10c — dükkan genişletme** (plan ayrıca onaylanacak).
+**Adım 10c-1 bitti ve test edildi.** Müşteriler artık dört tipte (Emekli Dayı, Öğrenci, Esnaf, Kabadayı): renkleri, sabırları, içecek zevkleri ve bahşişleri farklı; Esnaf itibar 60'ta, Kabadayı 140'ta gelmeye başlıyor; bahşiş ciroya giriyor. **Sıradaki iş: 10c-2 — masa oyunları** (İskambil + Domino upgrade'leri, oyunlu masada ikinci tur sipariş; plan ayrıca onaylanacak).
+
+**Adım 10a-2b bitti ve test edildi — 10a (HİKAYE VE TON) KAPANDI.** Polis, teslimat, tahsildar, kumar, mülk ve gün sonu metinleri intikam tonunda; metinler `ArayuzMetinleri.asset`'te, `Kan Bagi > Metinleri Uygula` ile sahne ve prefab'lara yazılıyor.
 
 **Adım 10a-2a bitti ve test edildi.** Mahalle fısıltıları çalışıyor: ilk sabah, tahsildar geliş/ödeme/ret, mülk ve kumarhane alımı, itibar barajlarında üst ortada intikam tonunda bir satır beliriyor; kayıttan devam edince eski olaylar tekrar fısıldanmıyor.
 
@@ -800,7 +838,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**10a-1**~~ ✅ | Hikaye giriş ekranı — **bitti** | Oyuna kimlik katar, küçük iş |
 | ~~**10a-2a**~~ ✅ | Mahalle fısıltıları (olaylara eşlik eden ton satırı + ilk sabah yönlendirmesi) — **bitti** | Ucuz, kimliği oyunun içine taşır |
 | ~~**10a-2b**~~ ✅ | Mevcut metinlerin tonu (sadece tablodakiler), `ArayuzMetinleri` + `Metinleri Uygula` — **bitti** | Fısıltılarla aynı tonu mevcut arayüze yayar |
-| **10c** | **Dükkan genişletme + iskambil/domino + müşteri ve stok çeşitliliği — SIRADAKİ** | Faz 2'den kalan; mekan büyüdükçe kumarhane odası da anlam kazanır |
+| **10c** | **Dükkan genişletme + iskambil/domino + müşteri ve stok çeşitliliği — DEVAM EDİYOR** (10c-1 ✅ profiller; sıradaki 10c-2 masa oyunları, sonra 10c-3 sahlep, 10c-4 bahçe — bölüm 6.8) | Faz 2'den kalan; mekan büyüdükçe kumarhane odası da anlam kazanır |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
 | **11** | Görsel cila, ses, ana menü, kayıt slotları | **En sona**: mekanikler değişince geometri/model yeniden yapılır |
@@ -823,7 +861,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum:** Commit'ler yerelde hazır ama **henüz push edilmedi** — `gh auth login` cihaz-kodu doğrulama maili gelmediği için giriş yapılamadı. **Push sorununu çözmeye çalışmadan önce kullanıcıya sor.**
 ```
-(yeni)   Adim 10a-2b: mevcut arayuz metinlerinin tonu
+(yeni)   Adim 10c-1: musteri profilleri
+971ad07  Adim 10a-2b: mevcut arayuz metinlerinin tonu
 177e081  Adim 10a-2a: mahalle fisiltilari
 2de9851  Adim 10a-1: hikaye giris ekrani
 97b0438  Adim 9a-2: kumarhane isletmesi - NPC kumarbazlar ve NavMesh duzeltmesi
@@ -850,7 +889,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (10c — dükkan genişletme) planını anlat, onay al**, sonra kod yaz.
+3. **Sıradaki adımın (10c-2 — masa oyunları: İskambil/Domino + ikinci tur sipariş) planını anlat, onay al**, sonra kod yaz. 10c'nin genel planı bölüm 6.8'de.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.
