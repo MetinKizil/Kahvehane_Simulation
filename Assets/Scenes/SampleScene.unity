@@ -328,10 +328,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.UI.PoliceNotificationUI
   messageText: {fileID: 0}
-  warningMessage: DEVRIYE MAHALLEDE! Kumar masasini ort!
-  arrivedMessage: POLIS DUKKANDA - etrafa bakiyor
-  bustedFormat: 'YAKALANDIN! Ceza: {0} TL'
-  cleanMessage: Kontrol temiz gecti
+  warningMessage: "K\xF6\u015Fede ekip arabas\u0131 var! Masay\u0131 \xF6rt, \xE7abuk!"
+  arrivedMessage: "Memur i\xE7eride, g\xF6z\xFC her yerde."
+  bustedFormat: "Bast\u0131lar! {0} TL ceza, itibar\u0131n yerlerde."
+  cleanMessage: "Memur eli bo\u015F d\xF6nd\xFC. Bu sefer."
   resultDuration: 5
   warningColor: {r: 0.95, g: 0.75, b: 0.2, a: 1}
   dangerColor: {r: 0.9, g: 0.3, b: 0.3, a: 1}
@@ -918,8 +918,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.UI.DeliveryNotificationUI
   messageText: {fileID: 0}
   showDuration: 4
-  queuedFormat: 'Siparis verildi: {0} x{1} - yolda'
-  deliveredFormat: 'Siparisin kapida: {0} x{1}'
+  queuedFormat: "Sipari\u015F verildi: {0} x{1}, kurye yolda"
+  deliveredFormat: "Kurye b\u0131rakt\u0131: {0} x{1} kap\u0131da"
 --- !u!114 &178853582
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1647,7 +1647,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46f2e3699196b5f4e9970f9929bd1be9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Core.ReputationManager
-  startingReputation: 300
+  startingReputation: 0
 --- !u!114 &334363805
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1660,7 +1660,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6c2c9b8360c5414abaa0a96e8d1759e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Economy.EconomyManager
-  startingMoney: 10000
+  startingMoney: 250
 --- !u!4 &334363806
 Transform:
   m_ObjectHideFlags: 0
@@ -1732,7 +1732,7 @@ MonoBehaviour:
   deliveryPoint: {fileID: 233533965}
   dropHeight: 0.6
   scatterRadius: 0.35
-  deliveryDelay: 8
+  deliveryDelay: 20
 --- !u!114 &334363811
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1883,8 +1883,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29e40df4bb3a2ea47afa84c7032d63a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Core.DayCycleManager
-  dayDurationMinutes: 1
-  nightTimeScale: 1
+  dayDurationMinutes: 6
+  nightTimeScale: 2
   openHour: 8
   closeHour: 22
   lastCallHours: 1
@@ -1995,11 +1995,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0389c22f32fb03445a1ba19d38dd4470, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Illegal.PoliceManager
-  minimumSuspicionRatio: 0
-  maxRaidChance: 1
+  minimumSuspicionRatio: 0.2
+  maxRaidChance: 0.6
   warningSeconds: 20
-  inspectionSeconds: 3
-  earliestRaidDay: 1
+  inspectionSeconds: 12
+  earliestRaidDay: 4
   fineAmount: 1000
   protectedMoney: 150
   reputationPenalty: 10
@@ -3329,8 +3329,8 @@ MonoBehaviour:
   property: {fileID: 11400000, guid: bc97dfc61bf2078409badbb968aba985, type: 2}
   forSaleFormat: '{0} - {1} TL'
   reputationLockedFormat: Itibar {0} gerekli
-  notEnoughMoneyFormat: '{0} TL gerekli'
-  ownedFormat: Senin dukkanin - Gunluk {0} TL
+  notEnoughMoneyFormat: "{0} TL laz\u0131m"
+  ownedFormat: "Art\u0131k bizim - G\xFCnl\xFCk {0} TL"
 --- !u!65 &689959168
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3949,10 +3949,10 @@ MonoBehaviour:
   coverVisual: {fileID: 1069694715}
   exposedVisuals:
   - {fileID: 1416222798}
-  playFormat: Kumar Oyna ({0} TL)
-  noMoneyFormat: '{0} TL gerekli'
-  hideMessage: Masayi Gizle
-  revealMessage: Ortuyu Ac
+  playFormat: Masaya otur ({0} TL)
+  noMoneyFormat: "{0} TL laz\u0131m"
+  hideMessage: "Masay\u0131 \xF6rt"
+  revealMessage: "\xD6rt\xFCy\xFC kald\u0131r"
   maxSeats: 2
   seatClearance: 0.6
   seatSpacing: 1
@@ -4065,7 +4065,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Illegal.GamblerSpawner
   gamblerPrefab: {fileID: 807908938986674379, guid: b15f66e3a7bf92e4a8b1b5f37e135704, type: 3}
   entryPoint: {fileID: 1822745117}
-  spawnDelayRange: {x: 2, y: 3}
+  spawnDelayRange: {x: 3, y: 6}
 --- !u!208 &940122833
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -5598,8 +5598,8 @@ MonoBehaviour:
   property: {fileID: 11400000, guid: 3e2b955421428564bbe7e5e57b6e3d4d, type: 2}
   forSaleFormat: '{0} - {1} TL'
   reputationLockedFormat: Itibar {0} gerekli
-  notEnoughMoneyFormat: '{0} TL gerekli'
-  ownedFormat: Senin dukkanin - Gunluk {0} TL
+  notEnoughMoneyFormat: "{0} TL laz\u0131m"
+  ownedFormat: "Art\u0131k bizim - G\xFCnl\xFCk {0} TL"
 --- !u!65 &1265885544
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -8036,8 +8036,8 @@ MonoBehaviour:
   customerPrefab: {fileID: 946487281903710997, guid: 9c0b79a6c1a99d74e879dcc150eebc42, type: 3}
   spawnPoint: {fileID: 1822745117}
   exitPoint: {fileID: 1822745117}
-  firstSpawnDelay: 2
-  spawnDelayRange: {x: 4, y: 8}
+  firstSpawnDelay: 3
+  spawnDelayRange: {x: 6, y: 14}
   maxActiveCustomers: 4
 --- !u!4 &1974894605
 Transform:
@@ -8379,8 +8379,8 @@ MonoBehaviour:
   property: {fileID: 11400000, guid: 72c6ec8f13d37ca4ea81fab87ad5c794, type: 2}
   forSaleFormat: '{0} - {1} TL'
   reputationLockedFormat: Itibar {0} gerekli
-  notEnoughMoneyFormat: '{0} TL gerekli'
-  ownedFormat: Senin dukkanin - Gunluk {0} TL
+  notEnoughMoneyFormat: "{0} TL laz\u0131m"
+  ownedFormat: "Art\u0131k bizim - G\xFCnl\xFCk {0} TL"
 --- !u!65 &2044269276
 BoxCollider:
   m_ObjectHideFlags: 0

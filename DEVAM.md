@@ -81,12 +81,12 @@ Assets/_Project/
                        DailyStatsManager, ISaveable, SaveManager, PropertyManager, BalanceLogger
     ├── Customers/     Customer, CustomerSpawner, CustomerModifiers, CustomerPatienceBoost
     ├── Data/          ItemData, ItemDatabase, ShopCatalog, UpgradeData, UpgradeCatalog,
-                       PropertyData, PropertyCatalog, StoryData, WhisperData
+                       PropertyData, PropertyCatalog, StoryData, WhisperData, TextPreset
     ├── Delivery/      DeliveryManager
     ├── Editor/        RowPrefabBuilder, ReportPanelBuilder, SaveMenuItems, SignPrefabBuilder,
                        GamblingSignBuilder, MafiaPrefabBuilder, PolicePrefabBuilder,
                        BalancePresetApplier, GamblerPrefabBuilder, NavMeshChecker,
-                       StoryPanelBuilder, WhisperLineBuilder
+                       StoryPanelBuilder, WhisperLineBuilder, TextPresetApplier
     ├── Illegal/       GamblingTable, SuspicionManager, MafiaManager, MafiaCollector,
                        PoliceManager, PoliceOfficer, Gambler, GamblerSpawner
     ├── Neighborhood/  PropertyBuilding, PropertyVisualSwitch
@@ -491,6 +491,32 @@ Ekranın üst ortasında, intikam tonunda kısa bir satır belirir (italik, ambe
 
 **Test:** ilk sabah mesajı, mülk ve kumarhane alımı, tahsildar geliş/ödeme/ret mesajları görünüyor; kayıttan devam edince eski olaylar tekrar fısıldanmıyor. Kullanıcı onayladı. (Test modunda itibar 300'le başladığı için baraj mesajları gelmez — gerçek değerlerle görülür.)
 
+### Adım 10a-2b — Mevcut metinlerin tonu ✅
+Polis, teslimat, tahsildar, kumar, mülk ve gün sonu metinleri fısıltılarla aynı tona çekildi. **Kapsam (kullanıcı kararı): sadece tablodaki metinler** — geri kalan arayüz ASCII kaldı ("Itibar", "Gun", "YENI GUN"...).
+
+| Bileşen.alan | Yeni metin |
+|---|---|
+| `PoliceNotificationUI.warningMessage` | Köşede ekip arabası var! Masayı ört, çabuk! |
+| `PoliceNotificationUI.arrivedMessage` | Memur içeride, gözü her yerde. |
+| `PoliceNotificationUI.bustedFormat` | Bastılar! {0} TL ceza, itibarın yerlerde. |
+| `PoliceNotificationUI.cleanMessage` | Memur eli boş döndü. Bu sefer. |
+| `PoliceOfficer.idlePrompt` | Memur etrafı kolaçan ediyor |
+| `MafiaCollector.idlePrompt` / `payFormat` | Takım elbiseli adam bekliyor / Haracı öde ({0} TL) |
+| `GamblingTable.playFormat` / `hideMessage` / `revealMessage` | Masaya otur ({0} TL) / Masayı ört / Örtüyü kaldır |
+| `GamblingSignUI.houseFormat` | KASAYA +{0} TL |
+| `DeliveryNotificationUI.queuedFormat` / `deliveredFormat` | Sipariş verildi: {0} x{1}, kurye yolda / Kurye bıraktı: {0} x{1} kapıda |
+| `PropertyBuilding.ownedFormat` | Artık bizim - Günlük {0} TL |
+| `DailyReportUI.titleFormat` | GÜN {0} — HESAP DEFTERİ |
+| `noMoneyFormat` / `notEnoughMoneyFormat` (tahsildar, kumar, bina) | {0} TL lazım |
+
+- `TextPreset` (`KanBagi.Data`, `Create > Kan Bagi > Text Preset`) + **`ArayuzMetinleri.asset`**: `FieldText` listesi (bileşen adı + alan adı + metin). **Arayüz metinlerinin tek kaynağı** — Türkçe karakter burada, kodda değil.
+- `Kan Bagi > Metinleri Uygula` (`TextPresetApplier`): önce `_Project/Prefabs` altındaki **prefab'lara** (`LoadPrefabContents` → kaydet), sonra açık **sahneye** (pasifler dahil, Undo destekli) yazar. Console'a `obje > Bilesen.alan: eski -> yeni` raporu; tekrar çalıştırılınca "0 alan degisti". İlk çalıştırmada 22 alan değişti (Tahsildar, PolisMemuru, KumarTabelasi, GunlukOzetPaneli prefab'ları + sahnede polis/teslimat bildirimi, kumar masası, 3 bina).
+- **Uygulanmayan satır:** emlak tabelasındaki "SENIN - Gunluk" metni prefab'da artık kullanılmayan **eski bir alanda** (`PropertySignUI` bu alanı artık okumuyor; tabela mülk alınınca kayboluyor). Ekranda görünmediği için atlandı.
+- ⚠️ **Builder prefab'ı yeniden üretirse** (ör. `Polis Prefabini Olustur`, `Kumar Tabelasini Olustur`, `Gunluk Ozet Panelini Olustur`) metinler koddaki ASCII varsayılanlara döner → **`Metinleri Uygula`'yı tekrar çalıştır.**
+- **ASCII kalanlar (→ 11 cila):** Inspector'daki diğer metinler ve **kodun içinde üretilen istemler** ("Temiz Bardak Al", "Elinde: ...", "Koliyi Bosalt", "{X} Doldur", "Elinde bos bardak olmali"). Tam Türkçe için bunlar da `ArayuzMetinleri`'ne / alanlara taşınmalı.
+
+**Test:** gün sonu başlığı, teslimat bildirimleri, kumar masası istemleri ve tabela, tahsildar, polis baskını mesajları ve sahip olunan bina istemi yeni metinlerle görünüyor. Kullanıcı onayladı.
+
 ---
 
 ## 7. SAHNE KURULUMU (`Assets/Scenes/SampleScene.unity`)
@@ -576,6 +602,7 @@ Ekranın üst ortasında, intikam tonunda kısa bir satır belirir (italik, ambe
 - `EmlakKatalogu` (PropertyCatalog) — üç mülkün tamamı (**kayıt eşlemesi buradan yapılır, boş bırakılamaz**)
 - `GirisHikayesi` (StoryData) — giriş ekranının 5 sayfası ve buton yazıları
 - `MahalleFisiltilari` (WhisperData) — fısıltı metinleri, kumarhane upgrade referansı, itibar barajları (60/140/240)
+- `ArayuzMetinleri` (TextPreset) — sahne/prefab metin alanlarının yeni değerleri; `Kan Bagi > Metinleri Uygula` yazar
 
 > ✅ **Sahne GERÇEK değerlerde** (Adım 9a-1). Hızlı test için `Kan Bagi > Denge > Test Degerlerini Uygula`, geri dönmek için `Gercek Degerleri Uygula`. Mod değiştirdikten sonra sahneyi kaydet; sıfırdan test için `Kan Bagi > Kaydi Sil`.
 
@@ -583,7 +610,9 @@ Ekranın üst ortasında, intikam tonunda kısa bir satır belirir (italik, ambe
 
 ## 8. ŞU AN NEREDE KALDIK
 
-**Adım 10a-2a bitti ve test edildi.** Mahalle fısıltıları çalışıyor: ilk sabah, tahsildar geliş/ödeme/ret, mülk ve kumarhane alımı, itibar barajlarında üst ortada intikam tonunda bir satır beliriyor; kayıttan devam edince eski olaylar tekrar fısıldanmıyor. **Sıradaki iş: kullanıcı seçecek** — 10a-2b (mevcut polis/teslimat/tahsildar/mülk/gün sonu metinlerini tona çekmek, metin asset'i + `Kan Bagi > Metinleri Uygula` komutu; Türkçe karakter kapsamı kararı bekliyor) **veya** 10c (dükkan genişletme).
+**Adım 10a-2b bitti ve test edildi — 10a (HİKAYE VE TON) KAPANDI.** Polis, teslimat, tahsildar, kumar, mülk ve gün sonu metinleri intikam tonunda; metinler `ArayuzMetinleri.asset`'te, `Kan Bagi > Metinleri Uygula` ile sahne ve prefab'lara yazılıyor. **Sıradaki iş: 10c — dükkan genişletme** (plan ayrıca onaylanacak).
+
+**Adım 10a-2a bitti ve test edildi.** Mahalle fısıltıları çalışıyor: ilk sabah, tahsildar geliş/ödeme/ret, mülk ve kumarhane alımı, itibar barajlarında üst ortada intikam tonunda bir satır beliriyor; kayıttan devam edince eski olaylar tekrar fısıldanmıyor.
 
 **Adım 10a-1 bitti ve test edildi.** Yeni oyunda siyah ekranda 5 sayfalık intikam hikayesi anlatılıyor; okunurken saat duruyor ve oyuncu kilitli, "Ocağı Yak" ile oyun başlıyor, "Atla" çalışıyor, kayıtlı oyunda ekran gelmiyor.
 
@@ -770,8 +799,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**9a-2**~~ ✅ | **Kumarhane işletmesi: NPC'ler oynar, oyuncu kasadır** — **bitti** | En büyük oynanış değişimi. **9b'den SONRA** yapılır ki yeni istasyon/NPC kodu doğuştan co-op uyumlu olsun. |
 | ~~**10a-1**~~ ✅ | Hikaye giriş ekranı — **bitti** | Oyuna kimlik katar, küçük iş |
 | ~~**10a-2a**~~ ✅ | Mahalle fısıltıları (olaylara eşlik eden ton satırı + ilk sabah yönlendirmesi) — **bitti** | Ucuz, kimliği oyunun içine taşır |
-| **10a-2b** | Mevcut metinlerin tonu: polis/teslimat/tahsildar/kumar/mülk/gün sonu. Metinler bir asset'te, `Kan Bagi > Metinleri Uygula` sahne + prefab'lara yazar (`BalancePresetApplier` gibi). **Karar bekliyor:** sadece değişen metinler mi Türkçe karakterli, yoksa tüm Inspector metinleri mi ("Itibar" → "İtibar"). Koddaki istemler ("Temiz Bardak Al", "Elinde: ...") ASCII kalır → 11'de. **(Seçenek — kullanıcı 10a-2b mi 10c mi karar verecek)** | Fısıltılarla aynı tonu mevcut arayüze yayar |
-| **10c** | Dükkan genişletme + iskambil/domino + müşteri ve stok çeşitliliği | Faz 2'den kalan; mekan büyüdükçe kumarhane odası da anlam kazanır |
+| ~~**10a-2b**~~ ✅ | Mevcut metinlerin tonu (sadece tablodakiler), `ArayuzMetinleri` + `Metinleri Uygula` — **bitti** | Fısıltılarla aynı tonu mevcut arayüze yayar |
+| **10c** | **Dükkan genişletme + iskambil/domino + müşteri ve stok çeşitliliği — SIRADAKİ** | Faz 2'den kalan; mekan büyüdükçe kumarhane odası da anlam kazanır |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
 | **11** | Görsel cila, ses, ana menü, kayıt slotları | **En sona**: mekanikler değişince geometri/model yeniden yapılır |
@@ -794,7 +823,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum:** Commit'ler yerelde hazır ama **henüz push edilmedi** — `gh auth login` cihaz-kodu doğrulama maili gelmediği için giriş yapılamadı. **Push sorununu çözmeye çalışmadan önce kullanıcıya sor.**
 ```
-(yeni)   Adim 10a-2a: mahalle fisiltilari
+(yeni)   Adim 10a-2b: mevcut arayuz metinlerinin tonu
+177e081  Adim 10a-2a: mahalle fisiltilari
 2de9851  Adim 10a-1: hikaye giris ekrani
 97b0438  Adim 9a-2: kumarhane isletmesi - NPC kumarbazlar ve NavMesh duzeltmesi
 3a5287c  Adim 9b: co-op hazirligi - PlayerContext ve etkilesim katmani
@@ -820,7 +850,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Kullanıcıya sıradaki adımı sor: 10a-2b (mevcut metinlerin tonu) mi, 10c (dükkan genişletme) mi?** 10a-2b seçilirse önce Türkçe karakter kapsamını sor. Seçilenin planını anlat, onay al, sonra kod yaz.
+3. **Sıradaki adımın (10c — dükkan genişletme) planını anlat, onay al**, sonra kod yaz.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.
@@ -835,6 +865,8 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 - **Denge değerlerini Inspector'da elle değiştirme** — `BalancePresetApplier`'ın `Settings` tablosuna yaz, menüden uygula. Değerler tek yerde ve izlenebilir kalır.
 - **NavMesh'i elle bake etme.** Pasif (kilitli) eşyalar bake'e girmez, `NavMeshObstacle`'lı objeler de NavMeshSurface ayarı yüzünden girmezdi → NPC'ler eşyanın içinden/üstünden yürür. Her zaman `Kan Bagi > NavMesh'i Yeniden Bake Et` + sahneyi kaydet + `NavMesh Kontrol Et`. Yeni eşya kök obje olarak ve collider'lı eklenmeli ki komut onu bulsun.
 - **Türkçe oyun metni koda yazılmaz** — ScriptableObject asset'ine yazılır (kod ASCII kuralı). TMP fontu Türkçe karakterleri gösteriyor.
+- **Arayüz metnini Inspector'da elle değiştirme** — `ArayuzMetinleri.asset`'e yaz, `Kan Bagi > Metinleri Uygula`. Bir builder prefab'ı yeniden ürettiyse bu komutu tekrar çalıştır, yoksa metinler ASCII'ye döner.
+- **Commit'ten önce sahnede test değerleri kalmış mı bak** (`startingMoney: 250`, `dayDurationMinutes: 6`). 10a-2b testinden sonra sahne test değerleriyle kaydedilmişti; commit'ten önce `Gercek Degerleri Uygula` + kaydet yapıldı.
 - **Builder menüsünü kod değişikliğinden hemen sonra çalıştırma** — Unity derlemeyi bitirmeden tıklanırsa ESKİ kodla kurar (10a-1'de panel eski boyutla kuruldu). Console temizlenene / derleme çubuğu kaybolana kadar bekle, gerekirse `Ctrl+R`.
 - **Oturum yarıda kalırsa** (DEVAM.md güncellenmeden), yeni oturumda önce `git status` ile commitlenmemiş işi kontrol et — 9a-2 kodu böyle bulundu.
 4. Kod bittikten sonra Unity Editor talimatlarını adım adım ver.

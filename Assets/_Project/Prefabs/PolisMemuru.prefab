@@ -128,7 +128,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8b2d79e4e61c9a4bbd9c9c9137e2dfd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Illegal.PoliceOfficer
-  idlePrompt: Memur etrafa bakiyor
+  idlePrompt: "Memur etraf\u0131 kola\xE7an ediyor"
 --- !u!1 &4073970451741036257
 GameObject:
   m_ObjectHideFlags: 0

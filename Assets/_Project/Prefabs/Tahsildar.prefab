@@ -128,9 +128,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa708ec18d08b534c861b0d30134c460, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Illegal.MafiaCollector
-  payFormat: Haraci Ode ({0} TL)
-  noMoneyFormat: '{0} TL gerekli'
-  idlePrompt: Adam sana bakiyor
+  payFormat: "Harac\u0131 \xF6de ({0} TL)"
+  noMoneyFormat: "{0} TL laz\u0131m"
+  idlePrompt: "Tak\u0131m elbiseli adam bekliyor"
 --- !u!1 &3678693653797204592
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 068210736fd447be8dada9c03eb035d7, type: 3}
+  m_Name: ArayuzMetinleri
+  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.TextPreset
+  fields:
+  - component: PoliceNotificationUI
+    field: warningMessage
+    text: "Köşede ekip arabası var! Masayı ört, çabuk!"
+  - component: PoliceNotificationUI
+    field: arrivedMessage
+    text: "Memur içeride, gözü her yerde."
+  - component: PoliceNotificationUI
+    field: bustedFormat
+    text: "Bastılar! {0} TL ceza, itibarın yerlerde."
+  - component: PoliceNotificationUI
+    field: cleanMessage
+    text: "Memur eli boş döndü. Bu sefer."
+  - component: PoliceOfficer
+    field: idlePrompt
+    text: "Memur etrafı kolaçan ediyor"
+  - component: MafiaCollector
+    field: idlePrompt
+    text: "Takım elbiseli adam bekliyor"
+  - component: MafiaCollector
+    field: payFormat
+    text: "Haracı öde ({0} TL)"
+  - component: MafiaCollector
+    field: noMoneyFormat
+    text: "{0} TL lazım"
+  - component: GamblingTable
+    field: playFormat
+    text: "Masaya otur ({0} TL)"
+  - component: GamblingTable
+    field: hideMessage
+    text: "Masayı ört"
+  - component: GamblingTable
+    field: revealMessage
+    text: "Örtüyü kaldır"
+  - component: GamblingTable
+    field: noMoneyFormat
+    text: "{0} TL lazım"
+  - component: GamblingSignUI
+    field: houseFormat
+    text: "KASAYA +{0} TL"
+  - component: DeliveryNotificationUI
+    field: queuedFormat
+    text: "Sipariş verildi: {0} x{1}, kurye yolda"
+  - component: DeliveryNotificationUI
+    field: deliveredFormat
+    text: "Kurye bıraktı: {0} x{1} kapıda"
+  - component: PropertyBuilding
+    field: ownedFormat
+    text: "Artık bizim - Günlük {0} TL"
+  - component: PropertyBuilding
+    field: notEnoughMoneyFormat
+    text: "{0} TL lazım"
+  - component: DailyReportUI
+    field: titleFormat
+    text: "GÜN {0} — HESAP DEFTERİ"

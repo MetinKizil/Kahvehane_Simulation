@@ -869,7 +869,7 @@ MonoBehaviour:
   reputationText: {fileID: 2368052986250003912}
   nextDayButton: {fileID: 8539434633424490733}
   computerStation: {fileID: 0}
-  titleFormat: GUN {0} OZETI
+  titleFormat: "G\xDCN {0} \u2014 HESAP DEFTER\u0130"
   servedFormat: 'Servis edilen musteri: {0}'
   lostFormat: 'Kacirilan musteri: {0}'
   revenueFormat: 'Ciro: {0} TL'
