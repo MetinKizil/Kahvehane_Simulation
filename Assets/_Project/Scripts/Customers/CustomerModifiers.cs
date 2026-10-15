@@ -15,6 +15,9 @@ namespace KanBagi.Customers
         /// <summary>Sabir carpani (1 = normal, 1.5 = %50 daha uzun bekler).</summary>
         public float PatienceMultiplier { get; private set; } = 1f;
 
+        /// <summary>Musterinin ictikten sonra bir tur daha isteme ihtimali (0-1). Masa oyunlari TOPLAYARAK artirir.</summary>
+        public float SecondRoundChance { get; private set; }
+
         /// <summary>Herhangi bir carpan degistiginde tetiklenir.</summary>
         public event Action OnModifiersChanged;
 
@@ -35,6 +38,15 @@ namespace KanBagi.Customers
             if (multiplier <= 0f) return;
 
             PatienceMultiplier *= multiplier;
+            OnModifiersChanged?.Invoke();
+        }
+
+        /// <summary>Ikinci tur ihtimalini artirir (iskambil, domino...). Toplam 1'i gecemez.</summary>
+        public void AddSecondRoundChance(float chance)
+        {
+            if (chance <= 0f) return;
+
+            SecondRoundChance = Mathf.Clamp01(SecondRoundChance + chance);
             OnModifiersChanged?.Invoke();
         }
 

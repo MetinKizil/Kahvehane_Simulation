@@ -79,7 +79,8 @@ Assets/_Project/
 └── Scripts/
     ├── Core/          ReputationManager, UpgradeManager, UpgradeUnlocker, DayCycleManager,
                        DailyStatsManager, ISaveable, SaveManager, PropertyManager, BalanceLogger
-    ├── Customers/     Customer, CustomerSpawner, CustomerModifiers, CustomerPatienceBoost
+    ├── Customers/     Customer, CustomerSpawner, CustomerModifiers, CustomerPatienceBoost,
+                       TableGameBoost
     ├── Data/          ItemData, ItemDatabase, ShopCatalog, UpgradeData, UpgradeCatalog,
                        PropertyData, PropertyCatalog, StoryData, WhisperData, TextPreset,
                        CustomerProfile
@@ -88,7 +89,7 @@ Assets/_Project/
                        GamblingSignBuilder, MafiaPrefabBuilder, PolicePrefabBuilder,
                        BalancePresetApplier, GamblerPrefabBuilder, NavMeshChecker,
                        StoryPanelBuilder, WhisperLineBuilder, TextPresetApplier,
-                       CustomerProfileLinker
+                       CustomerProfileLinker, TableGamesBuilder
     ├── Illegal/       GamblingTable, SuspicionManager, MafiaManager, MafiaCollector,
                        PoliceManager, PoliceOfficer, Gambler, GamblerSpawner
     ├── Neighborhood/  PropertyBuilding, PropertyVisualSwitch
@@ -523,7 +524,7 @@ Polis, teslimat, tahsildar, kumar, mülk ve gün sonu metinleri fısıltılarla 
 | Adım | İçerik |
 |---|---|
 | **10c-1** ✅ | Müşteri profilleri (renk, sabır, zevk, bahşiş, itibarla açılma) |
-| **10c-2** | Masa oyunları: İskambil ve Domino upgrade'leri okey gibi masada belirir; oyunlu masadaki müşteri içtikten sonra **bir tur daha** sipariş verebilir |
+| **10c-2** ✅ | Masa oyunları: İskambil ve Domino upgrade'leri okey gibi masada belirir; oyunlu masadaki müşteri içtikten sonra **bir tur daha** sipariş verebilir (+ profillere "oyun merakı") |
 | **10c-3** | Yeni içecek: Sahlep (Sahlep Makinesi upgrade'i + Sahlep Tozu) — tamamen veri, `TeaStove` deseni |
 | **10c-4** | Dükkan genişletme: "Bahçe" upgrade'i yeni zemin + 2 masa açar; builder ile kurulur, `NavMesh'i Yeniden Bake Et` ile bake. Geometri primitive, görsel 11'de |
 
@@ -552,6 +553,34 @@ Bütün müşteriler artık aynı değil: her birinin tipi var, tipine göre ren
 
 **Test:** gerçek değerlerde sadece gri/mavi geliyor, oralet yokken öğrenci çay istiyor, dayı daha sabırlı; test değerlerinde kahverengi ve siyah da geliyor, esnaf kahve istiyor, kabadayı 25 TL ödüyor ve bekletilince −4 itibar; ciro bahşişi içeriyor. Kullanıcı onayladı.
 
+### Adım 10c-2 — Masa oyunları ve ikinci tur ✅
+İskambil ve Domino upgrade'leri okey gibi **bütün masalarda** belirir (dükkan geneli etki, masa bazlı değil). Oyunlu dükkanda müşteri içtikten sonra belli bir şansla **kalkmaz, bir tur daha** sipariş verir → masa başı gelir artar.
+
+| Upgrade (asset) | Fiyat | İtibar | Etki |
+|---|---|---|---|
+| Okey Takımı (mevcut) | 150 | — | Sabır ×1.5 (değişmedi) |
+| `IskambilUpgrade` — İskambil Destesi | 200 TL | 40 | İkinci tur şansı **+%30** |
+| `DominoUpgrade` — Domino Takımı | 350 TL | 100 | İkinci tur şansı **+%20** (ikisi birlikte %50) |
+
+**Oyun merakı** (`CustomerProfile.gameCuriosity`, ikinci tur şansı bununla çarpılır): Emekli Dayı ×1.5, Öğrenci ×1, Esnaf ×0.5, Kabadayı ×1 → iki oyun alınmışken Dayı %75, Öğrenci/Kabadayı %50, Esnaf %25.
+
+**İkinci tur kuralları:**
+- İçme biter, bardak masada **kirli** kalır; zar tutarsa müşteri profil zevkine göre **yeni** sipariş verir (balon tekrar açılır).
+- Oyuncu önce kirli bardağı kaldırmalı (mevcut `Table` kuralı: "Once masadaki bardagi kaldir").
+- **En fazla bir ekstra tur.** İkinci turda sabrı biterse / kapanış gelirse **itibar cezası yok** (zaten memnun).
+- İkinci servis yine fiyat + bahşiş + 1 itibar; `PaidAmount` **birikir** → günlük özette müşteri 1, ciro iki satışın toplamı.
+
+**Parçalar:**
+- `CustomerModifiers.SecondRoundChance` + `AddSecondRoundChance(float)` — paylar **toplanır**, en fazla 1.
+- `TableGameBoost` (`KanBagi.Customers`, **Managers** üzerinde, `CustomerPatienceBoost` deseni): upgrade alınınca / kayıttan gelince payı bir kez ekler. İskambil (0.3) ve Domino (0.2) için iki tane.
+- `Customer`: `WantsSecondRound()` (dükkan payı × oyun merakı) → `SecondRoundRoutine()`. Inspector'da sabit sipariş atanmışsa (`hasFixedOrder`) ikinci turda da o istenir.
+- `Kan Bagi > Masa Oyunlarini Kur` (`TableGamesBuilder`, tekrar çalıştırılabilir):
+  - Her masaya (kilitli Masa3 dahil) `IskambilDestesi` (kırmızı, yerel (−0.3, 0.52, 0.3)) ve `DominoTakimi` (fildişi, yerel (0.3, 0.53, −0.3)) koyar — **collider yok**, başta pasif. Malzemeler `Materials/IskambilDestesi.mat`, `DominoTakimi.mat`.
+  - `Managers`'a her oyun için `UpgradeUnlocker` + `TableGameBoost` ekler/günceller (aynı upgrade'e bağlı olanı bulur, çoğaltmaz).
+  - İki upgrade'i `GelistirmeKatalogu`'na ekler (PC + kayıt eşlemesi).
+
+**Test:** PC'de iki yeni upgrade görünüyor, alınınca masalarda deste ve domino beliriyor; müşterilerin bir kısmı ikinci balonla sipariş veriyor, kirli bardak kaldırılmadan yeni bardak konmuyor, ikinci turda bekletilen müşteri itibar düşürmeden gidiyor, ciro iki satışı içeriyor, kayıttan etki geri geliyor. Kullanıcı onayladı.
+
 ---
 
 ## 7. SAHNE KURULUMU (`Assets/Scenes/SampleScene.unity`)
@@ -561,7 +590,7 @@ Bütün müşteriler artık aynı değil: her birinin tipi var, tipine göre ren
 | `Zemin` (Plane) | (0,0,0) | **NavMeshSurface** — `Kan Bagi > NavMesh'i Yeniden Bake Et` ile bake edilir (elle Bake'e basma: kilitli eşyaların deliği açılmaz). Tüm eşyalarda "Not Walkable" `NavMeshModifier` var |
 | `Player` (Empty) | (0, 1.1, 0) | CharacterController, PlayerController, PlayerInteractor, PlayerHands, PlayerLock |
 | └ `Main Camera` | (0, 0.6, 0) | — (child) |
-| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, PoliceManager, **BalanceLogger**, **5 × UpgradeUnlocker** (YeniMasa→Masa3, KahveMakinesi→KahveMakinesi, Oralet→OraletSemaveri, Okey→OkeyTakimi1/2/3) |
+| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, PoliceManager, **BalanceLogger**, **7 × UpgradeUnlocker** (YeniMasa→Masa3, KahveMakinesi→KahveMakinesi, Oralet→OraletSemaveri, Okey→OkeyTakimi1/2/3, Kumarhane→KumarMasasi, **İskambil→IskambilDestesi×3, Domino→DominoTakimi×3**), **2 × TableGameBoost** (İskambil 0.3, Domino 0.2) |
 | `EventSystem` | — | **Input System UI Input Module** (butonlar bunsuz çalışmaz) |
 | `Canvas` | — | InteractionPromptUI, HeldItemUI, ProgressBarUI, **ComputerUI** |
 | ├ `MoneyText` | sol üst (Pos Y -20) | MoneyUI |
@@ -592,6 +621,7 @@ Bütün müşteriler artık aynı değil: her birinin tipi var, tipine göre ren
 | `Masa2` (Cube) | (2.5, 0.4, -1) | Table |
 | `Masa3` (Cube) — **başta pasif** | (0, 0.4, -2) | Table (Yeni Masa upgrade'i açar; NavMesh **açıkken** bake edildi) |
 | `OkeyTakimi1/2/3` — masaların child'ı, **başta pasif** | yerel (0.3, 0.5, 0) | — (Box Collider **yok**) |
+| `IskambilDestesi` / `DominoTakimi` — her masanın child'ı, **başta pasif** | yerel (−0.3, 0.52, 0.3) / (0.3, 0.53, −0.3) | — (collider **yok**; `Masa Oyunlarini Kur` kurar) |
 | `GirisNoktasi` (Empty) | (0, 0, -4.5) | — (spawn + exit) |
 | `Spawner` (Empty) | — | CustomerSpawner (**profiles**: EmekliDayi, Ogrenci, Esnaf, Kabadayi — `Musteri Profillerini Bagla` bağlar) |
 | `YonetimPC` (Cube) | (2, 0.5, 2) | ComputerStation (catalog: MalzemeKatalogu) |
@@ -631,7 +661,7 @@ Bütün müşteriler artık aynı değil: her birinin tipi var, tipine göre ren
 | `OraletTozu` | Consumable | 0 | 3 | 0 |
 
 - `MalzemeKatalogu` (ShopCatalog) — CayYapragi ×10 (20 TL), KahveCekirdegi ×10 (40 TL, kilitli), OraletTozu ×10 (30 TL, kilitli)
-- `GelistirmeKatalogu` (UpgradeCatalog) — YeniMasaUpgrade (100), KahveMakinesiUpgrade (200), OraletUpgrade (100), SanayiOcagiUpgrade (250), OkeyTakimiUpgrade (150), GizliKumarhaneUpgrade (1500 + **itibar 180**)
+- `GelistirmeKatalogu` (UpgradeCatalog) — YeniMasaUpgrade (100), KahveMakinesiUpgrade (200), OraletUpgrade (100), SanayiOcagiUpgrade (250), OkeyTakimiUpgrade (150), GizliKumarhaneUpgrade (1500 + **itibar 180**), **IskambilUpgrade (200 + itibar 40), DominoUpgrade (350 + itibar 100)**
 - `UrunVeritabani` (ItemDatabase) — 6 ItemData'nın tamamı (kayıt sistemi için, **yeni ürün eklenince buraya da eklenmeli**)
 - `BakkalMulk` (800 TL / 60 / itibar **60**), `TerziMulk` (1200 / 90 / **140**), `KirathaneMulk` (2000 / 160 / **240**) — 9a-3'te güncellendi
 - `EmlakKatalogu` (PropertyCatalog) — üç mülkün tamamı (**kayıt eşlemesi buradan yapılır, boş bırakılamaz**)
@@ -646,7 +676,9 @@ Bütün müşteriler artık aynı değil: her birinin tipi var, tipine göre ren
 
 ## 8. ŞU AN NEREDE KALDIK
 
-**Adım 10c-1 bitti ve test edildi.** Müşteriler artık dört tipte (Emekli Dayı, Öğrenci, Esnaf, Kabadayı): renkleri, sabırları, içecek zevkleri ve bahşişleri farklı; Esnaf itibar 60'ta, Kabadayı 140'ta gelmeye başlıyor; bahşiş ciroya giriyor. **Sıradaki iş: 10c-2 — masa oyunları** (İskambil + Domino upgrade'leri, oyunlu masada ikinci tur sipariş; plan ayrıca onaylanacak).
+**Adım 10c-2 bitti ve test edildi.** İskambil (200 TL, itibar 40, +%30) ve Domino (350 TL, itibar 100, +%20) masalarda beliriyor; müşteriler içtikten sonra oyun meraklarına göre bir tur daha sipariş veriyor, ciro iki satışı da sayıyor, ikinci turda bekletmenin cezası yok. **Sıradaki iş: 10c-3 — Sahlep** (Sahlep Makinesi upgrade'i + Sahlep Tozu; plan ayrıca onaylanacak).
+
+**Adım 10c-1 bitti ve test edildi.** Müşteriler artık dört tipte (Emekli Dayı, Öğrenci, Esnaf, Kabadayı): renkleri, sabırları, içecek zevkleri ve bahşişleri farklı; Esnaf itibar 60'ta, Kabadayı 140'ta gelmeye başlıyor; bahşiş ciroya giriyor.
 
 **Adım 10a-2b bitti ve test edildi — 10a (HİKAYE VE TON) KAPANDI.** Polis, teslimat, tahsildar, kumar, mülk ve gün sonu metinleri intikam tonunda; metinler `ArayuzMetinleri.asset`'te, `Kan Bagi > Metinleri Uygula` ile sahne ve prefab'lara yazılıyor.
 
@@ -838,7 +870,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**10a-1**~~ ✅ | Hikaye giriş ekranı — **bitti** | Oyuna kimlik katar, küçük iş |
 | ~~**10a-2a**~~ ✅ | Mahalle fısıltıları (olaylara eşlik eden ton satırı + ilk sabah yönlendirmesi) — **bitti** | Ucuz, kimliği oyunun içine taşır |
 | ~~**10a-2b**~~ ✅ | Mevcut metinlerin tonu (sadece tablodakiler), `ArayuzMetinleri` + `Metinleri Uygula` — **bitti** | Fısıltılarla aynı tonu mevcut arayüze yayar |
-| **10c** | **Dükkan genişletme + iskambil/domino + müşteri ve stok çeşitliliği — DEVAM EDİYOR** (10c-1 ✅ profiller; sıradaki 10c-2 masa oyunları, sonra 10c-3 sahlep, 10c-4 bahçe — bölüm 6.8) | Faz 2'den kalan; mekan büyüdükçe kumarhane odası da anlam kazanır |
+| **10c** | **Dükkan genişletme + iskambil/domino + müşteri ve stok çeşitliliği — DEVAM EDİYOR** (10c-1 ✅ profiller, 10c-2 ✅ masa oyunları; sıradaki 10c-3 sahlep, sonra 10c-4 bahçe — bölüm 6.8) | Faz 2'den kalan; mekan büyüdükçe kumarhane odası da anlam kazanır |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
 | **11** | Görsel cila, ses, ana menü, kayıt slotları | **En sona**: mekanikler değişince geometri/model yeniden yapılır |
@@ -861,7 +893,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum:** Commit'ler yerelde hazır ama **henüz push edilmedi** — `gh auth login` cihaz-kodu doğrulama maili gelmediği için giriş yapılamadı. **Push sorununu çözmeye çalışmadan önce kullanıcıya sor.**
 ```
-(yeni)   Adim 10c-1: musteri profilleri
+(yeni)   Adim 10c-2: masa oyunlari ve ikinci tur siparis
+0883c45  Adim 10c-1: musteri profilleri
 971ad07  Adim 10a-2b: mevcut arayuz metinlerinin tonu
 177e081  Adim 10a-2a: mahalle fisiltilari
 2de9851  Adim 10a-1: hikaye giris ekrani
@@ -889,7 +922,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (10c-2 — masa oyunları: İskambil/Domino + ikinci tur sipariş) planını anlat, onay al**, sonra kod yaz. 10c'nin genel planı bölüm 6.8'de.
+3. **Sıradaki adımın (10c-3 — Sahlep: makine upgrade'i + Sahlep Tozu, `TeaStove` deseni) planını anlat, onay al**, sonra kod yaz. 10c'nin genel planı bölüm 6.8'de.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.

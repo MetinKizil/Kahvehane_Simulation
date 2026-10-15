@@ -15,6 +15,7 @@ MonoBehaviour:
   bodyColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
   patienceMultiplier: 1.5
   drinkDurationMultiplier: 1
+  gameCuriosity: 1.5
   favoriteDrinks:
   - beverage: {fileID: 11400000, guid: 2ae4b1d32918da540acf4db85dead80f, type: 2}
     weight: 4

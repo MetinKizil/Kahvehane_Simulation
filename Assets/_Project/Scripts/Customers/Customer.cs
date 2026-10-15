@@ -61,6 +61,7 @@ namespace KanBagi.Customers
         private Vector3 exitPosition;
         private TeaGlass servedGlass;
         private CustomerProfile profile;
+        private bool hasFixedOrder;
 
         public CustomerState State { get; private set; } = CustomerState.Arriving;
 
@@ -96,6 +97,7 @@ namespace KanBagi.Customers
         {
             exitPosition = exit;
             profile = customerProfile;
+            hasFixedOrder = desiredOrder != null;
 
             ApplyBodyColor();
             ResolveOrder();
@@ -206,11 +208,42 @@ namespace KanBagi.Customers
             yield return WaitForOrderRoutine();
 
             if (State == CustomerState.Drinking)
+            {
                 yield return DrinkRoutine();
+
+                if (WantsSecondRound()) yield return SecondRoundRoutine();
+            }
             else
+            {
                 LosePatience();
+            }
 
             yield return LeaveRoutine();
+        }
+
+        /// <summary>Masa oyunu varsa ictikten sonra bir tur daha ister mi? (dukkan payi x profilin oyun meraki)</summary>
+        private bool WantsSecondRound()
+        {
+            float chance = CustomerModifiers.Instance != null ? CustomerModifiers.Instance.SecondRoundChance : 0f;
+            if (profile != null) chance *= profile.GameCuriosity;
+
+            return chance > 0f && UnityEngine.Random.value < chance;
+        }
+
+        /// <summary>
+        /// En fazla BIR ekstra tur: yeni siparis verir, beklerse icer.
+        /// Bu turda sabri biterse itibar cezasi YOK - zaten memnun, sadece israr etmeden kalkar.
+        /// Masadaki kirli bardak kaldirilmadan yeni bardak konamaz (Table kurali).
+        /// </summary>
+        private IEnumerator SecondRoundRoutine()
+        {
+            if (!hasFixedOrder) desiredOrder = null;
+            ResolveOrder();
+
+            SetState(CustomerState.WaitingForOrder);
+            yield return WaitForOrderRoutine();
+
+            if (State == CustomerState.Drinking) yield return DrinkRoutine();
         }
 
         private IEnumerator WaitForOrderRoutine()
@@ -329,9 +362,10 @@ namespace KanBagi.Customers
         {
             if (product != null && EconomyManager.Instance != null)
             {
-                // Bahsis de ciroya girer: gunluk ozet PaidAmount'u okur.
-                PaidAmount = product.SellPrice + (profile != null ? profile.Tip : 0);
-                EconomyManager.Instance.AddMoney(PaidAmount);
+                // Bahsis de ciroya girer: gunluk ozet PaidAmount'u okur. Ikinci turda ustune eklenir.
+                int payment = product.SellPrice + (profile != null ? profile.Tip : 0);
+                PaidAmount += payment;
+                EconomyManager.Instance.AddMoney(payment);
             }
 
             if (ReputationManager.Instance != null)

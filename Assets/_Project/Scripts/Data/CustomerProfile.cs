@@ -32,6 +32,8 @@ namespace KanBagi.Data
         [SerializeField] private float patienceMultiplier = 1f;
         [Tooltip("Temel icme suresi bununla carpilir.")]
         [SerializeField] private float drinkDurationMultiplier = 1f;
+        [Tooltip("Oyun meraki: masa oyunlarinin ikinci tur ihtimali bununla carpilir. 1.5 = oyun sever, 0.5 = acelesi var.")]
+        [SerializeField] private float gameCuriosity = 1f;
 
         [Header("Zevk")]
         [Tooltip("Siparis bunlarin MENUDE OLANLARI arasindan agirlikli secilir. Hicbiri menude yoksa menuden rastgele.")]
@@ -52,6 +54,7 @@ namespace KanBagi.Data
         public Color BodyColor => bodyColor;
         public float PatienceMultiplier => patienceMultiplier;
         public float DrinkDurationMultiplier => drinkDurationMultiplier;
+        public float GameCuriosity => gameCuriosity;
         public IReadOnlyList<DrinkPreference> FavoriteDrinks => favoriteDrinks;
         public int Tip => tip;
         public int ReputationOnAngryLeave => reputationOnAngryLeave;
