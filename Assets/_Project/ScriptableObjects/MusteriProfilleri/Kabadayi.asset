@@ -18,6 +18,8 @@ MonoBehaviour:
   gameCuriosity: 1
   favoriteDrinks:
   - beverage: {fileID: 11400000, guid: 2ae4b1d32918da540acf4db85dead80f, type: 2}
+    weight: 2
+  - beverage: {fileID: 11400000, guid: 295f57fdd3b7454d9f14e4e5a27cf31a, type: 2}
     weight: 1
   tip: 10
   reputationOnAngryLeave: 4

@@ -159,8 +159,8 @@ namespace KanBagi.EditorTools
             serialized.ApplyModifiedProperties();
         }
 
-        /// <summary>Ayni upgrade'e bagli bilesen zaten varsa onu doner (tekrar calistirinca cogalmasin).</summary>
-        private static T FindByUpgrade<T>(GameObject owner, UpgradeData upgrade) where T : Component
+        /// <summary>Ayni upgrade'e bagli bilesen zaten varsa onu doner (tekrar calistirinca cogalmasin). BeverageStationBuilder da kullanir.</summary>
+        internal static T FindByUpgrade<T>(GameObject owner, UpgradeData upgrade) where T : Component
         {
             foreach (T component in owner.GetComponents<T>())
             {
@@ -171,8 +171,8 @@ namespace KanBagi.EditorTools
             return null;
         }
 
-        /// <summary>Upgrade'i UpgradeManager'in katalogunda yoksa ekler. Eklendiyse true.</summary>
-        private static bool AddToCatalog(UpgradeManager upgradeManager, UpgradeData upgrade)
+        /// <summary>Upgrade'i UpgradeManager'in katalogunda yoksa ekler. Eklendiyse true. BeverageStationBuilder da kullanir.</summary>
+        internal static bool AddToCatalog(UpgradeManager upgradeManager, UpgradeData upgrade)
         {
             var catalog = new SerializedObject(upgradeManager).FindProperty("catalog").objectReferenceValue as UpgradeCatalog;
             if (catalog == null)
@@ -196,7 +196,7 @@ namespace KanBagi.EditorTools
             return true;
         }
 
-        private static Material GetOrCreateMaterial(string materialName, Color color)
+        internal static Material GetOrCreateMaterial(string materialName, Color color)
         {
             string path = $"{MaterialFolder}/{materialName}.mat";
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);

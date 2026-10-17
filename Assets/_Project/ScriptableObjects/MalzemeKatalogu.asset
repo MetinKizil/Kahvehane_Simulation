@@ -22,3 +22,6 @@ MonoBehaviour:
   - item: {fileID: 11400000, guid: 5c85aa674d40708489e9efd7311737b1, type: 2}
     unitsPerPack: 10
     requiredUpgrade: {fileID: 11400000, guid: 10f656ab4238dcf4c9870ed2514fd561, type: 2}
+  - item: {fileID: 11400000, guid: ee90d1d61877447393e365051b988f3f, type: 2}
+    unitsPerPack: 10
+    requiredUpgrade: {fileID: 11400000, guid: 9acb20d5a1f744d3a7d408917721c4a5, type: 2}

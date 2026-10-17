@@ -89,7 +89,7 @@ Assets/_Project/
                        GamblingSignBuilder, MafiaPrefabBuilder, PolicePrefabBuilder,
                        BalancePresetApplier, GamblerPrefabBuilder, NavMeshChecker,
                        StoryPanelBuilder, WhisperLineBuilder, TextPresetApplier,
-                       CustomerProfileLinker, TableGamesBuilder
+                       CustomerProfileLinker, TableGamesBuilder, BeverageStationBuilder
     ├── Illegal/       GamblingTable, SuspicionManager, MafiaManager, MafiaCollector,
                        PoliceManager, PoliceOfficer, Gambler, GamblerSpawner
     ├── Neighborhood/  PropertyBuilding, PropertyVisualSwitch
@@ -525,7 +525,7 @@ Polis, teslimat, tahsildar, kumar, mülk ve gün sonu metinleri fısıltılarla 
 |---|---|
 | **10c-1** ✅ | Müşteri profilleri (renk, sabır, zevk, bahşiş, itibarla açılma) |
 | **10c-2** ✅ | Masa oyunları: İskambil ve Domino upgrade'leri okey gibi masada belirir; oyunlu masadaki müşteri içtikten sonra **bir tur daha** sipariş verebilir (+ profillere "oyun merakı") |
-| **10c-3** | Yeni içecek: Sahlep (Sahlep Makinesi upgrade'i + Sahlep Tozu) — tamamen veri, `TeaStove` deseni |
+| **10c-3** ✅ | Yeni içecek: Sahlep (Sahlep Makinesi upgrade'i + Sahlep Tozu) — veri + genel `Icecek Istasyonlarini Kur` builder'ı |
 | **10c-4** | Dükkan genişletme: "Bahçe" upgrade'i yeni zemin + 2 masa açar; builder ile kurulur, `NavMesh'i Yeniden Bake Et` ile bake. Geometri primitive, görsel 11'de |
 
 Sıranın mantığı: profiller her şeyin temeli → masa başı gelir (ikinci tur) → menü çeşitliliği → en son fazla masa (talep oluştuktan sonra anlamlı).
@@ -535,10 +535,10 @@ Bütün müşteriler artık aynı değil: her birinin tipi var, tipine göre ren
 
 | Profil (asset) | Renk | Sabır | Zevk (ağırlık) | Bahşiş | Kızarsa | Görünür | Gelme ağırlığı |
 |---|---|---|---|---|---|---|---|
-| `EmekliDayi` | gri | ×1.5 | Çay 4, Oralet 1 | 0 | −1 | baştan | 3 |
-| `Ogrenci` | mavi | ×1.0 | Oralet 3, Çay 2 | 0 | −1 | baştan | 3 |
+| `EmekliDayi` | gri | ×1.5 | Çay 4, **Sahlep 2** (10c-3), Oralet 1 | 0 | −1 | baştan | 3 |
+| `Ogrenci` | mavi | ×1.0 | Oralet 3, Çay 2, **Sahlep 1** (10c-3) | 0 | −1 | baştan | 3 |
 | `Esnaf` | kahverengi | ×0.7 | Kahve 3, Çay 1 | +5 TL | −2 | itibar 60 | 2 |
-| `Kabadayi` | siyah | ×0.6 | Çay 1 | +10 TL | **−4** | itibar 140 | 1 |
+| `Kabadayi` | siyah | ×0.6 | Çay 2, **Sahlep 1** (10c-3) | +10 TL | **−4** | itibar 140 | 1 |
 
 - `CustomerProfile` (`KanBagi.Data`, `Create > Kan Bagi > Customer Profile`): `bodyColor`, `patienceMultiplier`, `drinkDurationMultiplier` (hepsinde 1), `favoriteDrinks` (`DrinkPreference`: içecek + ağırlık), `tip`, `reputationOnAngryLeave`, `requiredReputation`, `spawnWeight`. Asset'ler `ScriptableObjects/MusteriProfilleri/`.
 - `CustomerSpawner.profiles`: itibarı yeten profiller arasından **ağırlıklı** seçim, `customer.Initialize(exit, profile)`. Liste boşsa / uygun profil yoksa eski davranış (prefab varsayılanları).
@@ -581,6 +581,21 @@ Bütün müşteriler artık aynı değil: her birinin tipi var, tipine göre ren
 
 **Test:** PC'de iki yeni upgrade görünüyor, alınınca masalarda deste ve domino beliriyor; müşterilerin bir kısmı ikinci balonla sipariş veriyor, kirli bardak kaldırılmadan yeni bardak konmuyor, ikinci turda bekletilen müşteri itibar düşürmeden gidiyor, ciro iki satışı içeriyor, kayıttan etki geri geliyor. Kullanıcı onayladı.
 
+### Adım 10c-3 — Sahlep ✅
+En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 4 sn (Sanayi Ocağı ile 2.4). **Sahlep Tozu** 10'lu paket 50 TL (birim 5) → bardak başı kâr 25 TL. **Sahlep Makinesi** upgrade'i **300 TL, itibar 80**. Makine arka tezgah hattında, Lavabo'nun sağında **(3.5, 0.5, 3)**, krem rengi, başta pasif.
+
+**Zevkler:** Dayı Çay 4 / Sahlep 2 / Oralet 1, Öğrenci +Sahlep 1, Kabadayı Çay 2 / Sahlep 1, Esnaf değişmedi. Makine alınmadan sahlep menüde olmadığı için kimse istemez ("sadece menüdeki favoriler" kuralı).
+
+**Yeni bir içeceğin oyuna tam girmesi 10 bağlantı ister** (kahve/oralet elle yapılmıştı, biri unutulursa sessizce bozulur): içecek `ItemData`, malzeme `ItemData`, `UpgradeData`, geliştirme kataloğu, malzeme kataloğu (upgrade'e kilitli), **ürün veritabanı (kayıt!)**, `MenuManager` (upgrade'e kilitli), sahnede `TeaStove` + `UpgradeUnlocker`, Sanayi Ocağı listesi (`StationSpeedBoost`), `StockUI`. İlerleme çubuğu istasyonları kendisi bulur.
+
+- Veri: `Sahlep.asset`, `SahlepTozu.asset`, `SahlepMakinesiUpgrade.asset` (Türkçe metinler asset'te).
+- **`Kan Bagi > Icecek Istasyonlarini Kur` (`BeverageStationBuilder`, genel):** dosyanın başındaki **`Stations` tablosundaki** her içecek için 3–10 arası bağlantıların hepsini kurar; raporu `eklendi / zaten vardi` diye basar. Var olan istasyonu `beverageData`'dan tanır, **tekrar çalıştırılabilir, çoğaltmaz.** Kahve/oralet tabloda yok (elle kurulu, dokunulmadı). **Yeni içecek = veri asset'leri + tabloya bir satır + menü + NavMesh bake.**
+- `TableGamesBuilder`'daki `FindByUpgrade`, `AddToCatalog`, `GetOrCreateMaterial` `internal` yapıldı; yeni builder kopyalamadan kullanıyor (davranış değişmedi).
+- Kurulumdan sonra `NavMesh'i Yeniden Bake Et` → `NavMesh Kontrol Et`: **12 eşyanın hepsinde delik var.**
+- **Oyun kodu değişmedi** — `TeaStove`, menü, stok ve kayıt sistemleri sahlebi olduğu gibi kaldırdı.
+
+**Test:** gerçek değerlerde "Sahlep Tozu: 0" görünüyor, malzeme ve makine kilitli; makine alınınca beliriyor, toz sipariş edilip depoya konunca sahlep yapılıyor, profiller sahlep istiyor, 30 TL (+ bahşiş) giriyor; Sanayi Ocağı hızlandırıyor; kayıttan makine, stok ve menü geri geliyor. Kullanıcı onayladı.
+
 ---
 
 ## 7. SAHNE KURULUMU (`Assets/Scenes/SampleScene.unity`)
@@ -590,12 +605,12 @@ Bütün müşteriler artık aynı değil: her birinin tipi var, tipine göre ren
 | `Zemin` (Plane) | (0,0,0) | **NavMeshSurface** — `Kan Bagi > NavMesh'i Yeniden Bake Et` ile bake edilir (elle Bake'e basma: kilitli eşyaların deliği açılmaz). Tüm eşyalarda "Not Walkable" `NavMeshModifier` var |
 | `Player` (Empty) | (0, 1.1, 0) | CharacterController, PlayerController, PlayerInteractor, PlayerHands, PlayerLock |
 | └ `Main Camera` | (0, 0.6, 0) | — (child) |
-| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, PoliceManager, **BalanceLogger**, **7 × UpgradeUnlocker** (YeniMasa→Masa3, KahveMakinesi→KahveMakinesi, Oralet→OraletSemaveri, Okey→OkeyTakimi1/2/3, Kumarhane→KumarMasasi, **İskambil→IskambilDestesi×3, Domino→DominoTakimi×3**), **2 × TableGameBoost** (İskambil 0.3, Domino 0.2) |
+| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, PoliceManager, **BalanceLogger**, **8 × UpgradeUnlocker** (YeniMasa→Masa3, KahveMakinesi→KahveMakinesi, Oralet→OraletSemaveri, Okey→OkeyTakimi1/2/3, Kumarhane→KumarMasasi, **İskambil→IskambilDestesi×3, Domino→DominoTakimi×3, SahlepMakinesi→SahlepMakinesi**), **2 × TableGameBoost** (İskambil 0.3, Domino 0.2) |
 | `EventSystem` | — | **Input System UI Input Module** (butonlar bunsuz çalışmaz) |
 | `Canvas` | — | InteractionPromptUI, HeldItemUI, ProgressBarUI, **ComputerUI** |
 | ├ `MoneyText` | sol üst (Pos Y -20) | MoneyUI |
 | ├ `ReputationText` | Pos Y -55 | ReputationUI |
-| ├ `StockText` | Pos Y -90 | StockUI (tracked: CayYapragi) |
+| ├ `StockText` | Pos Y -90 | StockUI (tracked: CayYapragi, KahveCekirdegi, OraletTozu, SahlepTozu) |
 | ├ `PromptText` | orta-alt | — |
 | ├ `HeldItemText` | sol alt | — |
 | ├ `BildirimText` | üst-orta | DeliveryNotificationUI |
@@ -617,6 +632,7 @@ Bütün müşteriler artık aynı değil: her birinin tipi var, tipine göre ren
 | `KahveMakinesi` (Cube) — **başta pasif** | (-1, 0.5, 3) | TeaStove (Kahve + KahveCekirdegi × 1) |
 | `OraletSemaveri` (Cube) — **başta pasif** | (1, 0.5, 3) | TeaStove (Oralet + OraletTozu × 1) |
 | `Lavabo` (Cube) | (2, 0.5, 3) | Sink (washDuration 2.5) |
+| `SahlepMakinesi` (Cube, 1×1×0.8, krem) — **başta pasif** | (3.5, 0.5, 3) | TeaStove (Sahlep + SahlepTozu × 1) — `Icecek Istasyonlarini Kur` kurar |
 | `Masa1` (Cube) | (-2.5, 0.4, -1) | Table (IInteractable — collider aynı objede olmalı) |
 | `Masa2` (Cube) | (2.5, 0.4, -1) | Table |
 | `Masa3` (Cube) — **başta pasif** | (0, 0.4, -2) | Table (Yeni Masa upgrade'i açar; NavMesh **açıkken** bake edildi) |
@@ -656,13 +672,15 @@ Bütün müşteriler artık aynı değil: her birinin tipi var, tipine göre ren
 | `Cay` | Beverage | 15 | 3 | 3 |
 | `Kahve` | Beverage | 25 | 0 | 5 |
 | `Oralet` | Beverage | 18 | 0 | 2 |
+| `Sahlep` | Beverage | 30 | 0 | 4 |
 | `CayYapragi` | Consumable | 0 | 2 | 0 |
 | `KahveCekirdegi` | Consumable | 0 | 4 | 0 |
 | `OraletTozu` | Consumable | 0 | 3 | 0 |
+| `SahlepTozu` | Consumable | 0 | 5 | 0 |
 
-- `MalzemeKatalogu` (ShopCatalog) — CayYapragi ×10 (20 TL), KahveCekirdegi ×10 (40 TL, kilitli), OraletTozu ×10 (30 TL, kilitli)
-- `GelistirmeKatalogu` (UpgradeCatalog) — YeniMasaUpgrade (100), KahveMakinesiUpgrade (200), OraletUpgrade (100), SanayiOcagiUpgrade (250), OkeyTakimiUpgrade (150), GizliKumarhaneUpgrade (1500 + **itibar 180**), **IskambilUpgrade (200 + itibar 40), DominoUpgrade (350 + itibar 100)**
-- `UrunVeritabani` (ItemDatabase) — 6 ItemData'nın tamamı (kayıt sistemi için, **yeni ürün eklenince buraya da eklenmeli**)
+- `MalzemeKatalogu` (ShopCatalog) — CayYapragi ×10 (20 TL), KahveCekirdegi ×10 (40 TL, kilitli), OraletTozu ×10 (30 TL, kilitli), **SahlepTozu ×10 (50 TL, kilitli)**
+- `GelistirmeKatalogu` (UpgradeCatalog) — YeniMasaUpgrade (100), KahveMakinesiUpgrade (200), OraletUpgrade (100), SanayiOcagiUpgrade (250), OkeyTakimiUpgrade (150), GizliKumarhaneUpgrade (1500 + **itibar 180**), **IskambilUpgrade (200 + itibar 40), DominoUpgrade (350 + itibar 100), SahlepMakinesiUpgrade (300 + itibar 80)**
+- `UrunVeritabani` (ItemDatabase) — 8 ItemData'nın tamamı (kayıt sistemi için, **yeni ürün eklenince buraya da eklenmeli** — `Icecek Istasyonlarini Kur` bunu otomatik yapar)
 - `BakkalMulk` (800 TL / 60 / itibar **60**), `TerziMulk` (1200 / 90 / **140**), `KirathaneMulk` (2000 / 160 / **240**) — 9a-3'te güncellendi
 - `EmlakKatalogu` (PropertyCatalog) — üç mülkün tamamı (**kayıt eşlemesi buradan yapılır, boş bırakılamaz**)
 - `GirisHikayesi` (StoryData) — giriş ekranının 5 sayfası ve buton yazıları
@@ -676,7 +694,9 @@ Bütün müşteriler artık aynı değil: her birinin tipi var, tipine göre ren
 
 ## 8. ŞU AN NEREDE KALDIK
 
-**Adım 10c-2 bitti ve test edildi.** İskambil (200 TL, itibar 40, +%30) ve Domino (350 TL, itibar 100, +%20) masalarda beliriyor; müşteriler içtikten sonra oyun meraklarına göre bir tur daha sipariş veriyor, ciro iki satışı da sayıyor, ikinci turda bekletmenin cezası yok. **Sıradaki iş: 10c-3 — Sahlep** (Sahlep Makinesi upgrade'i + Sahlep Tozu; plan ayrıca onaylanacak).
+**Adım 10c-3 bitti ve test edildi.** Sahlep (30 TL) Sahlep Makinesi upgrade'iyle (300 TL, itibar 80) açılıyor; makine lavabonun sağında beliriyor, toz sipariş edilip sahlep yapılıyor, Dayı/Öğrenci/Kabadayı istiyor, kayıttan geri geliyor. Yeni içecekler artık `Icecek Istasyonlarini Kur` tablosuna bir satırla ekleniyor. **Sıradaki iş: 10c-4 — Bahçe** (dükkan genişletme: yeni zemin + 2 masa; plan ayrıca onaylanacak).
+
+**Adım 10c-2 bitti ve test edildi.** İskambil (200 TL, itibar 40, +%30) ve Domino (350 TL, itibar 100, +%20) masalarda beliriyor; müşteriler içtikten sonra oyun meraklarına göre bir tur daha sipariş veriyor, ciro iki satışı da sayıyor, ikinci turda bekletmenin cezası yok.
 
 **Adım 10c-1 bitti ve test edildi.** Müşteriler artık dört tipte (Emekli Dayı, Öğrenci, Esnaf, Kabadayı): renkleri, sabırları, içecek zevkleri ve bahşişleri farklı; Esnaf itibar 60'ta, Kabadayı 140'ta gelmeye başlıyor; bahşiş ciroya giriyor.
 
@@ -870,7 +890,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**10a-1**~~ ✅ | Hikaye giriş ekranı — **bitti** | Oyuna kimlik katar, küçük iş |
 | ~~**10a-2a**~~ ✅ | Mahalle fısıltıları (olaylara eşlik eden ton satırı + ilk sabah yönlendirmesi) — **bitti** | Ucuz, kimliği oyunun içine taşır |
 | ~~**10a-2b**~~ ✅ | Mevcut metinlerin tonu (sadece tablodakiler), `ArayuzMetinleri` + `Metinleri Uygula` — **bitti** | Fısıltılarla aynı tonu mevcut arayüze yayar |
-| **10c** | **Dükkan genişletme + iskambil/domino + müşteri ve stok çeşitliliği — DEVAM EDİYOR** (10c-1 ✅ profiller, 10c-2 ✅ masa oyunları; sıradaki 10c-3 sahlep, sonra 10c-4 bahçe — bölüm 6.8) | Faz 2'den kalan; mekan büyüdükçe kumarhane odası da anlam kazanır |
+| **10c** | **Dükkan genişletme + iskambil/domino + müşteri ve stok çeşitliliği — DEVAM EDİYOR** (10c-1 ✅ profiller, 10c-2 ✅ masa oyunları, 10c-3 ✅ sahlep; sıradaki 10c-4 bahçe — bölüm 6.8) | Faz 2'den kalan; mekan büyüdükçe kumarhane odası da anlam kazanır |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
 | **11** | Görsel cila, ses, ana menü, kayıt slotları | **En sona**: mekanikler değişince geometri/model yeniden yapılır |
@@ -893,7 +913,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum:** Commit'ler yerelde hazır ama **henüz push edilmedi** — `gh auth login` cihaz-kodu doğrulama maili gelmediği için giriş yapılamadı. **Push sorununu çözmeye çalışmadan önce kullanıcıya sor.**
 ```
-(yeni)   Adim 10c-2: masa oyunlari ve ikinci tur siparis
+(yeni)   Adim 10c-3: sahlep ve genel icecek istasyonu builder'i
+6da6fa5  Adim 10c-2: masa oyunlari ve ikinci tur siparis
 0883c45  Adim 10c-1: musteri profilleri
 971ad07  Adim 10a-2b: mevcut arayuz metinlerinin tonu
 177e081  Adim 10a-2a: mahalle fisiltilari
@@ -922,7 +943,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (10c-3 — Sahlep: makine upgrade'i + Sahlep Tozu, `TeaStove` deseni) planını anlat, onay al**, sonra kod yaz. 10c'nin genel planı bölüm 6.8'de.
+3. **Sıradaki adımın (10c-4 — Bahçe: dükkan genişletme, yeni zemin + 2 masa, upgrade ile açılır; builder + NavMesh bake) planını anlat, onay al**, sonra kod yaz. 10c'nin genel planı bölüm 6.8'de.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.
@@ -937,6 +958,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 - **Denge değerlerini Inspector'da elle değiştirme** — `BalancePresetApplier`'ın `Settings` tablosuna yaz, menüden uygula. Değerler tek yerde ve izlenebilir kalır.
 - **NavMesh'i elle bake etme.** Pasif (kilitli) eşyalar bake'e girmez, `NavMeshObstacle`'lı objeler de NavMeshSurface ayarı yüzünden girmezdi → NPC'ler eşyanın içinden/üstünden yürür. Her zaman `Kan Bagi > NavMesh'i Yeniden Bake Et` + sahneyi kaydet + `NavMesh Kontrol Et`. Yeni eşya kök obje olarak ve collider'lı eklenmeli ki komut onu bulsun.
 - **Türkçe oyun metni koda yazılmaz** — ScriptableObject asset'ine yazılır (kod ASCII kuralı). TMP fontu Türkçe karakterleri gösteriyor.
+- **Yeni içeceği elle bağlama** — 10 ayrı yere bağlanması gerekiyor, biri unutulursa (özellikle ürün veritabanı → kayıt) sessizce bozulur. Veri asset'lerini yaz, `BeverageStationBuilder.Stations` tablosuna satır ekle, `Icecek Istasyonlarini Kur` → kaydet → `NavMesh'i Yeniden Bake Et` → kaydet.
 - **Arayüz metnini Inspector'da elle değiştirme** — `ArayuzMetinleri.asset`'e yaz, `Kan Bagi > Metinleri Uygula`. Bir builder prefab'ı yeniden ürettiyse bu komutu tekrar çalıştır, yoksa metinler ASCII'ye döner.
 - **Commit'ten önce sahnede test değerleri kalmış mı bak** (`startingMoney: 250`, `dayDurationMinutes: 6`). 10a-2b testinden sonra sahne test değerleriyle kaydedilmişti; commit'ten önce `Gercek Degerleri Uygula` + kaydet yapıldı.
 - **Builder menüsünü kod değişikliğinden hemen sonra çalıştırma** — Unity derlemeyi bitirmeden tıklanırsa ESKİ kodla kurar (10a-1'de panel eski boyutla kuruldu). Console temizlenene / derleme çubuğu kaybolana kadar bekle, gerekirse `Ctrl+R`.
