@@ -906,14 +906,17 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 | | |
 |---|---|
-| Repo (hedef) | `https://github.com/MetinKizil/Kahvehane_Simulation` |
+| Repo | `https://github.com/MetinKizil/Kahvehane_Simulation` — **PUBLIC** (herkese açık) |
+| Remote | `origin` → yukarıdaki adres, `main` dalı `origin/main`'i takip ediyor |
 | Yerel repo kökü | `D:\KAHVE DENEME\KAHVEHANEDENEME` (Unity proje klasörü) |
 | Git kimliği | `MetinKizil` / `metinkizil210@gmail.com` |
 | Kurulu araçlar | Git 2.55 + GitHub CLI 2.101 (winget ile kuruldu, PATH'e elle eklenmesi gerekebilir) |
+| Giriş | `gh` ile `MetinKizil` hesabı (keyring), yetkiler `repo`, `workflow`...; `gh auth setup-git` ile git push da bu girişi kullanıyor |
 
-**Durum:** Commit'ler yerelde hazır ama **henüz push edilmedi** — `gh auth login` cihaz-kodu doğrulama maili gelmediği için giriş yapılamadı. **Push sorununu çözmeye çalışmadan önce kullanıcıya sor.**
+**Durum (2026-10-17): GitHub bağlantısı kuruldu, tüm commit'ler push edildi** (ilk push: 17 commit, ~2.7 MB). Yerel `main` = `origin/main`.
 ```
-(yeni)   Adim 10c-3: sahlep ve genel icecek istasyonu builder'i
+(yeni)   GitHub remote kuruldu, DEVAM/CLAUDE git durumu guncellendi
+9b5038a  Adim 10c-3: sahlep ve genel icecek istasyonu builder'i
 6da6fa5  Adim 10c-2: masa oyunlari ve ikinci tur siparis
 0883c45  Adim 10c-1: musteri profilleri
 971ad07  Adim 10a-2b: mevcut arayuz metinlerinin tonu
@@ -930,10 +933,12 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 ```
 
 **Kurallar:**
-- Her tamamlanıp test edilen adımdan sonra DEVAM.md güncellenir, sonra commit + push.
+- Her tamamlanıp test edilen adımdan sonra DEVAM.md güncellenir, sonra **commit + `git push`**.
 - ⚠️ **Commit mesajlarına Claude imzası (`Co-Authored-By`) EKLENMEZ**, PR açıklamalarına "Generated with Claude Code" yazılmaz. Kullanıcının açık talebi.
 - Commit mesajları Türkçe ama ASCII (şapkasız).
-- Giriş çözümü için öneri: tarayıcıda github.com'a girip **sonra** `gh auth login` çalıştırmak, ya da telefondan `github.com/login/device`, ya da `repo` yetkili Personal Access Token ile `gh auth login --with-token` (token kullanıcı kendi terminaline girer, sohbete yazılmaz).
+- ⚠️ **Repo herkese açık:** commit'e şifre, token, kişisel dosya girmemeli. Push'tan önce `git status` ile bak; `DengeLog/`, `Library/` vb. `.gitignore`'da.
+- Commit'ten önce sahnede **test değerleri kalmamalı** (`startingMoney: 250`) — yoksa GitHub'a test sahnesi gider.
+- Giriş düşerse: `gh auth status` ile bak; gerekirse kullanıcı kendi terminalinde `gh auth login` yapar (token sohbete yazılmaz), sonra `gh auth setup-git`.
 - PowerShell oturumunda PATH tazelemek gerekebilir:
   `$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")`
 

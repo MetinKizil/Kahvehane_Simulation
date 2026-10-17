@@ -67,4 +67,5 @@ Aşağıdaki dört ilke [andrej-karpathy-skills](https://github.com/multica-ai/a
 - Her tamamlanıp test edilen adımdan sonra DEVAM.md güncellenir, sonra commit.
 - ⚠️ **Commit mesajlarına Claude imzası eklenmez** (`Co-Authored-By` yok, "Generated with Claude Code" yok). Kullanıcının açık talebi.
 - Commit mesajları Türkçe ama ASCII.
-- Repo: `https://github.com/MetinKizil/Kahvehane_Simulation` — push henüz yapılamadı, detay DEVAM.md bölüm 10.5'te. **Push'u çözmeye çalışmadan önce kullanıcıya sor.**
+- Repo: `https://github.com/MetinKizil/Kahvehane_Simulation` (**herkese açık**) — `origin` kurulu, her adım sonunda commit + `git push`. Detay DEVAM.md bölüm 10.5'te.
+- Commit'ten önce sahnede test değerleri kalmamalı ve gizli bilgi girmemeli (repo public).
