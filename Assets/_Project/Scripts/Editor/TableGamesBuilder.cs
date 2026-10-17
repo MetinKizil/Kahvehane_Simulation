@@ -77,6 +77,14 @@ namespace KanBagi.EditorTools
                                    .OrderBy(table => table.name)
                                    .ToArray();
 
+            // D2'den beri masalar sahnede degil, 'Masa' prefab'indan olusturuluyor; parcalar da prefab'da (UpgradeVisual).
+            if (tables.Length == 0)
+            {
+                Debug.LogWarning("[TableGamesBuilder] Sahnede masa yok: D2'den beri masa oyunu parcalari 'Masa' prefab'inda " +
+                                 "(UpgradeVisual). Bu komut artik gerekmiyor; yeni parca icin prefab'i duzenle.");
+                return;
+            }
+
             var report = new StringBuilder($"[TableGamesBuilder] {tables.Length} masaya kuruldu:\n");
 
             foreach (GameSetup game in Games)

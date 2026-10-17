@@ -39,7 +39,7 @@ Aşağıdaki dört ilke [andrej-karpathy-skills](https://github.com/multica-ai/a
 
 ## 4. Kod konvansiyonları
 
-- Namespace: `KanBagi.<Alan>` (Core, Customers, Data, Delivery, Economy, Illegal, Interaction, Inventory, Items, Neighborhood, Player, Shop, UI, EditorTools)
+- Namespace: `KanBagi.<Alan>` (Core, Customers, Data, Delivery, Economy, Furniture, Illegal, Interaction, Inventory, Items, Neighborhood, Player, Shop, UI, EditorTools)
 - Yorumlar **Türkçe ama ASCII** — şapkasız, noktasız: `cay`, `musteri`, `siparis`. Kod içinde Türkçe karakter yok.
 - Manager'lar: `public static X Instance { get; private set; }`
 - Durum makineleri `Update` yerine **coroutine** ile.

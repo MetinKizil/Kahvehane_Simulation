@@ -1,0 +1,218 @@
+using System;
+using System.Collections.Generic;
+using KanBagi.Core;
+using KanBagi.Data;
+using UnityEngine;
+
+namespace KanBagi.Furniture
+{
+    /// <summary>
+    /// Dukkandaki yerlestirilmis esyalarin TEK sahibi (dunya durumu; co-op'ta server-authoritative).
+    /// Esya olusturma/tasima/kaldirma SADECE buradaki metotlardan gecer (ileride RPC siniri).
+    /// Her degisiklikte OnLayoutChanged yayinlar; NavMesh'i NavMeshRuntimeBaker gunceller (SOLID).
+    ///
+    /// Kayit yoksa (yeni oyun) varsayilan duzeni kurar; kayit varsa SaveManager duzeni kayittakiyle degistirir.
+    /// Order 50: varsayilan duzen SaveManager'in (100) yuklemesinden ONCE kurulsun.
+    /// </summary>
+    [DefaultExecutionOrder(50)]
+    public class FurnitureManager : MonoBehaviour, ISaveable
+    {
+        [Serializable]
+        private class FurnitureSaveEntry
+        {
+            public string furniture;
+            public Vector3 position;
+            public float yaw;
+        }
+
+        [Serializable]
+        private class FurnitureSaveData
+        {
+            public List<FurnitureSaveEntry> items = new List<FurnitureSaveEntry>();
+            // Esyasini zaten vermis upgrade'ler (UpgradeFurnitureGrant tekrar vermesin).
+            public List<string> granted = new List<string>();
+        }
+
+        public static FurnitureManager Instance { get; private set; }
+
+        [Header("Veri")]
+        [Tooltip("Kayittaki esya adlarini tanima ceviren liste.")]
+        [SerializeField] private FurnitureDatabase database;
+        [Tooltip("Kayit yokken (yeni oyun) kurulacak duzen.")]
+        [SerializeField] private FurnitureLayout defaultLayout;
+
+        private readonly List<PlacedFurniture> placed = new List<PlacedFurniture>();
+        private readonly HashSet<string> grantedKeys = new HashSet<string>();
+
+        public IReadOnlyList<PlacedFurniture> Placed => placed;
+
+        /// <summary>Esya eklenince, tasininca veya kaldirilinca tetiklenir. NavMesh guncelleyici abone olur.</summary>
+        public event Action OnLayoutChanged;
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(this);
+                return;
+            }
+
+            Instance = this;
+
+            if (database == null)
+            {
+                Debug.LogError("[FurnitureManager] 'Database' atanmamis. 'Kan Bagi > Esya Altyapisini Kur' calistir.", this);
+                enabled = false;
+            }
+        }
+
+        private void Start()
+        {
+            if (placed.Count == 0 && defaultLayout != null)
+                SpawnLayout(defaultLayout.Entries);
+        }
+
+        // ---- Esya islemleri (tek gecis noktasi) ----
+
+        /// <summary>Esyayi verilen yere, verilen aciyla koyar.</summary>
+        public PlacedFurniture Spawn(FurnitureData data, Vector3 position, float yaw)
+        {
+            PlacedFurniture furniture = CreateInstance(data, position, yaw);
+            if (furniture != null) OnLayoutChanged?.Invoke();
+            return furniture;
+        }
+
+        /// <summary>Esyayi yeni yerine ve acisina tasir.</summary>
+        public void Move(PlacedFurniture furniture, Vector3 position, float yaw)
+        {
+            if (furniture == null || !placed.Contains(furniture)) return;
+
+            furniture.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
+            OnLayoutChanged?.Invoke();
+        }
+
+        /// <summary>Esyayi dukkandan kaldirir.</summary>
+        public void Remove(PlacedFurniture furniture)
+        {
+            if (furniture == null || !placed.Remove(furniture)) return;
+
+            DestroyInstance(furniture);
+            OnLayoutChanged?.Invoke();
+        }
+
+        // ---- Upgrade hibeleri ----
+
+        /// <summary>Bu anahtarin (upgrade adi) esyasi daha once verildi mi?</summary>
+        public bool IsGranted(string key) => !string.IsNullOrEmpty(key) && grantedKeys.Contains(key);
+
+        public void MarkGranted(string key)
+        {
+            if (!string.IsNullOrEmpty(key)) grantedKeys.Add(key);
+        }
+
+        // ---- Ic isler ----
+
+        private void SpawnLayout(IReadOnlyList<FurnitureLayoutEntry> entries)
+        {
+            foreach (FurnitureLayoutEntry entry in entries)
+                CreateInstance(entry.Furniture, entry.Position, entry.Yaw);
+
+            OnLayoutChanged?.Invoke();
+        }
+
+        private PlacedFurniture CreateInstance(FurnitureData data, Vector3 position, float yaw)
+        {
+            if (data == null || data.Prefab == null)
+            {
+                Debug.LogError($"[FurnitureManager] Esya tanimi veya prefab'i eksik: '{(data != null ? data.name : "null")}'.", this);
+                return null;
+            }
+
+            GameObject instance = Instantiate(data.Prefab, position, Quaternion.Euler(0f, yaw, 0f));
+            instance.name = data.Prefab.name;
+
+            if (!instance.TryGetComponent(out PlacedFurniture furniture))
+                furniture = instance.AddComponent<PlacedFurniture>();
+
+            furniture.Initialize(data);
+            placed.Add(furniture);
+            return furniture;
+        }
+
+        /// <summary>
+        /// Once kapatilir: OnDisable hemen calisir (masa TableManager'dan hemen cikar),
+        /// Destroy ise kare sonunu bekler; arada ayni masa iki kez sayilmasin.
+        /// </summary>
+        private static void DestroyInstance(PlacedFurniture furniture)
+        {
+            furniture.gameObject.SetActive(false);
+            Destroy(furniture.gameObject);
+        }
+
+        private void ClearAll()
+        {
+            foreach (PlacedFurniture furniture in placed)
+            {
+                if (furniture != null) DestroyInstance(furniture);
+            }
+
+            placed.Clear();
+        }
+
+        // ---- Kayit ----
+
+        public string SaveKey => "furniture";
+
+        public string CaptureState()
+        {
+            var data = new FurnitureSaveData();
+
+            foreach (PlacedFurniture furniture in placed)
+            {
+                if (furniture == null || furniture.Data == null) continue;
+
+                data.items.Add(new FurnitureSaveEntry
+                {
+                    furniture = furniture.Data.name,
+                    position = furniture.transform.position,
+                    yaw = furniture.Yaw
+                });
+            }
+
+            data.granted.AddRange(grantedKeys);
+            return JsonUtility.ToJson(data);
+        }
+
+        /// <summary>Mevcut duzen tamamen kayittakiyle degistirilir.</summary>
+        public void RestoreState(string state)
+        {
+            var data = JsonUtility.FromJson<FurnitureSaveData>(state);
+            if (data == null || data.items == null) return;
+
+            ClearAll();
+
+            foreach (FurnitureSaveEntry entry in data.items)
+            {
+                FurnitureData furnitureData = database.FindByName(entry.furniture);
+
+                if (furnitureData == null)
+                {
+                    Debug.LogWarning($"[FurnitureManager] Kayittaki '{entry.furniture}' esyasi veritabaninda yok, atlandi.", this);
+                    continue;
+                }
+
+                CreateInstance(furnitureData, entry.position, entry.yaw);
+            }
+
+            grantedKeys.Clear();
+            if (data.granted != null) grantedKeys.UnionWith(data.granted);
+
+            OnLayoutChanged?.Invoke();
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+        }
+    }
+}

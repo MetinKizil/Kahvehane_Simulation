@@ -90,13 +90,15 @@ Assets/_Project/
                        BalancePresetApplier, GamblerPrefabBuilder, NavMeshChecker,
                        StoryPanelBuilder, WhisperLineBuilder, TextPresetApplier,
                        CustomerProfileLinker, TableGamesBuilder, BeverageStationBuilder,
-                       TrayBuilder
+                       TrayBuilder, FurnitureSetupBuilder, FurnitureTestMenu (geçici, D3'te silinecek)
     ├── Illegal/       GamblingTable, SuspicionManager, MafiaManager, MafiaCollector,
                        PoliceManager, PoliceOfficer, Gambler, GamblerSpawner
     ├── Neighborhood/  PropertyBuilding, PropertyVisualSwitch
     ├── Economy/       EconomyManager, PurchaseManager
     ├── Interaction/   IInteractable, HoldableItem, PlayerInteractor
     ├── Inventory/     InventoryManager
+    ├── Furniture/     PlacedFurniture, FurnitureManager, NavMeshRuntimeBaker, UpgradeVisual,
+                       UpgradeFurnitureGrant
     ├── Items/         TeaGlass, DeliveryBox, Tray
     ├── Player/        PlayerController, PlayerHands, PlayerLock, PlayerContext (düz sınıf, bileşen değil)
     ├── Shop/          TimedStation, TeaStove, Sink, GlassShelf, Table, TableManager,
@@ -622,7 +624,7 @@ En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 
 | # | Adım | İçerik |
 |---|---|---|
 | **D1** ✅ | **Tepsi** | 8 bardak; raftan bardak alma, ocakta doldurma, masaya servis, kirli toplama, lavaboda toplu yıkama. Bağımsız iş, ilk adım. |
-| D2 | Eşya altyapısı | `FurnitureData` (prefab, fiyat, kapladığı alan, kategori), yerleştirilmiş eşyaları tutan `FurnitureManager` (dünya durumu → co-op'ta server), **kayıt** (tür + konum + açı), **oyun içi NavMesh güncellemesi** (editörde bake yerine). Önce masalar. |
+| D2 ✅ | Eşya altyapısı | `FurnitureData` (prefab, fiyat, kapladığı alan, kategori), yerleştirilmiş eşyaları tutan `FurnitureManager` (dünya durumu → co-op'ta server), **kayıt** (tür + konum + açı), **oyun içi NavMesh güncellemesi** (editörde bake yerine). Önce masalar. **Oyuncuya görünür bir şey getirmez — sadece altyapı.** |
 | D3 | Yerleştirme modu | Hayalet önizleme, 0.1–0.2 m adım, serbest döndürme, çakışma/bölge kontrolü, var olan eşyayı alıp taşıma. |
 | D4 | Eşya satın alma | PC'de eşya kataloğu → alınca elde hayalet. Sarf malzemesi kurye ile kalır. |
 | D5 | Bütün eşyalar taşınabilir | Ocak, makineler, lavabo, raf, PC… Sabit sahne + `UpgradeUnlocker` düzeni kalkar; menü kilidi "upgrade alındı mı" yerine "makine dükkanda mı" olur. |
@@ -658,6 +660,26 @@ Tek bardak taşıma aynen duruyor; tepsi **ek** bir yol. Tepsi **8 bardak** (4×
 
 **Test:** raftan tepsiyle bardak alma, ocakta sıralı doldurma, karışık sipariş (çay + kahve), masada kirli toplama + servis (ikinci tur dahil), lavaboda toplu yıkama, tepsiyi geri bırakma ve tepsisiz tek bardak servisi çalışıyor. Kullanıcı onayladı.
 
+### Adım D2 — Eşya altyapısı ✅ (görünmez altyapı; yerleştirme D3'te)
+Masalar artık sahneye elle konmuş sabit objeler değil: **veriden oluşturulan, konumu/açısı kaydedilen eşyalar.** Oyuncu açısından bir şey değişmedi (masalar aynı yerde) — bu adım D3'teki yerleştirme modunun zemini.
+
+> ⚠️ **Kullanıcı geri bildirimi (2026-10-17):** test için yazılan `Kan Bagi > Test > Masalari Kaydir` (bütün boş masaları birden +0.5 m kaydırıp 30° döndüren düğme) kullanıcı tarafından **yerleştirme sistemi sanıldı** ve haklı olarak "saçma" bulundu. Ders: **görünmez bir altyapı adımında, oyuncunun göreceği şeyin hangi adımda geleceğini baştan açıkça söyle;** test aracını gerçek özellikmiş gibi sunma. Bu düğme **D3'te silinecek.**
+
+**Parçalar:**
+- **Veri** (`KanBagi.Data`): `FurnitureData` (displayName, `FurnitureCategory` Table/Station/Decor, prefab, price — fiyat D4'te), `FurnitureDatabase` (asset adı → tanım; **yeni eşya buraya eklenmeli**), `FurnitureLayout` (`FurnitureLayoutEntry`: eşya + konum + **yaw**).
+  Asset'ler: `MasaEsya`, `EsyaVeritabani`, `VarsayilanDuzen` (Masa1 (−2.5, 0.4, −1), Masa2 (2.5, 0.4, −1)).
+- **Oyun içi** (yeni klasör `Scripts/Furniture/`, **`KanBagi.Furniture`**):
+  - `PlacedFurniture` — eşya kökünde "ben hangi eşyayım" (`Data`, `Yaw`).
+  - `FurnitureManager` (**`[DefaultExecutionOrder(50)]`**, Managers, `ISaveable` anahtar **`furniture`**): `Spawn`, `Move`, `Remove` (tek geçiş noktası = co-op RPC sınırı), `OnLayoutChanged`. Kayıt yoksa `Start`'ta varsayılan düzeni kurar (SaveManager'dan (100) önce). Kayıt: eşya **asset adı** + konum + yaw, ayrıca `granted` (eşyasını vermiş upgrade adları). Yüklemede düzen **tamamen** kayıttakiyle değişir. Silerken önce `SetActive(false)` (masa `TableManager`'dan hemen çıksın), sonra `Destroy`.
+  - `NavMeshRuntimeBaker` (Managers): `OnLayoutChanged` ve **`OnUpgradePurchased`** (kilitli makine açılınca) → **bir sonraki karede bir kez** `NavMeshSurface.BuildNavMesh()`. Aynı karedeki istekler birleşir. Yeni veri bellekte oluşur, diskteki asset'e dokunulmaz. **Editördeki `NavMesh'i Yeniden Bake Et` artık zorunlu değil** (oyun başında zaten bake ediliyor), ama editör görünümü için kullanılabilir.
+  - `UpgradeVisual` (masa prefab'ında): upgrade alınınca **kendi** okey/iskambil/domino parçasını açar; sonradan oluşturulan masada `Start`'ta `IsPurchased` ile hemen uygular. Sahnedeki parça açıcı `UpgradeUnlocker`'ların yerini aldı (D8'in temeli).
+  - `UpgradeFurnitureGrant` (Managers): "Yeni Masa" alınınca Masa3'ün eski yerine (0, 0.4, −2) **bir kez** masa koyar; `FurnitureManager.MarkGranted(upgrade adı)`. **Yükleme sırası belirsizliğine dayanıklı:** upgrade önce yüklenirse verilen masa, ardından gelen eşya kaydıyla değiştirilir; eşya önce yüklenirse `granted` sayesinde atlanır. Eski (eşya bölümü olmayan) kayıtta varsayılan düzen + "Yeni Masa" alınmışsa hibe. **Geçici:** D3/D4'te masa elde hayalet olarak gelecek.
+- **Editor:** `Kan Bagi > Esya Altyapisini Kur` (`FurnitureSetupBuilder`, **bir kez**): Masa1'den `Masa` prefab'ı (Table + BoxCollider + NavMeshModifier "Not Walkable" + `PlacedFurniture` + `UpgradeVisual` + parçalar `OkeyTakimi`/`IskambilDestesi`/`DominoTakimi`, başta kapalı), veri asset'leri, Managers bileşenleri; **sahnedeki 3 masa ve 4 eski `UpgradeUnlocker` (YeniMasa, Okey, İskambil, Domino) silindi.** Hangi upgrade'in ne açtığını asset adından değil **mevcut açıcıların hedeflerinden** çıkardı. Kalan açıcılar: Kahve, Oralet, Kumarhane, Sahlep.
+- `TableGamesBuilder` (`Masa Oyunlarini Kur`): sahnede masa yoksa "artık gerekmiyor, parçalar `Masa` prefab'ında" der.
+- ⚠️ Editörde `GetComponent<T>() ?? ...` kullanılmaz: eksik bileşen "sahte null" döner, `??` yakalamaz → `TryGetComponent`.
+
+**Test:** yeni oyunda masalar eski yerlerinde, servis/tepsi çalışıyor; "Yeni Masa" Masa3'ü getiriyor, parçalar üç masada görünüyor; test düğmesiyle kaydırılan masaların etrafından müşteriler yürüyor; kayıttan kaydırılmış düzen geri geliyor, Masa3 çoğalmıyor; makineler açılınca içinden geçilmiyor. Kullanıcı onayladı ("dediklerin çalışıyor").
+
 **Değişecek mevcut parçalar (bilerek):** sabit eşyalar + `UpgradeUnlocker`, editörde NavMesh bake (`NavMesh'i Yeniden Bake Et`), `Icecek Istasyonlarini Kur` / `Masa Oyunlarini Kur` builder'ları, tek kişilik `Table`, tek eşya tutan eller, dükkan geneli masa oyunları. **Değişmeyenler:** müşteri profilleri, sipariş/ikinci tur, menü, stok/kurye, ekonomi, itibar, gün döngüsü, kayıt altyapısı, kumar/mafya/polis, fısıltılar, hikaye, co-op etkileşim katmanı.
 
 ---
@@ -669,7 +691,7 @@ Tek bardak taşıma aynen duruyor; tepsi **ek** bir yol. Tepsi **8 bardak** (4×
 | `Zemin` (Plane) | (0,0,0) | **NavMeshSurface** — `Kan Bagi > NavMesh'i Yeniden Bake Et` ile bake edilir (elle Bake'e basma: kilitli eşyaların deliği açılmaz). Tüm eşyalarda "Not Walkable" `NavMeshModifier` var |
 | `Player` (Empty) | (0, 1.1, 0) | CharacterController, PlayerController, PlayerInteractor, PlayerHands, PlayerLock |
 | └ `Main Camera` | (0, 0.6, 0) | — (child) |
-| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, PoliceManager, **BalanceLogger**, **8 × UpgradeUnlocker** (YeniMasa→Masa3, KahveMakinesi→KahveMakinesi, Oralet→OraletSemaveri, Okey→OkeyTakimi1/2/3, Kumarhane→KumarMasasi, **İskambil→IskambilDestesi×3, Domino→DominoTakimi×3, SahlepMakinesi→SahlepMakinesi**), **2 × TableGameBoost** (İskambil 0.3, Domino 0.2) |
+| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, PoliceManager, **BalanceLogger**, **4 × UpgradeUnlocker** (KahveMakinesi→KahveMakinesi, Oralet→OraletSemaveri, Kumarhane→KumarMasasi, SahlepMakinesi→SahlepMakinesi — masa/parça açıcıları D2'de kalktı), **2 × TableGameBoost** (İskambil 0.3, Domino 0.2), **FurnitureManager, NavMeshRuntimeBaker, UpgradeFurnitureGrant** (YeniMasa → masa (0, 0.4, −2)) |
 | `EventSystem` | — | **Input System UI Input Module** (butonlar bunsuz çalışmaz) |
 | `Canvas` | — | InteractionPromptUI, HeldItemUI, ProgressBarUI, **ComputerUI** |
 | ├ `MoneyText` | sol üst (Pos Y -20) | MoneyUI |
@@ -698,11 +720,7 @@ Tek bardak taşıma aynen duruyor; tepsi **ek** bir yol. Tepsi **8 bardak** (4×
 | `OraletSemaveri` (Cube) — **başta pasif** | (1, 0.5, 3) | TeaStove (Oralet + OraletTozu × 1) |
 | `Lavabo` (Cube) | (2, 0.5, 3) | Sink (washDuration 2.5) |
 | `SahlepMakinesi` (Cube, 1×1×0.8, krem) — **başta pasif** | (3.5, 0.5, 3) | TeaStove (Sahlep + SahlepTozu × 1) — `Icecek Istasyonlarini Kur` kurar |
-| `Masa1` (Cube) | (-2.5, 0.4, -1) | Table (IInteractable — collider aynı objede olmalı) |
-| `Masa2` (Cube) | (2.5, 0.4, -1) | Table |
-| `Masa3` (Cube) — **başta pasif** | (0, 0.4, -2) | Table (Yeni Masa upgrade'i açar; NavMesh **açıkken** bake edildi) |
-| `OkeyTakimi1/2/3` — masaların child'ı, **başta pasif** | yerel (0.3, 0.5, 0) | — (Box Collider **yok**) |
-| `IskambilDestesi` / `DominoTakimi` — her masanın child'ı, **başta pasif** | yerel (−0.3, 0.52, 0.3) / (0.3, 0.53, −0.3) | — (collider **yok**; `Masa Oyunlarini Kur` kurar) |
+| ~~`Masa1/2/3`~~ — **D2'den beri sahnede masa YOK** | — | Masalar oyun başında `FurnitureManager` tarafından `Masa` prefab'ından oluşturulur (varsayılan düzen / kayıt). Prefab'da `OkeyTakimi` (yerel 0.3, 0.6, 0.3), `IskambilDestesi` (−0.3, 0.52, 0.3), `DominoTakimi` (0.3, 0.53, −0.3) — collider yok, `UpgradeVisual` açar |
 | `GirisNoktasi` (Empty) | (0, 0, -4.5) | — (spawn + exit) |
 | `Spawner` (Empty) | — | CustomerSpawner (**profiles**: EmekliDayi, Ogrenci, Esnaf, Kabadayi — `Musteri Profillerini Bagla` bağlar) |
 | `YonetimPC` (Cube) | (2, 0.5, 2) | ComputerStation (catalog: MalzemeKatalogu) |
@@ -762,7 +780,9 @@ Tek bardak taşıma aynen duruyor; tepsi **ek** bir yol. Tepsi **8 bardak** (4×
 
 **Adım 10c-3 bitti ve test edildi.** Sahlep (30 TL) Sahlep Makinesi upgrade'iyle (300 TL, itibar 80) açılıyor; makine lavabonun sağında beliriyor, toz sipariş edilip sahlep yapılıyor, Dayı/Öğrenci/Kabadayı istiyor, kayıttan geri geliyor. Yeni içecekler artık `Icecek Istasyonlarini Kur` tablosuna bir satırla ekleniyor. **10c-4 (bahçe) iptal edildi** — kullanıcının "kendi dükkanını kur" vizyonu üzerine yeni **Dükkan Düzenleme** bölümü açıldı (bölüm 6.9).
 
-**Adım D1 bitti ve test edildi — DÜKKAN DÜZENLEME BAŞLADI.** Tepsi 8 bardak taşıyor: raftan her E bir bardak, ocağa bırakınca her E bir bardak daha dolduruyor, masada tek basışta kirliyi toplayıp servis ediyor, lavaboda toplu (bardak başı 1.5 sn) yıkanıyor; tepsiler rafın üstünde duruyor. **Sıradaki iş: D2 — Eşya altyapısı** (`FurnitureData`, `FurnitureManager`, kayıt, oyun içi NavMesh; önce masalar — plan ayrıca onaylanacak).
+**Adım D1 bitti ve test edildi — DÜKKAN DÜZENLEME BAŞLADI.** Tepsi 8 bardak taşıyor: raftan her E bir bardak, ocağa bırakınca her E bir bardak daha dolduruyor, masada tek basışta kirliyi toplayıp servis ediyor, lavaboda toplu (bardak başı 1.5 sn) yıkanıyor; tepsiler rafın üstünde duruyor.
+
+**Adım D2 bitti ve test edildi (altyapı).** Masalar veriden oluşturuluyor, konum/açıları kayda giriyor, NavMesh oyun içinde güncelleniyor, "Yeni Masa" hibe ile geliyor, masa oyunu parçalarını her masa kendisi açıyor. Oyuncuya görünür bir değişiklik yok. **Sıradaki iş: D3 — Yerleştirme modu** (elde hayalet önizleme, masayı tek tek tutup taşıma, 0.1 m adım, serbest döndürme, geçerlilik kontrolü; "Yeni Masa" alınınca masa **elde hayalet** olarak gelir; test düğmesi silinir — plan ayrıca onaylanacak).
 
 **Adım 10c-2 bitti ve test edildi.** İskambil (200 TL, itibar 40, +%30) ve Domino (350 TL, itibar 100, +%20) masalarda beliriyor; müşteriler içtikten sonra oyun meraklarına göre bir tur daha sipariş veriyor, ciro iki satışı da sayıyor, ikinci turda bekletmenin cezası yok.
 
@@ -959,7 +979,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**10a-2a**~~ ✅ | Mahalle fısıltıları (olaylara eşlik eden ton satırı + ilk sabah yönlendirmesi) — **bitti** | Ucuz, kimliği oyunun içine taşır |
 | ~~**10a-2b**~~ ✅ | Mevcut metinlerin tonu (sadece tablodakiler), `ArayuzMetinleri` + `Metinleri Uygula` — **bitti** | Fısıltılarla aynı tonu mevcut arayüze yayar |
 | ~~**10c**~~ ✅ | Müşteri ve stok çeşitliliği — **bitti** (10c-1 profiller, 10c-2 masa oyunları, 10c-3 sahlep; 10c-4 bahçe → D bölümüne taşındı) | Faz 2'den kalan |
-| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi; sıradaki D2 eşya altyapısı): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
+| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi, D2 ✅ eşya altyapısı; sıradaki D3 yerleştirme modu): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
 | **11** | Görsel cila, ses, ana menü, kayıt slotları | **En sona**: mekanikler değişince geometri/model yeniden yapılır |
@@ -984,7 +1004,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum (2026-10-17): GitHub bağlantısı kuruldu, tüm commit'ler push edildi** (ilk push: 17 commit, ~2.7 MB). Yerel `main` = `origin/main`.
 ```
-(yeni)   Adim D1: tepsi - 8 bardaklik servis ve toplama
+(yeni)   Adim D2: esya altyapisi - FurnitureManager, kayit, oyun ici NavMesh
+65b19d0  Adim D1: tepsi - 8 bardaklik servis ve toplama
 a56f83e  DEVAM.md: Dukkan Duzenleme bolumu - kullanici kararlari ve D1-D9 yol haritasi
 a45a845  GitHub remote kuruldu, DEVAM/CLAUDE git durumu guncellendi
 9b5038a  Adim 10c-3: sahlep ve genel icecek istasyonu builder'i
@@ -1019,7 +1040,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (D2 — Eşya altyapısı: `FurnitureData`, `FurnitureManager`, yerleşim kaydı, oyun içi NavMesh güncellemesi; önce masalar) planını anlat, onay al**, sonra kod yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
+3. **Sıradaki adımın (D3 — Yerleştirme modu: elde hayalet, tek tek taşıma, "Yeni Masa" elde hayalet olarak) planını anlat, onay al**, sonra kod yaz. Planda **oyuncunun ne göreceğini** açıkça yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.
