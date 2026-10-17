@@ -30,6 +30,9 @@ namespace KanBagi.Shop
         public ShopCatalog Catalog => catalog;
         public bool IsScreenOpen { get; private set; }
 
+        /// <summary>Ekrani su an kullanan oyuncunun kilidi (ekran kapaliysa null). PC'den alinan esya ona verilir.</summary>
+        public PlayerLock ScreenUser => screenUser;
+
         /// <summary>Ekran acilip kapandiginda tetiklenir. ComputerUI buna abone olur.</summary>
         public event Action<bool> OnScreenToggled;
 
