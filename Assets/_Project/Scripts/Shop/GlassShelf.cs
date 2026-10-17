@@ -35,6 +35,14 @@ namespace KanBagi.Shop
             if (hands.IsEmpty)
                 return cleanGlassCount > 0 ? $"Temiz Bardak Al ({cleanGlassCount})" : "Temiz bardak kalmadi";
 
+            if (TryGetHeldTray(hands, out Tray tray))
+            {
+                if (tray.IsFull) return "Tepsi dolu";
+                return cleanGlassCount > 0
+                    ? $"Tepsiye Bardak Koy ({tray.Count}/{tray.Capacity})"
+                    : "Temiz bardak kalmadi";
+            }
+
             return CanReturnHeldGlass(hands) ? "Bardagi Rafa Koy" : "Once elindekini birak";
         }
 
@@ -45,8 +53,30 @@ namespace KanBagi.Shop
 
             if (hands.IsEmpty)
                 TakeGlass(hands);
+            else if (TryGetHeldTray(hands, out Tray tray))
+                PutGlassOnTray(tray);
             else if (CanReturnHeldGlass(hands))
                 ReturnGlass(hands);
+        }
+
+        private static bool TryGetHeldTray(PlayerHands hands, out Tray tray)
+        {
+            tray = null;
+            return hands.HeldItem != null && hands.HeldItem.TryGetComponent(out tray);
+        }
+
+        /// <summary>Her basista tepsiye BIR temiz bardak (kac bardak goturulecegine oyuncu karar verir).</summary>
+        private void PutGlassOnTray(Tray tray)
+        {
+            if (tray.IsFull || cleanGlassCount <= 0) return;
+
+            HoldableItem glassItem = SpawnGlass();
+            if (glassItem == null) return;
+
+            if (glassItem.TryGetComponent(out TeaGlass glass) && tray.TryAdd(glass))
+                ChangeCount(-1);
+            else
+                Destroy(glassItem.gameObject);
         }
 
         /// <summary>Elde temiz ve bos bir bardak varsa rafa geri konabilir.</summary>
@@ -59,22 +89,30 @@ namespace KanBagi.Shop
 
         private void TakeGlass(PlayerHands hands)
         {
-            if (cleanGlassCount <= 0 || glassPrefab == null) return;
+            if (cleanGlassCount <= 0) return;
 
-            Transform origin = spawnPoint != null ? spawnPoint : transform;
-            GameObject glassObject = Instantiate(glassPrefab, origin.position, origin.rotation);
-
-            if (!glassObject.TryGetComponent(out HoldableItem holdable))
-            {
-                Debug.LogError($"[GlassShelf] '{glassPrefab.name}' prefab'inda HoldableItem yok.", this);
-                Destroy(glassObject);
-                return;
-            }
+            HoldableItem holdable = SpawnGlass();
+            if (holdable == null) return;
 
             if (hands.TryHold(holdable))
                 ChangeCount(-1);
             else
-                Destroy(glassObject);
+                Destroy(holdable.gameObject);
+        }
+
+        /// <summary>Raf noktasinda yeni bir bardak olusturur (stoktan dusmek cagiranin isi).</summary>
+        private HoldableItem SpawnGlass()
+        {
+            if (glassPrefab == null) return null;
+
+            Transform origin = spawnPoint != null ? spawnPoint : transform;
+            GameObject glassObject = Instantiate(glassPrefab, origin.position, origin.rotation);
+
+            if (glassObject.TryGetComponent(out HoldableItem holdable)) return holdable;
+
+            Debug.LogError($"[GlassShelf] '{glassPrefab.name}' prefab'inda HoldableItem yok.", this);
+            Destroy(glassObject);
+            return null;
         }
 
         private void ReturnGlass(PlayerHands hands)

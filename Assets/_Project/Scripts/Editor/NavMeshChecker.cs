@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using KanBagi.Interaction;
 using Unity.AI.Navigation;
 using Unity.AI.Navigation.Editor;
 using UnityEditor;
@@ -198,6 +199,8 @@ namespace KanBagi.EditorTools
                 // Sadece kok objeler (mobilya). Cocuklar (okey takimi, tabela) ve oyuncu atlanir.
                 if (collider.transform.parent != null || collider is CharacterController) continue;
                 if (collider.GetComponent<NavMeshAgent>() != null) continue;
+                // Elde tasinan esyalar (tepsi, koli) mobilya degil.
+                if (collider.GetComponent<HoldableItem>() != null) continue;
 
                 Bounds bounds = GetBounds(collider);
                 if (bounds.size.x > MaxFurnitureSize || bounds.size.z > MaxFurnitureSize) continue;

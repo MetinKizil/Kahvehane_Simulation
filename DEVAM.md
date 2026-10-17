@@ -89,17 +89,18 @@ Assets/_Project/
                        GamblingSignBuilder, MafiaPrefabBuilder, PolicePrefabBuilder,
                        BalancePresetApplier, GamblerPrefabBuilder, NavMeshChecker,
                        StoryPanelBuilder, WhisperLineBuilder, TextPresetApplier,
-                       CustomerProfileLinker, TableGamesBuilder, BeverageStationBuilder
+                       CustomerProfileLinker, TableGamesBuilder, BeverageStationBuilder,
+                       TrayBuilder
     ├── Illegal/       GamblingTable, SuspicionManager, MafiaManager, MafiaCollector,
                        PoliceManager, PoliceOfficer, Gambler, GamblerSpawner
     ├── Neighborhood/  PropertyBuilding, PropertyVisualSwitch
     ├── Economy/       EconomyManager, PurchaseManager
     ├── Interaction/   IInteractable, HoldableItem, PlayerInteractor
     ├── Inventory/     InventoryManager
-    ├── Items/         TeaGlass, DeliveryBox
+    ├── Items/         TeaGlass, DeliveryBox, Tray
     ├── Player/        PlayerController, PlayerHands, PlayerLock, PlayerContext (düz sınıf, bileşen değil)
     ├── Shop/          TimedStation, TeaStove, Sink, GlassShelf, Table, TableManager,
-                       ComputerStation, StorageRack, MenuManager, StationSpeedBoost
+                       ComputerStation, StorageRack, MenuManager, StationSpeedBoost, TraySpot
     └── UI/            MoneyUI, ReputationUI, StockUI, HeldItemUI, InteractionPromptUI, ProgressBarUI,
                        OrderBubbleUI, Billboard, ComputerUI, CatalogEntryUI, DeliveryNotificationUI,
                        TabGroupUI, UpgradeListUI, UpgradeEntryUI, ClockUI, DailyReportUI,
@@ -620,7 +621,7 @@ En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 
 
 | # | Adım | İçerik |
 |---|---|---|
-| **D1** | **Tepsi** | 8 bardak; raftan bardak alma, ocakta doldurma, masaya servis, kirli toplama, lavaboda toplu yıkama. Bağımsız iş, ilk adım. |
+| **D1** ✅ | **Tepsi** | 8 bardak; raftan bardak alma, ocakta doldurma, masaya servis, kirli toplama, lavaboda toplu yıkama. Bağımsız iş, ilk adım. |
 | D2 | Eşya altyapısı | `FurnitureData` (prefab, fiyat, kapladığı alan, kategori), yerleştirilmiş eşyaları tutan `FurnitureManager` (dünya durumu → co-op'ta server), **kayıt** (tür + konum + açı), **oyun içi NavMesh güncellemesi** (editörde bake yerine). Önce masalar. |
 | D3 | Yerleştirme modu | Hayalet önizleme, 0.1–0.2 m adım, serbest döndürme, çakışma/bölge kontrolü, var olan eşyayı alıp taşıma. |
 | D4 | Eşya satın alma | PC'de eşya kataloğu → alınca elde hayalet. Sarf malzemesi kurye ile kalır. |
@@ -629,6 +630,33 @@ En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 
 | D7 | Çok kişilik masalar + grup müşteriler | 2'lik/4'lük masalar, 2–4 kişilik gruplar; birlikte gelir/gider, her kişi kendi siparişi. |
 | D8 | Masa oyunları masa bazında | Okey/iskambil/domino masaya konan eşya; 4 kişilik okey grubu okeyli masayı ister (10c-2'deki dükkan geneli etki buna dönüşür). |
 | D9 | Kişiselleştirme / cafe | Mobilya kataloğu, duvar kâğıdı, zemin. (Dükkan boyutunu etkilemediği için mahalleden sonraya da kayabilir — kullanıcıya sorulacak.) |
+
+### Adım D1 — Tepsi ✅
+Tek bardak taşıma aynen duruyor; tepsi **ek** bir yol. Tepsi **8 bardak** (4×2) alır: dolu, boş veya kirli.
+
+**Akış (elde tepsiyle E):**
+
+| Nerede | Ne olur |
+|---|---|
+| Rafın üstündeki tepsi | Bakıp E → tepsi ele (`HoldableItem`, "Tepsiyi Al") |
+| **Bardak rafı** (gövdesi) | **Her E bir temiz bardak** tepsiye: "Tepsiye Bardak Koy (3/8)" |
+| **Ocak / makine** | Tepsi ocağa iner, **bir** boş bardak dolmaya başlar. Ocak çalışırken **her E bir bardak daha sıraya** ("Bir Çay Daha (2 sırada)"). Malzeme **her bardakta ayrı** düşer; stok biterse sıra durur. Bitince tepsiye bakıp alırsın (dolum sırasında tepsi alınamaz). Tek bardak dolduysa elde tepsiyle "Bardağı Tepsiye Al" |
+| **Masa** | **Tek basış:** önce masadaki kirli/boş bardak tepsiye, sonra bekleyen müşteriye **istediği** dolu bardak ("Kirliyi Topla + Servis Et"). Müşteri içerken bardak dolu sayılır, toplanmaz. Tepside yoksa "Tepside Kahve yok" |
+| **Lavabo** | Tepsideki **tüm kirli + dolu (dökülür)** bardaklar toplu yıkanır, **bardak başı 1.5 sn** (tekli 2.5 sn — toplu indirim). Temiz-boş bardaklar tepside kalır. Bitince tepsiye bakıp alırsın |
+| **Tepsi yeri** (rafın üstü, tepsi yokken) | "Tepsiyi Bırak" |
+
+**Parçalar:**
+- `Tray` (`KanBagi.Items`, `[RequireComponent(HoldableItem)]`): `capacity` 8, `grid` 4×2, `spacing` (0.1, 0.12), `surfaceHeight`, `glassLift`. Yuvalar `Awake`'te çocuk transform olarak oluşur; bardak `HoldableItem.AttachTo(yuva)` ile yapışır → **`IsHeld = true`, collider kapalı** (ışın tepsiye çarpar, masa/ocak yuvaları bardağı "kaldırılmış" görür). `TryAdd`, `TryTakeOut`, `TryRemoveAndDestroy`, `CountByState`, `FindByState`, `Find`, `FindAll`, `GetSummary` ("3 Çay, 1 Kahve, 2 boş, 1 kirli"), `OnContentsChanged` (tepsideki bardağın durumu değişince de tetiklenir).
+- `TraySpot` (`KanBagi.Shop`): ince collider; tepsi üstündeyken ışın tepsiye, kalkınca buraya çarpar. Doluluk takibi gerekmiyor. **Şimdilik bardak rafının üstünde sabit** (2 adet, `TepsiYeri1/2`); D3'te tezgaha da konabilecek.
+- İstasyonlara **tepsi dalı** eklendi, tek bardak kodu korunarak: `GlassShelf` (`SpawnGlass` ortak), `TeaStove` (`pendingFills` sırası, `TrayOnStove` — tepsi geri alınınca kendini temizler), `Table` (`ServeWithTray`, `PlaceAndServe` ortak), `Sink` (`trayWashDurationPerGlass` 1.5, `TrayOnSink`).
+- `HeldItemUI`: "Elinde: Tepsi (4/8) - 3 Çay, 1 boş".
+- `Kan Bagi > Tepsiyi Kur` (`TrayBuilder`): `Tepsi` prefab'ını kodla üretir (**kök ölçeksiz** + kökte BoxCollider 0.45×0.03×0.32, `Govde` çocuğu tahta renkli, `HoldableItem` "Tepsi"/"Tepsiyi Al" + `Tray`; `glassLift` bardak prefab'ının mesh yüksekliğinden). Rafın `Renderer.bounds`'undan **2 tepsi yeri + 2 tepsi** (co-op: oyuncu başına bir) koyar. Tekrar çalıştırılabilir.
+- `NavMeshChecker`: **`HoldableItem` taşıyan objeler mobilya sayılmaz** (tepsi/koli bake'te yürünemez işaretlenmesin).
+- ⚠️ Kök ölçeksiz kuralı: bardak tepsinin çocuğu olduğu için tepsinin kökü ölçeklenirse bardaklar ezilir. Gövde ayrı çocuk.
+- Bilinen küçük görsel kusur: ocak/lavabo yuva noktası bardak ortasına göre ayarlı; pivotu altta olan tepsi yüzeyden birkaç cm yukarıda durur (11'de).
+- Co-op: tepsi oyuncunun elinde (`player.Hands`), istasyonlar dünya nesnesi.
+
+**Test:** raftan tepsiyle bardak alma, ocakta sıralı doldurma, karışık sipariş (çay + kahve), masada kirli toplama + servis (ikinci tur dahil), lavaboda toplu yıkama, tepsiyi geri bırakma ve tepsisiz tek bardak servisi çalışıyor. Kullanıcı onayladı.
 
 **Değişecek mevcut parçalar (bilerek):** sabit eşyalar + `UpgradeUnlocker`, editörde NavMesh bake (`NavMesh'i Yeniden Bake Et`), `Icecek Istasyonlarini Kur` / `Masa Oyunlarini Kur` builder'ları, tek kişilik `Table`, tek eşya tutan eller, dükkan geneli masa oyunları. **Değişmeyenler:** müşteri profilleri, sipariş/ikinci tur, menü, stok/kurye, ekonomi, itibar, gün döngüsü, kayıt altyapısı, kumar/mafya/polis, fısıltılar, hikaye, co-op etkileşim katmanı.
 
@@ -664,6 +692,7 @@ En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 
 | &nbsp;&nbsp;├ `UpgradeSayfasi` (VLG, flexible height 1) | — | UpgradeListUI |
 | &nbsp;&nbsp;└ `EmlakSayfasi` (VLG, flexible height 1) | — | PropertyListUI |
 | `BardakRafi` (Cube) | (-2, 0.5, 2) | GlassShelf (stok 10, prefab: CayBardagi) |
+| `TepsiYeri1` / `TepsiYeri2` (+ üstlerinde 2 `Tepsi` prefab'ı) | rafın üstü (−2.25 / −1.75, 0.8, 2) | TraySpot — `Tepsiyi Kur` kurar |
 | `CayOcagi` (Cube) | (0, 0.5, 3) | TeaStove (Cay + CayYapragi × 1) |
 | `KahveMakinesi` (Cube) — **başta pasif** | (-1, 0.5, 3) | TeaStove (Kahve + KahveCekirdegi × 1) |
 | `OraletSemaveri` (Cube) — **başta pasif** | (1, 0.5, 3) | TeaStove (Oralet + OraletTozu × 1) |
@@ -699,6 +728,7 @@ En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 
 - `PolisMemuru` — aynı şekilde `Kan Bagi > Polis Prefabini Olustur`; PoliceManager runtime'da üretir/yok eder
 - `KumarMasasi > Ortu` — `Kan Bagi > Kumar Ortusunu Olustur ve Bagla` menüsü üretip bağlar
 - `Koli` (Cube 0.35/0.3/0.35 + **Rigidbody** + HoldableItem + DeliveryBox) — Rigidbody olmazsa koli havada asılı kalır
+- `Tepsi` — **elle kurulmaz**, `Kan Bagi > Tepsiyi Kur` üretir (kök ölçeksiz, HoldableItem + Tray)
 - `Kumarbaz` — **elle kurulmaz, sahneye elle konmaz**, `Kan Bagi > Kumarhaneyi Kur`; GamblerSpawner gece runtime'da üretir
 - `HikayeGirisPaneli` — **elle kurulmaz**, `Kan Bagi > Hikaye Giris Panelini Olustur` üretir ve Canvas'a yerleştirir
 
@@ -730,7 +760,9 @@ En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 
 
 ## 8. ŞU AN NEREDE KALDIK
 
-**Adım 10c-3 bitti ve test edildi.** Sahlep (30 TL) Sahlep Makinesi upgrade'iyle (300 TL, itibar 80) açılıyor; makine lavabonun sağında beliriyor, toz sipariş edilip sahlep yapılıyor, Dayı/Öğrenci/Kabadayı istiyor, kayıttan geri geliyor. Yeni içecekler artık `Icecek Istasyonlarini Kur` tablosuna bir satırla ekleniyor. **10c-4 (bahçe) iptal edildi** — kullanıcının "kendi dükkanını kur" vizyonu üzerine yeni **Dükkan Düzenleme** bölümü açıldı (bölüm 6.9). **Sıradaki iş: D1 — Tepsi** (plan ayrıca onaylanacak).
+**Adım 10c-3 bitti ve test edildi.** Sahlep (30 TL) Sahlep Makinesi upgrade'iyle (300 TL, itibar 80) açılıyor; makine lavabonun sağında beliriyor, toz sipariş edilip sahlep yapılıyor, Dayı/Öğrenci/Kabadayı istiyor, kayıttan geri geliyor. Yeni içecekler artık `Icecek Istasyonlarini Kur` tablosuna bir satırla ekleniyor. **10c-4 (bahçe) iptal edildi** — kullanıcının "kendi dükkanını kur" vizyonu üzerine yeni **Dükkan Düzenleme** bölümü açıldı (bölüm 6.9).
+
+**Adım D1 bitti ve test edildi — DÜKKAN DÜZENLEME BAŞLADI.** Tepsi 8 bardak taşıyor: raftan her E bir bardak, ocağa bırakınca her E bir bardak daha dolduruyor, masada tek basışta kirliyi toplayıp servis ediyor, lavaboda toplu (bardak başı 1.5 sn) yıkanıyor; tepsiler rafın üstünde duruyor. **Sıradaki iş: D2 — Eşya altyapısı** (`FurnitureData`, `FurnitureManager`, kayıt, oyun içi NavMesh; önce masalar — plan ayrıca onaylanacak).
 
 **Adım 10c-2 bitti ve test edildi.** İskambil (200 TL, itibar 40, +%30) ve Domino (350 TL, itibar 100, +%20) masalarda beliriyor; müşteriler içtikten sonra oyun meraklarına göre bir tur daha sipariş veriyor, ciro iki satışı da sayıyor, ikinci turda bekletmenin cezası yok.
 
@@ -927,7 +959,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**10a-2a**~~ ✅ | Mahalle fısıltıları (olaylara eşlik eden ton satırı + ilk sabah yönlendirmesi) — **bitti** | Ucuz, kimliği oyunun içine taşır |
 | ~~**10a-2b**~~ ✅ | Mevcut metinlerin tonu (sadece tablodakiler), `ArayuzMetinleri` + `Metinleri Uygula` — **bitti** | Fısıltılarla aynı tonu mevcut arayüze yayar |
 | ~~**10c**~~ ✅ | Müşteri ve stok çeşitliliği — **bitti** (10c-1 profiller, 10c-2 masa oyunları, 10c-3 sahlep; 10c-4 bahçe → D bölümüne taşındı) | Faz 2'den kalan |
-| **D1–D9** | **DÜKKAN DÜZENLEME — SIRADAKİ** (D1 tepsi ile başlar): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
+| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi; sıradaki D2 eşya altyapısı): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
 | **11** | Görsel cila, ses, ana menü, kayıt slotları | **En sona**: mekanikler değişince geometri/model yeniden yapılır |
@@ -952,7 +984,9 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum (2026-10-17): GitHub bağlantısı kuruldu, tüm commit'ler push edildi** (ilk push: 17 commit, ~2.7 MB). Yerel `main` = `origin/main`.
 ```
-(yeni)   GitHub remote kuruldu, DEVAM/CLAUDE git durumu guncellendi
+(yeni)   Adim D1: tepsi - 8 bardaklik servis ve toplama
+a56f83e  DEVAM.md: Dukkan Duzenleme bolumu - kullanici kararlari ve D1-D9 yol haritasi
+a45a845  GitHub remote kuruldu, DEVAM/CLAUDE git durumu guncellendi
 9b5038a  Adim 10c-3: sahlep ve genel icecek istasyonu builder'i
 6da6fa5  Adim 10c-2: masa oyunlari ve ikinci tur siparis
 0883c45  Adim 10c-1: musteri profilleri
@@ -985,7 +1019,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (D1 — Tepsi) planını anlat, onay al**, sonra kod yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
+3. **Sıradaki adımın (D2 — Eşya altyapısı: `FurnitureData`, `FurnitureManager`, yerleşim kaydı, oyun içi NavMesh güncellemesi; önce masalar) planını anlat, onay al**, sonra kod yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.

@@ -19,6 +19,7 @@ namespace KanBagi.UI
         [SerializeField] private PlayerHands hands;
 
         private TeaGlass trackedGlass;
+        private Tray trackedTray;
 
         private void Start()
         {
@@ -41,20 +42,28 @@ namespace KanBagi.UI
             if (hands != null)
                 hands.OnHeldItemChanged -= HandleHeldItemChanged;
 
-            UnsubscribeFromGlass();
+            UnsubscribeFromHeldItem();
         }
 
         private void HandleHeldItemChanged(HoldableItem item)
         {
-            UnsubscribeFromGlass();
+            UnsubscribeFromHeldItem();
 
             if (item != null && item.TryGetComponent(out trackedGlass))
                 trackedGlass.OnStateChanged += HandleGlassStateChanged;
+
+            if (item != null && item.TryGetComponent(out trackedTray))
+                trackedTray.OnContentsChanged += HandleTrayContentsChanged;
 
             Refresh(item);
         }
 
         private void HandleGlassStateChanged(GlassState state)
+        {
+            Refresh(hands.HeldItem);
+        }
+
+        private void HandleTrayContentsChanged()
         {
             Refresh(hands.HeldItem);
         }
@@ -66,17 +75,27 @@ namespace KanBagi.UI
 
             if (!hasItem) return;
 
-            heldItemText.text = trackedGlass != null
-                ? $"Elinde: {item.DisplayName} ({trackedGlass.GetStateLabel()})"
-                : $"Elinde: {item.DisplayName}";
+            if (trackedGlass != null)
+                heldItemText.text = $"Elinde: {item.DisplayName} ({trackedGlass.GetStateLabel()})";
+            else if (trackedTray != null)
+                heldItemText.text = $"Elinde: {item.DisplayName} ({trackedTray.Count}/{trackedTray.Capacity}) - {trackedTray.GetSummary()}";
+            else
+                heldItemText.text = $"Elinde: {item.DisplayName}";
         }
 
-        private void UnsubscribeFromGlass()
+        private void UnsubscribeFromHeldItem()
         {
-            if (trackedGlass == null) return;
+            if (trackedGlass != null)
+            {
+                trackedGlass.OnStateChanged -= HandleGlassStateChanged;
+                trackedGlass = null;
+            }
 
-            trackedGlass.OnStateChanged -= HandleGlassStateChanged;
-            trackedGlass = null;
+            if (trackedTray != null)
+            {
+                trackedTray.OnContentsChanged -= HandleTrayContentsChanged;
+                trackedTray = null;
+            }
         }
     }
 }
