@@ -526,7 +526,7 @@ Polis, teslimat, tahsildar, kumar, mülk ve gün sonu metinleri fısıltılarla 
 | **10c-1** ✅ | Müşteri profilleri (renk, sabır, zevk, bahşiş, itibarla açılma) |
 | **10c-2** ✅ | Masa oyunları: İskambil ve Domino upgrade'leri okey gibi masada belirir; oyunlu masadaki müşteri içtikten sonra **bir tur daha** sipariş verebilir (+ profillere "oyun merakı") |
 | **10c-3** ✅ | Yeni içecek: Sahlep (Sahlep Makinesi upgrade'i + Sahlep Tozu) — veri + genel `Icecek Istasyonlarini Kur` builder'ı |
-| **10c-4** | Dükkan genişletme: "Bahçe" upgrade'i yeni zemin + 2 masa açar; builder ile kurulur, `NavMesh'i Yeniden Bake Et` ile bake. Geometri primitive, görsel 11'de |
+| ~~**10c-4**~~ ➜ | ~~Bahçe: sabit zemin + 2 sabit masa~~ — **İPTAL, yeni "Dükkan Düzenleme" bölümüne taşındı** (bahçe orada bir genişletme bölgesi; masaları oyuncu yerleştirir). Bkz. bölüm 6.9 |
 
 Sıranın mantığı: profiller her şeyin temeli → masa başı gelir (ikinci tur) → menü çeşitliliği → en son fazla masa (talep oluştuktan sonra anlamlı).
 
@@ -595,6 +595,42 @@ En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 
 - **Oyun kodu değişmedi** — `TeaStove`, menü, stok ve kayıt sistemleri sahlebi olduğu gibi kaldırdı.
 
 **Test:** gerçek değerlerde "Sahlep Tozu: 0" görünüyor, malzeme ve makine kilitli; makine alınınca beliriyor, toz sipariş edilip depoya konunca sahlep yapılıyor, profiller sahlep istiyor, 30 TL (+ bahşiş) giriyor; Sanayi Ocağı hızlandırıyor; kayıttan makine, stok ve menü geri geliyor. Kullanıcı onayladı.
+
+---
+
+## 6.9 DÜKKAN DÜZENLEME — YENİ BÖLÜM (kararlar 2026-10-17, mahalleden ÖNCE)
+
+> **Neden:** Kullanıcının upgrade vizyonu "kilitli sahne" değil, **"kendi dükkanını kur"** (Supermarket Simulator / cafe sim türü). Bugünkü model (eşyalar sahneye elle sabit konmuş, upgrade sadece `UpgradeUnlocker` ile obje AÇIYOR) bu vizyonla uyuşmuyor. **Mahalleden önce** yapılır çünkü: *dükkanın ulaşabileceği en büyük boyut belli olsun ki mahalle onun etrafına kurulsun* (kullanıcının gerekçesi).
+
+**Kullanıcı kararları:**
+1. **Yerleştirme serbest:** mümkün olduğunca oyuncuya kalsın — **0.1–0.2 m adım**, **istediği açıda döndürme** (90° ile sınırlı değil).
+2. **Bütün eşyaların yeri değiştirilebilir** (masa, ocak, makineler, lavabo, raf, kumar masası…).
+   - **Kumar için ayrı oda:** geliştirme sayfasında **"Kumar Odası"** olarak görünür → alınca oda açılır → **kumar masası ayrıca satın alınır** ve **sayısı artırılabilir** (birden fazla kumar masası).
+3. **Teslimat iki türlü:**
+   - **Sarf malzemesi** (çay yaprağı, kahve çekirdeği…) → bugünkü gibi **kurye + koli**.
+   - **Eşya** (masa, kahve makinesi…) → alınınca **elde hayalet (yarı saydam önizleme) olarak belirir**, yerleştirilince normal haline döner. Kurye yok.
+4. **Genişletme hazır bölgelerle:** duvar kaldırılınca yeni bölge açılır. **Sıralı açılır** — "direkt üst katı alayım" olmaz. Örnek sıra: **yan oda → bahçe → üst kat** (kumar odasının bu zincirdeki yeri netleştirilecek).
+5. **Grup müşteriler:** **2, 3 veya 4 kişi** gelebilir (ör. 4 kişi gelip okey oynar).
+   **Tepsi:** **8 bardak** alır; **dolu bardak servisi + masadaki boş/kirli bardakları toplama** ikisi de tepsiyle yapılır.
+6. **Sıra:** **tepsiden başla**, bu bölüm **mahalleden (10d) önce**.
+
+**Bonus vizyon — kıraathaneden cafeye:** dükkan zamanla kıraathane olmaktan çıkıp **cafeye** dönüşecek. Bunun için **mobilya kataloğu** ve **kişiselleştirme** gerekecek: **duvar kâğıdı, zemin, mobilyalar** — oyuncuya "burası benim dükkanım" hissi vermek için.
+
+**Taslak adımlar (her biri ayrıca planlanıp onaylanacak):**
+
+| # | Adım | İçerik |
+|---|---|---|
+| **D1** | **Tepsi** | 8 bardak; raftan bardak alma, ocakta doldurma, masaya servis, kirli toplama, lavaboda toplu yıkama. Bağımsız iş, ilk adım. |
+| D2 | Eşya altyapısı | `FurnitureData` (prefab, fiyat, kapladığı alan, kategori), yerleştirilmiş eşyaları tutan `FurnitureManager` (dünya durumu → co-op'ta server), **kayıt** (tür + konum + açı), **oyun içi NavMesh güncellemesi** (editörde bake yerine). Önce masalar. |
+| D3 | Yerleştirme modu | Hayalet önizleme, 0.1–0.2 m adım, serbest döndürme, çakışma/bölge kontrolü, var olan eşyayı alıp taşıma. |
+| D4 | Eşya satın alma | PC'de eşya kataloğu → alınca elde hayalet. Sarf malzemesi kurye ile kalır. |
+| D5 | Bütün eşyalar taşınabilir | Ocak, makineler, lavabo, raf, PC… Sabit sahne + `UpgradeUnlocker` düzeni kalkar; menü kilidi "upgrade alındı mı" yerine "makine dükkanda mı" olur. |
+| D6 | Duvarlar + sıralı genişletme bölgeleri | İç/dış ayrımı (10d'den buraya kaydı), kapı. Yan oda → bahçe → üst kat; **Kumar Odası** + çoğaltılabilir kumar masası. **Dükkanın en büyük boyutu burada kesinleşir.** |
+| D7 | Çok kişilik masalar + grup müşteriler | 2'lik/4'lük masalar, 2–4 kişilik gruplar; birlikte gelir/gider, her kişi kendi siparişi. |
+| D8 | Masa oyunları masa bazında | Okey/iskambil/domino masaya konan eşya; 4 kişilik okey grubu okeyli masayı ister (10c-2'deki dükkan geneli etki buna dönüşür). |
+| D9 | Kişiselleştirme / cafe | Mobilya kataloğu, duvar kâğıdı, zemin. (Dükkan boyutunu etkilemediği için mahalleden sonraya da kayabilir — kullanıcıya sorulacak.) |
+
+**Değişecek mevcut parçalar (bilerek):** sabit eşyalar + `UpgradeUnlocker`, editörde NavMesh bake (`NavMesh'i Yeniden Bake Et`), `Icecek Istasyonlarini Kur` / `Masa Oyunlarini Kur` builder'ları, tek kişilik `Table`, tek eşya tutan eller, dükkan geneli masa oyunları. **Değişmeyenler:** müşteri profilleri, sipariş/ikinci tur, menü, stok/kurye, ekonomi, itibar, gün döngüsü, kayıt altyapısı, kumar/mafya/polis, fısıltılar, hikaye, co-op etkileşim katmanı.
 
 ---
 
@@ -694,7 +730,7 @@ En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 
 
 ## 8. ŞU AN NEREDE KALDIK
 
-**Adım 10c-3 bitti ve test edildi.** Sahlep (30 TL) Sahlep Makinesi upgrade'iyle (300 TL, itibar 80) açılıyor; makine lavabonun sağında beliriyor, toz sipariş edilip sahlep yapılıyor, Dayı/Öğrenci/Kabadayı istiyor, kayıttan geri geliyor. Yeni içecekler artık `Icecek Istasyonlarini Kur` tablosuna bir satırla ekleniyor. **Sıradaki iş: 10c-4 — Bahçe** (dükkan genişletme: yeni zemin + 2 masa; plan ayrıca onaylanacak).
+**Adım 10c-3 bitti ve test edildi.** Sahlep (30 TL) Sahlep Makinesi upgrade'iyle (300 TL, itibar 80) açılıyor; makine lavabonun sağında beliriyor, toz sipariş edilip sahlep yapılıyor, Dayı/Öğrenci/Kabadayı istiyor, kayıttan geri geliyor. Yeni içecekler artık `Icecek Istasyonlarini Kur` tablosuna bir satırla ekleniyor. **10c-4 (bahçe) iptal edildi** — kullanıcının "kendi dükkanını kur" vizyonu üzerine yeni **Dükkan Düzenleme** bölümü açıldı (bölüm 6.9). **Sıradaki iş: D1 — Tepsi** (plan ayrıca onaylanacak).
 
 **Adım 10c-2 bitti ve test edildi.** İskambil (200 TL, itibar 40, +%30) ve Domino (350 TL, itibar 100, +%20) masalarda beliriyor; müşteriler içtikten sonra oyun meraklarına göre bir tur daha sipariş veriyor, ciro iki satışı da sayıyor, ikinci turda bekletmenin cezası yok.
 
@@ -890,7 +926,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**10a-1**~~ ✅ | Hikaye giriş ekranı — **bitti** | Oyuna kimlik katar, küçük iş |
 | ~~**10a-2a**~~ ✅ | Mahalle fısıltıları (olaylara eşlik eden ton satırı + ilk sabah yönlendirmesi) — **bitti** | Ucuz, kimliği oyunun içine taşır |
 | ~~**10a-2b**~~ ✅ | Mevcut metinlerin tonu (sadece tablodakiler), `ArayuzMetinleri` + `Metinleri Uygula` — **bitti** | Fısıltılarla aynı tonu mevcut arayüze yayar |
-| **10c** | **Dükkan genişletme + iskambil/domino + müşteri ve stok çeşitliliği — DEVAM EDİYOR** (10c-1 ✅ profiller, 10c-2 ✅ masa oyunları, 10c-3 ✅ sahlep; sıradaki 10c-4 bahçe — bölüm 6.8) | Faz 2'den kalan; mekan büyüdükçe kumarhane odası da anlam kazanır |
+| ~~**10c**~~ ✅ | Müşteri ve stok çeşitliliği — **bitti** (10c-1 profiller, 10c-2 masa oyunları, 10c-3 sahlep; 10c-4 bahçe → D bölümüne taşındı) | Faz 2'den kalan |
+| **D1–D9** | **DÜKKAN DÜZENLEME — SIRADAKİ** (D1 tepsi ile başlar): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
 | **11** | Görsel cila, ses, ana menü, kayıt slotları | **En sona**: mekanikler değişince geometri/model yeniden yapılır |
@@ -948,7 +985,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (10c-4 — Bahçe: dükkan genişletme, yeni zemin + 2 masa, upgrade ile açılır; builder + NavMesh bake) planını anlat, onay al**, sonra kod yaz. 10c'nin genel planı bölüm 6.8'de.
+3. **Sıradaki adımın (D1 — Tepsi) planını anlat, onay al**, sonra kod yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.
