@@ -28,12 +28,17 @@ namespace KanBagi.Data
         [SerializeField] private GameObject prefab;
 
         [Header("Ekonomi")]
-        [Tooltip("Satin alma fiyati (TL). D4'te esya katalogunda kullanilacak.")]
+        [Tooltip("Satin alma fiyati (TL). Esya yerlestirilince odenir.")]
         [SerializeField] private int price = 100;
+
+        [Header("Sinir")]
+        [Tooltip("Dukkanda en fazla kac tane olabilir (ana salon). 0 = sinirsiz. Genisletme bolgeleri (D6) artiracak.")]
+        [SerializeField] private int baseLimit;
 
         public string DisplayName => displayName;
         public FurnitureCategory Category => category;
         public GameObject Prefab => prefab;
         public int Price => price;
+        public int BaseLimit => baseLimit;
     }
 }

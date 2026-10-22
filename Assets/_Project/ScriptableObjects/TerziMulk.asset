@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: TerziMulk
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.PropertyData
   propertyName: "Terzi D\xFCkkan\u0131"
-  description: Kepenk kapali duruyor. Kirasi iyi.
+  description: "Kepenk kapalı duruyor. Kirası iyi."
   purchasePrice: 1200
   dailyIncome: 90
   requiredReputation: 140

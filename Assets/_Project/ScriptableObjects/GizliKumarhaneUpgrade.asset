@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: GizliKumarhaneUpgrade
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.UpgradeData
   upgradeName: Gizli Kumarhane
-  description: Arka odada kumar masasi. Geceleri acilir. Yuksek kazanc, yuksek risk.
+  description: "Arka odada kumar masası. Geceleri açılır. Yüksek kazanç, yüksek risk."
   cost: 1500
   requiredReputation: 180

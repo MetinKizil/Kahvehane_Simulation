@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: YeniMasaUpgrade
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.UpgradeData
   upgradeName: Yeni Masa
-  description: Dukkana ucuncu masayi koyar. Daha fazla musteri, daha fazla para.
+  description: "Kullanılmıyor: masalar PC'deki EŞYALAR sekmesinden alınır."
   cost: 100

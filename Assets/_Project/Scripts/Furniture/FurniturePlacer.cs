@@ -14,7 +14,8 @@ namespace KanBagi.Furniture
     /// Yerlestirme modu: oyuncu bir esyayi (simdilik masa) F ile kaldirir, esya yari saydam HAYALET olur
     /// ve oyuncunun baktigi zemin noktasini takip eder (0.1 m adim). Tekerlek 5 derece, Shift+tekerlek 45 derece dondurur.
     /// Yesil = konabilir, kirmizi = konamaz. Sol tik birakir, sag tik iptal eder (esya eski yerine doner).
-    /// PC'den alinan yeni esya da ayni yoldan elde hayalet olarak gelir (BeginPlacingNew).
+    /// PC'den alinan yeni esya da ayni yoldan elde hayalet olarak gelir (BeginPlacingNew): hayalet dukkana
+    /// KAYDEDILMEZ; sol tikla konunca FurnitureManager.TryPurchase ile para duser ve esya olusur, iptalde hayalet silinir.
     ///
     /// Player objesinde durur; SINGLETON DEGIL (co-op'ta her oyuncunun kendi yerlestirmesi).
     /// Esyanin yerini SADECE onaylayinca FurnitureManager.Move ile degistirir (dunya durumu, RPC siniri).
@@ -76,6 +77,8 @@ namespace KanBagi.Furniture
         private Collider[] colliders;
         private bool[] colliderStates;
         private Table table;
+        // Doluysa tasinan sey PC'den yeni alinmis (henuz odenmemis) bir esyanin hayaleti.
+        private FurnitureData pendingPurchase;
 
         public bool IsPlacing => current != null;
 
@@ -144,12 +147,24 @@ namespace KanBagi.Furniture
 
         // ---- Disaridan: PC'den alinan yeni esya ----
 
-        /// <summary>Yeni olusturulmus esyayi dogrudan hayalet olarak oyuncunun eline verir. Iptal edilirse bulundugu yerde kalir.</summary>
-        public void BeginPlacingNew(PlacedFurniture furniture)
+        /// <summary>
+        /// Satin alinan esyanin hayaletini oyuncunun onunde olusturup eline verir. Para henuz dusmez;
+        /// sol tikla konunca odenir, sag tikla iptal edilirse hayalet silinir ve para hic gitmez.
+        /// </summary>
+        public void BeginPlacingNew(FurnitureData data)
         {
-            if (furniture == null) return;
+            if (data == null || data.Prefab == null) return;
             if (IsPlacing) Cancel();
 
+            Vector3 start = rayOrigin.position + rayOrigin.forward * 2f;
+            GameObject ghost = Instantiate(data.Prefab, start, Quaternion.identity);
+            ghost.name = data.Prefab.name;
+
+            if (!ghost.TryGetComponent(out PlacedFurniture furniture))
+                furniture = ghost.AddComponent<PlacedFurniture>();
+            furniture.Initialize(data);
+
+            pendingPurchase = data;
             Begin(furniture);
         }
 
@@ -201,12 +216,31 @@ namespace KanBagi.Furniture
                 return;
             }
 
+            FurnitureManager manager = FurnitureManager.Instance;
+            if (manager == null) return;
+
             Vector3 position = current.transform.position;
+
+            if (pendingPurchase != null)
+            {
+                // Para/sinir yerlestirme aninda tekrar kontrol edilir (bu arada ceza kesilmis olabilir).
+                if (!manager.CanPurchase(pendingPurchase, out string reason))
+                {
+                    OnMessage?.Invoke(reason);
+                    return;
+                }
+
+                FurnitureData data = pendingPurchase;
+                DiscardGhost();
+                manager.TryPurchase(data, position, yaw);
+                return;
+            }
+
             PlacedFurniture placed = current;
             End();
 
             // Tek gecis noktasi: NavMesh guncellenir, kayda girer.
-            if (FurnitureManager.Instance != null) FurnitureManager.Instance.Move(placed, position, yaw);
+            manager.Move(placed, position, yaw);
         }
 
         private void HandleCancel(InputAction.CallbackContext context)
@@ -245,6 +279,8 @@ namespace KanBagi.Furniture
             originalYaw = furniture.Yaw;
             yaw = originalYaw;
 
+            // Yeni olusturulan hayaletin collider sinirlari dogru okunsun.
+            Physics.SyncTransforms();
             colliders = furniture.GetComponentsInChildren<Collider>(true);
             pivotHeight = MeasurePivotHeight(furniture, colliders);
 
@@ -399,11 +435,38 @@ namespace KanBagi.Furniture
 
         private void Cancel()
         {
+            // Yeni esya: hayalet silinir, para hic dusmemisti.
+            if (pendingPurchase != null)
+            {
+                DiscardGhost();
+                return;
+            }
+
             PlacedFurniture furniture = current;
             End();
 
             // Esya eski yerine/acisina doner; duzen degismedigi icin NavMesh'e dokunulmaz.
             furniture.transform.SetPositionAndRotation(originalPosition, Quaternion.Euler(0f, originalYaw, 0f));
+        }
+
+        /// <summary>Henuz satin alinmamis hayaleti yok eder (eski haline dondurmeye gerek yok).</summary>
+        private void DiscardGhost()
+        {
+            GameObject ghost = current.gameObject;
+
+            // Once kapatilir: Table.OnDisable hemen calisir, masa TableManager'a hic geri girmez.
+            ghost.SetActive(false);
+            Destroy(ghost);
+
+            if (interactor != null && CanControl()) interactor.enabled = true;
+
+            pendingPurchase = null;
+            current = null;
+            table = null;
+            renderers = null;
+            colliders = null;
+
+            OnPlacingChanged?.Invoke(false);
         }
 
         /// <summary>Hayaleti normale dondurur: malzemeler, collider'lar, masa kaydi, etkilesim.</summary>

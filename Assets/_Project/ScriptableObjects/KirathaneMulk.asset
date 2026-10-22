@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: KirathaneMulk
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.PropertyData
   propertyName: "Eski K\u0131raathane"
-  description: Mahallenin en eski mekani. Herkes burayi bilir.
+  description: "Mahallenin en eski mekânı. Herkes burayı bilir."
   purchasePrice: 2000
   dailyIncome: 160
   requiredReputation: 240

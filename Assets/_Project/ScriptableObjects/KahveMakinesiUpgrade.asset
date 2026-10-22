@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: daebcd5ffb35a6b40bd3e2e39552ea09, type: 3}
   m_Name: KahveMakinesiUpgrade
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.UpgradeData
-  upgradeName: KAhve MAkinesi
-  description: Musteriler kahve de istemeye baslar. Cay'dan pahali.
+  upgradeName: "Kahve Makinesi"
+  description: "Müşteriler kahve de istemeye başlar. Çaydan pahalı."
   cost: 200

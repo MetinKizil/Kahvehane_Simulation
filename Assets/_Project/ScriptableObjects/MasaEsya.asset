@@ -16,3 +16,4 @@ MonoBehaviour:
   category: 0
   prefab: {fileID: 3104127545479715257, guid: 3dd262b73149cbc4fab6b7df39305923, type: 3}
   price: 100
+  baseLimit: 4

@@ -17,7 +17,7 @@ namespace KanBagi.EditorTools
     /// D2 - Esya altyapisi kurulumu. Sahnedeki SABIT masalari veriden olusturulan esyalara cevirir:
     ///  1) Masa1'den 'Masa' prefab'i (Table + collider + NavMeshModifier + okey/iskambil/domino parcalari + UpgradeVisual)
     ///  2) Veri: MasaEsya (FurnitureData), EsyaVeritabani (FurnitureDatabase), VarsayilanDuzen (FurnitureLayout)
-    ///  3) Managers: FurnitureManager, NavMeshRuntimeBaker, "Yeni Masa" icin UpgradeFurnitureGrant
+    ///  3) Managers: FurnitureManager, NavMeshRuntimeBaker
     ///  4) Sahnedeki masalar ve onlari/parcalarini acan eski UpgradeUnlocker'lar silinir
     ///     (okey'in sabir, iskambil/domino'nun ikinci tur ETKILERI ayri bilesenler; dokunulmaz)
     ///
@@ -155,18 +155,9 @@ namespace KanBagi.EditorTools
             bakerSerialized.FindProperty("surface").objectReferenceValue = Object.FindFirstObjectByType<NavMeshSurface>();
             bakerSerialized.ApplyModifiedProperties();
 
-            if (grantUpgrade != null && grantTable != null)
-            {
-                UpgradeFurnitureGrant grant = EnsureComponent<UpgradeFurnitureGrant>(managers);
-                var grantSerialized = new SerializedObject(grant);
-                grantSerialized.FindProperty("upgrade").objectReferenceValue = grantUpgrade;
-                grantSerialized.FindProperty("furniture").objectReferenceValue = tableData;
-                grantSerialized.FindProperty("position").vector3Value = grantTable.transform.position;
-                grantSerialized.FindProperty("yaw").floatValue = grantTable.transform.eulerAngles.y;
-                grantSerialized.ApplyModifiedProperties();
-
-                report.AppendLine($"  Hibe: '{grantUpgrade.name}' alininca {grantTable.name} yerine masa");
-            }
+            // D4'ten beri masa PC'deki ESYALAR katalogundan alinir; "Yeni Masa" upgrade'i ve hibesi kalkti.
+            if (grantUpgrade != null)
+                report.AppendLine($"  Not: '{grantUpgrade.name}' artik kullanilmiyor; masa ESYALAR katalogundan alinir.");
 
             // --- Eski sabit duzeni sil ---
             foreach (UpgradeUnlocker unlocker in unlockersToRemove)

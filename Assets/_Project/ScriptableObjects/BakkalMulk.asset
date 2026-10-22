@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BakkalMulk
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.PropertyData
   propertyName: "K\xF6\u015Fem Bakkal"
-  description: Mahallenin eski bakkali. Kucuk ama duzenli.
+  description: "Mahallenin eski bakkalı. Küçük ama düzenli."
   purchasePrice: 800
   dailyIncome: 60
   requiredReputation: 60

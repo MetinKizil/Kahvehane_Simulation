@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using KanBagi.Core;
 using KanBagi.Data;
+using KanBagi.Economy;
 using UnityEngine;
 
 namespace KanBagi.Furniture
@@ -29,8 +30,6 @@ namespace KanBagi.Furniture
         private class FurnitureSaveData
         {
             public List<FurnitureSaveEntry> items = new List<FurnitureSaveEntry>();
-            // Esyasini zaten vermis upgrade'ler (UpgradeFurnitureGrant tekrar vermesin).
-            public List<string> granted = new List<string>();
         }
 
         public static FurnitureManager Instance { get; private set; }
@@ -42,7 +41,6 @@ namespace KanBagi.Furniture
         [SerializeField] private FurnitureLayout defaultLayout;
 
         private readonly List<PlacedFurniture> placed = new List<PlacedFurniture>();
-        private readonly HashSet<string> grantedKeys = new HashSet<string>();
 
         public IReadOnlyList<PlacedFurniture> Placed => placed;
 
@@ -100,14 +98,55 @@ namespace KanBagi.Furniture
             OnLayoutChanged?.Invoke();
         }
 
-        // ---- Upgrade hibeleri ----
+        // ---- Satin alma ----
 
-        /// <summary>Bu anahtarin (upgrade adi) esyasi daha once verildi mi?</summary>
-        public bool IsGranted(string key) => !string.IsNullOrEmpty(key) && grantedKeys.Contains(key);
-
-        public void MarkGranted(string key)
+        /// <summary>Dukkanda bu esyadan kac tane var?</summary>
+        public int CountOf(FurnitureData data)
         {
-            if (!string.IsNullOrEmpty(key)) grantedKeys.Add(key);
+            int count = 0;
+            foreach (PlacedFurniture furniture in placed)
+            {
+                if (furniture != null && furniture.Data == data) count++;
+            }
+
+            return count;
+        }
+
+        /// <summary>Bu esyadan en fazla kac tane olabilir (0 = sinirsiz). D6'da genisletme bolgeleri artiracak.</summary>
+        public int GetLimit(FurnitureData data) => data != null ? data.BaseLimit : 0;
+
+        /// <summary>Sinir ve para yetiyor mu? Yetmiyorsa oyuncuya gosterilecek sebep doner.</summary>
+        public bool CanPurchase(FurnitureData data, out string reason)
+        {
+            reason = null;
+            if (data == null) return false;
+
+            int limit = GetLimit(data);
+            if (limit > 0 && CountOf(data) >= limit)
+            {
+                reason = $"{data.DisplayName} siniri dolu ({limit})";
+                return false;
+            }
+
+            if (EconomyManager.Instance == null || EconomyManager.Instance.CurrentMoney < data.Price)
+            {
+                reason = "Para yetmiyor";
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Satin almanin TEK gecis noktasi (co-op'ta RPC siniri): para yerlestirme aninda duser, sonra esya konur.
+        /// Harcama gunluk ozetin "Gider" satirina girer (TrySpendMoney).
+        /// </summary>
+        public bool TryPurchase(FurnitureData data, Vector3 position, float yaw)
+        {
+            if (!CanPurchase(data, out _)) return false;
+            if (!EconomyManager.Instance.TrySpendMoney(data.Price)) return false;
+
+            return Spawn(data, position, yaw) != null;
         }
 
         // ---- Ic isler ----
@@ -179,7 +218,6 @@ namespace KanBagi.Furniture
                 });
             }
 
-            data.granted.AddRange(grantedKeys);
             return JsonUtility.ToJson(data);
         }
 
@@ -203,9 +241,6 @@ namespace KanBagi.Furniture
 
                 CreateInstance(furnitureData, entry.position, entry.yaw);
             }
-
-            grantedKeys.Clear();
-            if (data.granted != null) grantedKeys.UnionWith(data.granted);
 
             OnLayoutChanged?.Invoke();
         }

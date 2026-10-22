@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d4cf8c81e6e9fb488d8f494b98455d2, type: 3}
   m_Name: CayYapragi
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.ItemData
-  itemName: Cay Yapragi
+  itemName: "Çay Yaprağı"
   description: 
   icon: {fileID: 0}
   itemType: 1

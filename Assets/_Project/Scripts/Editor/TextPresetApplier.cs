@@ -84,6 +84,7 @@ namespace KanBagi.EditorTools
             foreach (FieldText entry in preset.Fields)
             {
                 if (entry.Component != typeName) continue;
+                if (!MatchesPath(behaviour.transform, entry.ObjectPath)) continue;
 
                 serialized ??= new SerializedObject(behaviour);
                 SerializedProperty property = serialized.FindProperty(entry.Field);
@@ -107,6 +108,18 @@ namespace KanBagi.EditorTools
             else serialized.ApplyModifiedPropertiesWithoutUndo();
 
             return changed;
+        }
+
+        /// <summary>Yol bossa her obje; doluysa hiyerarsi yolu ("Ata/Cocuk") bununla biten obje.</summary>
+        private static bool MatchesPath(Transform target, string objectPath)
+        {
+            if (string.IsNullOrEmpty(objectPath)) return true;
+
+            string path = target.name;
+            for (Transform parent = target.parent; parent != null; parent = parent.parent)
+                path = $"{parent.name}/{path}";
+
+            return path == objectPath || path.EndsWith("/" + objectPath);
         }
 
         private static string GetOwnerName(Component component)

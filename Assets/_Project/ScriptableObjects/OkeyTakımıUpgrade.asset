@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: daebcd5ffb35a6b40bd3e2e39552ea09, type: 3}
   m_Name: "OkeyTak\u0131m\u0131Upgrade"
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.UpgradeData
-  upgradeName: OkeyTakimi
-  description: Masalara okey takimi. Musteriler %50 daha sabirli olur.
+  upgradeName: "Okey Takımı"
+  description: "Masalara okey takımı. Müşteriler %50 daha sabırlı olur."
   cost: 150

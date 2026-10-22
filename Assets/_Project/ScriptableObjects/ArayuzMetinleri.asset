@@ -67,3 +67,32 @@ MonoBehaviour:
   - component: DailyReportUI
     field: titleFormat
     text: "GÜN {0} — HESAP DEFTERİ"
+  - component: TextMeshProUGUI
+    field: m_text
+    objectPath: UstBar/Baslik
+    text: "DÜKKAN YÖNETİMİ"
+  - component: TextMeshProUGUI
+    field: m_text
+    objectPath: MalzemeSekmeButton/Text (TMP)
+    text: "MALZEMELER"
+  - component: TextMeshProUGUI
+    field: m_text
+    objectPath: GelistirmeSekmeButton/Text (TMP)
+    text: "GELİŞTİRME"
+  - component: TextMeshProUGUI
+    field: m_text
+    objectPath: EmlakSekmeButton/Text (TMP)
+    text: "EMLAK"
+  - component: TextMeshProUGUI
+    field: m_text
+    objectPath: EsyaSekmeButton/Text (TMP)
+    text: "EŞYALAR"
+  - component: FurnitureEntryUI
+    field: countFormat
+    text: "Dükkanda {0} / {1}"
+  - component: FurnitureEntryUI
+    field: unlimitedCountFormat
+    text: "Dükkanda {0}"
+  - component: FurnitureEntryUI
+    field: limitReachedLabel
+    text: "Sınır dolu"
