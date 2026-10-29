@@ -44,7 +44,7 @@ namespace KanBagi.EditorTools
             Bounds floor = floorRenderer.bounds;
             float doorX = FindDoorX(floor);
 
-            GameObject old = GameObject.Find(RootName);
+            GameObject old = GameObject.Find("/" + RootName);
             if (old != null) Undo.DestroyObjectImmediate(old);
 
             var root = new GameObject(RootName);

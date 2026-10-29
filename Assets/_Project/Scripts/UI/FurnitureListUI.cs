@@ -50,6 +50,7 @@ namespace KanBagi.UI
             if (EconomyManager.Instance != null) EconomyManager.Instance.OnMoneyChanged += HandleMoneyChanged;
             if (FurnitureManager.Instance != null) FurnitureManager.Instance.OnLayoutChanged += RefreshAll;
             if (ReputationManager.Instance != null) ReputationManager.Instance.OnReputationChanged += HandleReputationChanged;
+            if (UpgradeManager.Instance != null) UpgradeManager.Instance.OnUpgradePurchased += HandleUpgradePurchased;
         }
 
         // Sayfa her acildiginda guncel sayilar gorunsun.
@@ -59,6 +60,9 @@ namespace KanBagi.UI
 
         // Itibar kilitli makine (sahlep) itibar yetince acilsin.
         private void HandleReputationChanged(int reputation) => RefreshAll();
+
+        // Genisletme alininca masa siniri artar ("Dukkanda 2 / 7").
+        private void HandleUpgradePurchased(UpgradeData upgrade) => RefreshAll();
 
         private void RefreshAll()
         {
@@ -90,6 +94,7 @@ namespace KanBagi.UI
             if (EconomyManager.Instance != null) EconomyManager.Instance.OnMoneyChanged -= HandleMoneyChanged;
             if (FurnitureManager.Instance != null) FurnitureManager.Instance.OnLayoutChanged -= RefreshAll;
             if (ReputationManager.Instance != null) ReputationManager.Instance.OnReputationChanged -= HandleReputationChanged;
+            if (UpgradeManager.Instance != null) UpgradeManager.Instance.OnUpgradePurchased -= HandleUpgradePurchased;
         }
     }
 }

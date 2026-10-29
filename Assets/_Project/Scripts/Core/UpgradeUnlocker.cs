@@ -18,6 +18,8 @@ namespace KanBagi.Core
         [SerializeField] private UpgradeData requiredUpgrade;
         [Tooltip("Gelistirme alinana kadar kapali duracak sahne objeleri.")]
         [SerializeField] private GameObject[] targets;
+        [Tooltip("Gelistirme alininca KAPANACAK sahne objeleri (genisletmede yikilan duvar). Bos kalabilir.")]
+        [SerializeField] private GameObject[] hideTargets;
 
         private void Start()
         {
@@ -55,6 +57,15 @@ namespace KanBagi.Core
                 if (target == null) continue;
 
                 target.SetActive(isActive);
+            }
+
+            if (hideTargets == null) return;
+
+            foreach (GameObject target in hideTargets)
+            {
+                if (target == null) continue;
+
+                target.SetActive(!isActive);
             }
         }
 

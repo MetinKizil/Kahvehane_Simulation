@@ -26,6 +26,8 @@ namespace KanBagi.UI
         [SerializeField] private string purchasedLabel = "Alindi";
         [Tooltip("{0} gereken itibar.")]
         [SerializeField] private string reputationLockedFormat = "Itibar {0} gerekli";
+        [Tooltip("{0} once alinmasi gereken gelistirmenin adi.")]
+        [SerializeField] private string prerequisiteLockedFormat = "Once: {0}";
 
         private UpgradeData upgrade;
 
@@ -66,6 +68,10 @@ namespace KanBagi.UI
         private string GetButtonLabel(UpgradeManager manager)
         {
             if (manager != null && manager.IsPurchased(upgrade)) return purchasedLabel;
+
+            // Sira: once onkosul (genisletme zinciri), sonra itibar, sonra fiyat.
+            UpgradeData missing = manager != null ? manager.GetMissingPrerequisite(upgrade) : null;
+            if (missing != null) return string.Format(prerequisiteLockedFormat, missing.UpgradeName);
 
             // Itibar yetmiyorsa fiyat yerine sart gosterilir.
             if (manager != null && !manager.MeetsReputation(upgrade))

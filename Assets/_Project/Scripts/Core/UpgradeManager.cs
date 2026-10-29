@@ -57,11 +57,42 @@ namespace KanBagi.Core
             return reputation >= upgrade.RequiredReputation;
         }
 
-        /// <summary>Kasada bu gelistirmeyi alacak para ve yeterli itibar var mi? Buton aktifligi icin UI sorar.</summary>
+        /// <summary>Once alinmasi gereken ama henuz alinmamis ilk gelistirme; hepsi alinmissa null.</summary>
+        public UpgradeData GetMissingPrerequisite(UpgradeData upgrade)
+        {
+            if (upgrade == null) return null;
+
+            foreach (UpgradeData required in upgrade.RequiredUpgrades)
+            {
+                if (required != null && !IsPurchased(required)) return required;
+            }
+
+            return null;
+        }
+
+        /// <summary>Alinmis gelistirmelerin bu esyanin sinirina ekledigi toplam (FurnitureManager.GetLimit sorar).</summary>
+        public int GetLimitBonus(FurnitureData furniture)
+        {
+            if (furniture == null) return 0;
+
+            int bonus = 0;
+            foreach (UpgradeData upgrade in purchased)
+            {
+                foreach (UpgradeData.LimitBonus limitBonus in upgrade.LimitBonuses)
+                {
+                    if (limitBonus != null && limitBonus.Furniture == furniture) bonus += limitBonus.Amount;
+                }
+            }
+
+            return bonus;
+        }
+
+        /// <summary>Kasada bu gelistirmeyi alacak para, yeterli itibar ve onkosullar var mi? Buton aktifligi icin UI sorar.</summary>
         public bool CanAfford(UpgradeData upgrade)
         {
             if (upgrade == null || !upgrade.IsValid || IsPurchased(upgrade)) return false;
             if (!MeetsReputation(upgrade)) return false;
+            if (GetMissingPrerequisite(upgrade) != null) return false;
             if (EconomyManager.Instance == null) return false;
 
             return EconomyManager.Instance.CurrentMoney >= upgrade.Cost;
@@ -72,6 +103,7 @@ namespace KanBagi.Core
         {
             if (upgrade == null || !upgrade.IsValid || IsPurchased(upgrade)) return false;
             if (!MeetsReputation(upgrade)) return false;
+            if (GetMissingPrerequisite(upgrade) != null) return false;
 
             if (EconomyManager.Instance == null)
             {

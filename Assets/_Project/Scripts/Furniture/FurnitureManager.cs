@@ -141,8 +141,14 @@ namespace KanBagi.Furniture
             return count;
         }
 
-        /// <summary>Bu esyadan en fazla kac tane olabilir (0 = sinirsiz). D6'da genisletme bolgeleri artiracak.</summary>
-        public int GetLimit(FurnitureData data) => data != null ? data.BaseLimit : 0;
+        /// <summary>Bu esyadan en fazla kac tane olabilir (0 = sinirsiz). Alinmis genisletmeler temel sinira eklenir (D6b).</summary>
+        public int GetLimit(FurnitureData data)
+        {
+            if (data == null || data.BaseLimit <= 0) return 0;
+
+            int bonus = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetLimitBonus(data) : 0;
+            return data.BaseLimit + bonus;
+        }
 
         /// <summary>Esyanin itibar sarti karsilaniyor mu?</summary>
         public bool MeetsReputation(FurnitureData data) =>

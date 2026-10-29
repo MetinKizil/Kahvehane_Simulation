@@ -99,3 +99,12 @@ MonoBehaviour:
   - component: FurnitureEntryUI
     field: reputationLockedFormat
     text: "İtibar {0} gerekli"
+  - component: UpgradeEntryUI
+    field: prerequisiteLockedFormat
+    text: "Önce: {0}"
+  - component: UpgradeEntryUI
+    field: purchasedLabel
+    text: "Alındı"
+  - component: UpgradeEntryUI
+    field: reputationLockedFormat
+    text: "İtibar {0} gerekli"

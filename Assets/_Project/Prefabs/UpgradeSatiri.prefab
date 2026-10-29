@@ -281,7 +281,9 @@ MonoBehaviour:
   buyButton: {fileID: 823115919204749768}
   buyButtonLabel: {fileID: 2084698260923389139}
   priceFormat: '{0} TL'
-  purchasedLabel: Alindi
+  purchasedLabel: "Al\u0131nd\u0131"
+  reputationLockedFormat: "\u0130tibar {0} gerekli"
+  prerequisiteLockedFormat: "\xD6nce: {0}"
 --- !u!1 &4130368401233601868
 GameObject:
   m_ObjectHideFlags: 0

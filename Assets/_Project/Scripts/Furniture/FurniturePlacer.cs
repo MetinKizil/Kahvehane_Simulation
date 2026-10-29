@@ -335,7 +335,7 @@ namespace KanBagi.Furniture
             }
         }
 
-        /// <summary>Bakis isini dukkan zemininde (NavMeshSurface'li obje ve cocuklari) karsilayan nokta.</summary>
+        /// <summary>Bakis isini dukkan zemininde (ana zemin veya acilmis genisletme bolgesi) karsilayan nokta.</summary>
         private bool TryGetFloorPoint(out Vector3 point)
         {
             point = Vector3.zero;
@@ -349,7 +349,8 @@ namespace KanBagi.Furniture
             return true;
         }
 
-        private static bool IsShopFloor(Collider collider) => collider.GetComponentInParent<NavMeshSurface>() != null;
+        private static bool IsShopFloor(Collider collider) =>
+            collider.GetComponentInParent<NavMeshSurface>() != null || collider.GetComponentInParent<ShopFloor>() != null;
 
         private float Snap(float value) => gridStep > 0f ? Mathf.Round(value / gridStep) * gridStep : value;
 
