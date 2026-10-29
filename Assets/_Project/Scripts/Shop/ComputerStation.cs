@@ -1,5 +1,6 @@
 using System;
 using KanBagi.Data;
+using KanBagi.Furniture;
 using KanBagi.Interaction;
 using KanBagi.Player;
 using UnityEngine;
@@ -12,7 +13,7 @@ namespace KanBagi.Shop
     /// ne satin alir ne de arayuz cizer (SOLID). Ekran durumunu event ile yayinlar,
     /// ComputerUI buna abone olur (Observer Pattern).
     /// </summary>
-    public class ComputerStation : MonoBehaviour, IInteractable
+    public class ComputerStation : MonoBehaviour, IInteractable, IFurnitureMoveCheck
     {
         [Header("Katalog")]
         [Tooltip("Bu bilgisayardan siparis edilebilecek malzemeler.")]
@@ -33,8 +34,15 @@ namespace KanBagi.Shop
         /// <summary>Ekrani su an kullanan oyuncunun kilidi (ekran kapaliysa null). PC'den alinan esya ona verilir.</summary>
         public PlayerLock ScreenUser => screenUser;
 
-        /// <summary>Ekran acilip kapandiginda tetiklenir. ComputerUI buna abone olur.</summary>
+        /// <summary>Ekran acilip kapandiginda tetiklenir.</summary>
         public event Action<bool> OnScreenToggled;
+
+        /// <summary>
+        /// HERHANGI bir PC'nin ekrani acilip kapandiginda (PC, acik mi) ile tetiklenir. ComputerUI buna abone olur:
+        /// D5'ten beri PC tasinabilir bir esya; oyun sirasinda olusturulur ve kayittan yeniden kurulur,
+        /// bu yuzden UI tek bir sahne objesine baglanmaz.
+        /// </summary>
+        public static event Action<ComputerStation, bool> AnyScreenToggled;
 
         public string GetPrompt(PlayerContext player) => catalog != null ? "Bilgisayari Kullan" : "Bilgisayar ayarlanmamis";
 
@@ -72,6 +80,25 @@ namespace KanBagi.Shop
 
             SetCancelListening(isOpen);
             OnScreenToggled?.Invoke(isOpen);
+            AnyScreenToggled?.Invoke(this, isOpen);
+        }
+
+        /// <summary>Ekran acikken (biri kullanirken) PC tasinamaz.</summary>
+        public bool CanMove(out string reason)
+        {
+            reason = IsScreenOpen ? "Bilgisayar kullaniliyor" : null;
+            return !IsScreenOpen;
+        }
+
+        /// <summary>Ekrani acik olan ilk PC (yoksa null). PC'den alinan esya, gun sonu kapatma vb. icin.</summary>
+        public static ComputerStation FindOpen()
+        {
+            foreach (ComputerStation station in FindObjectsByType<ComputerStation>(FindObjectsSortMode.None))
+            {
+                if (station.IsScreenOpen) return station;
+            }
+
+            return null;
         }
 
         private void SetCancelListening(bool isListening)

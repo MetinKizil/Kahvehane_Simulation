@@ -92,7 +92,7 @@ Assets/_Project/
                        StoryPanelBuilder, WhisperLineBuilder, TextPresetApplier,
                        CustomerProfileLinker, TableGamesBuilder, BeverageStationBuilder,
                        TrayBuilder, FurnitureSetupBuilder, PlacementModeBuilder,
-                       FurnitureCatalogBuilder
+                       FurnitureCatalogBuilder, StationFurnitureBuilder
     ├── Illegal/       GamblingTable, SuspicionManager, MafiaManager, MafiaCollector,
                        PoliceManager, PoliceOfficer, Gambler, GamblerSpawner
     ├── Neighborhood/  PropertyBuilding, PropertyVisualSwitch
@@ -100,7 +100,7 @@ Assets/_Project/
     ├── Interaction/   IInteractable, HoldableItem, PlayerInteractor
     ├── Inventory/     InventoryManager
     ├── Furniture/     PlacedFurniture, FurnitureManager, NavMeshRuntimeBaker, UpgradeVisual,
-                       FurniturePlacer
+                       FurniturePlacer, IFurnitureMoveCheck
     ├── Items/         TeaGlass, DeliveryBox, Tray
     ├── Player/        PlayerController, PlayerHands, PlayerLock, PlayerContext (düz sınıf, bileşen değil)
     ├── Shop/          TimedStation, TeaStove, Sink, GlassShelf, Table, TableManager,
@@ -630,7 +630,8 @@ En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 
 | D2 ✅ | Eşya altyapısı | `FurnitureData` (prefab, fiyat, kapladığı alan, kategori), yerleştirilmiş eşyaları tutan `FurnitureManager` (dünya durumu → co-op'ta server), **kayıt** (tür + konum + açı), **oyun içi NavMesh güncellemesi** (editörde bake yerine). Önce masalar. **Oyuncuya görünür bir şey getirmez — sadece altyapı.** |
 | D3 ✅ | Yerleştirme modu | Hayalet önizleme, 0.1 m adım, 5° döndürme (Shift 45°), çakışma/zemin/oturma noktası kontrolü, var olan eşyayı tek tek alıp taşıma; "Yeni Masa" elde hayalet. |
 | D4 ✅ | Eşya satın alma | PC'de eşya kataloğu → alınca elde hayalet, **koyunca öder**. Masa sabit 100 TL, **sınır 4** (genişletme artıracak). Sarf malzemesi kurye ile kalır. + PC paneli görünüm/yazım düzeltmeleri. |
-| D5 | Bütün eşyalar taşınabilir | Ocak, makineler, lavabo, raf, PC… Sabit sahne + `UpgradeUnlocker` düzeni kalkar; menü kilidi "upgrade alındı mı" yerine "makine dükkanda mı" olur. |
+| D5a ✅ | Temel eşyalar taşınabilir | Çay ocağı, lavabo, bardak rafı (tepsileriyle), depo, PC eşyaya dönüştü; meşgul eşya taşınmaz; sabit sahne bağları kaldırıldı. |
+| D5b | Makineler eşya kataloğuna | Kahve/oralet/sahlep makinesi GELİŞTİRME'den EŞYALAR'a (fiyat ve itibar aynı); menü/malzeme kilidi "makine dükkanda mı"; her makineden 1, **artırılabilmesi dükkan genişletmelerinden sonra (D6)**. |
 | D6 | Duvarlar + sıralı genişletme bölgeleri | İç/dış ayrımı (10d'den buraya kaydı), kapı. Yan oda → bahçe → üst kat; **Kumar Odası** + çoğaltılabilir kumar masası. **Dükkanın en büyük boyutu burada kesinleşir.** |
 | D7 | Çok kişilik masalar + grup müşteriler | 2'lik/4'lük masalar, 2–4 kişilik gruplar; birlikte gelir/gider, her kişi kendi siparişi. |
 | D8 | Masa oyunları masa bazında | Okey/iskambil/domino masaya konan eşya; 4 kişilik okey grubu okeyli masayı ister (10c-2'deki dükkan geneli etki buna dönüşür). |
@@ -727,6 +728,27 @@ Masalar artık sahneye elle konmuş sabit objeler değil: **veriden oluşturulan
 
 **Test:** EŞYALAR'dan masa alma, koyunca ödeme, iptalde ödememe, sınır, kayıt; sekmeler her sayfada 44 px, kapalı sekmeler okunur, başlık ve adlar düzgün. Kullanıcı onayladı ("süper olmuş").
 
+### Adım D5a — Temel eşyalar taşınabilir ✅
+**Oyuncu ne görür:** **çay ocağı, lavabo, bardak rafı, depo, yönetim PC'si** masa gibi F ile kalkıp hayalet olur, istenen yere konur. **Bardak rafı taşınınca üstündeki 2 tepsi (ve bardakları) da gelir.** Meşgul eşya taşınmaz: "Ocak çalışıyor, taşınamaz", "Ocağın üstünde bardak/tepsi var", "Lavabo yıkıyor, taşınamaz", "Lavabonun üstünde tepsi var", "Bilgisayar kullanılıyor", "Masa dolu, taşınamaz". Gameplay aynı. **Kahve/oralet/sahlep makinesi ve kumar masası henüz sabit** (D5b / D6). Raf ve PC eskiden yerden birkaç cm havadaydı; taşınınca zemine oturur.
+
+**Kullanıcı kararları (D5 planı):** D5 ikiye bölündü (D5a temel eşyalar, D5b makineler); **her makineden 1 tane, artırılabilmesi belli dükkan genişletmelerinden sonra açılsın** (D6'da `GetLimit` bonusu); eski test kayıtları için `Kaydi Sil` kabul.
+
+**Parçalar:**
+- **`IFurnitureMoveCheck`** (`KanBagi.Furniture`): `bool CanMove(out string reason)`. Uygulayanlar: `Table` (müşteri/bardak), `TeaStove` (`IsBusy`, ocakta bardak/tepsi), `Sink` (`IsBusy`, lavaboda tepsi), `ComputerStation` (`IsScreenOpen`). `FurniturePlacer.CanPickUp` eşyadaki **tüm** kontrollere sorar (masaya özel eski kontrol kalktı).
+- **Sabit sahne bağları kaldırıldı** (eşyalar oyun sırasında oluşup kayıttan yeniden kurulduğu için):
+  - `ComputerStation.AnyScreenToggled` (static event) → **`ComputerUI`** artık tek PC'ye bağlı değil; açılan PC'ye hizmet eder, satırları ilk açılışta kurar, Kapat o PC'yi kapatır. `ComputerStation.FindOpen()` (ekranı açık PC).
+  - `DailyReportUI` gün sonunda `FindOpen()` ile açık PC'yi kapatır; `FurnitureListUI` satın almada `FindOpen()`.
+  - `TimedStation.AnyProgressChanged / AnyWorkFinished` (static) → **`ProgressBarUI`** sonradan oluşan istasyonları da gösterir.
+  - `Sink.Shelf`: rafı ihtiyaç anında bulur.
+  - **`StationSpeedBoost`**: sabit `targetStations` listesi KALKTI; dükkandaki **tüm `TeaStove`'lara** (pasifler dahil) uygulanır, `FurnitureManager.OnLayoutChanged`'de yeniden uygulanır (yeni konan makine de hızlı).
+  - `TraySpot`: rafa bırakılan tepsi tepsi yerinin **çocuğu** olur (raf taşınınca gelir).
+- **`FurnitureManager.SpawnMissingDefaults`**: kayıttan yüklenen düzende **varsayılan düzendeki bir eşya türü hiç yoksa** (D5'ten önceki kayıtta ocak/PC/lavabo eşya değildi) varsayılan yerine konur. Eski kayıtlar PC'siz/ocaksız açılmaz.
+- `Kan Bagi > Istasyonlari Esyaya Cevir` (`StationFurnitureBuilder`, **bir kez**): **açık** (kilitli olmayan) kök istasyonları (`TeaStove`, `Sink`, `GlassShelf`, `StorageRack`, `ComputerStation`) prefab'a (PlacedFurniture + NavMeshModifier "Not Walkable"), `FurnitureData`'ya (`<Ad>Esya`, Station, fiyat 0, **baseLimit 1**) ve `VarsayilanDuzen`'e çevirir; sahnedekileri siler. Bardak rafında önce `TepsiYeri1/2` + tepsileri rafın çocuğu yapar (dünya ölçeği korunur → tepsi ezilmez). Görünen adlar sonra asset'te Türkçeleştirildi: **Çay Ocağı, Lavabo, Bardak Rafı, Depo, Yönetim PC'si**.
+- Varsayılan düzen artık **7 eşya**: Masa ×2, BardakRafi (−2, 0.5, 2), CayOcagi (0, 0.5, 3), Depo (−2, 0.5, 3.5), Lavabo (2, 0.5, 3), YonetimPC (2, 0.5, 2).
+- Eskiyen builder'lar: `Tepsiyi Kur` (raf artık sahnede değil → hata verip durur), `Icecek Istasyonlarini Kur` (D5b'de yerini katalog alacak).
+
+**Test:** beş eşya F ile taşınıyor/dönüyor, taşınan yerlerde çay/servis/tepsi/bulaşık/PC siparişi/depo/masa alma çalışıyor, meşgul eşya taşınmıyor, raf tepsileriyle taşınıyor, kayıttan düzen geri geliyor. Kullanıcı onayladı.
+
 **Değişecek mevcut parçalar (bilerek):** sabit eşyalar + `UpgradeUnlocker`, editörde NavMesh bake (`NavMesh'i Yeniden Bake Et`), `Icecek Istasyonlarini Kur` / `Masa Oyunlarini Kur` builder'ları, tek kişilik `Table`, tek eşya tutan eller, dükkan geneli masa oyunları. **Değişmeyenler:** müşteri profilleri, sipariş/ikinci tur, menü, stok/kurye, ekonomi, itibar, gün döngüsü, kayıt altyapısı, kumar/mafya/polis, fısıltılar, hikaye, co-op etkileşim katmanı.
 
 ---
@@ -761,24 +783,19 @@ Masalar artık sahneye elle konmuş sabit objeler değil: **veriden oluşturulan
 | &nbsp;&nbsp;├ `MalzemeSayfasi` (VLG, flexible height 1) | — | ComputerUI'ın `entryContainer`'ı |
 | &nbsp;&nbsp;├ `UpgradeSayfasi` (VLG, flexible height 1) | — | UpgradeListUI |
 | &nbsp;&nbsp;└ `EmlakSayfasi` (VLG, flexible height 1) | — | PropertyListUI |
-| `BardakRafi` (Cube) | (-2, 0.5, 2) | GlassShelf (stok 10, prefab: CayBardagi) |
-| `TepsiYeri1` / `TepsiYeri2` (+ üstlerinde 2 `Tepsi` prefab'ı) | rafın üstü (−2.25 / −1.75, 0.8, 2) | TraySpot — `Tepsiyi Kur` kurar |
-| `CayOcagi` (Cube) | (0, 0.5, 3) | TeaStove (Cay + CayYapragi × 1) |
+| ~~`BardakRafi`, `CayOcagi`, `Lavabo`, `Depo`, `YonetimPC`~~ — **D5a'dan beri sahnede YOK** | varsayılan düzen: raf (−2, 0.5, 2), ocak (0, 0.5, 3), lavabo (2, 0.5, 3), depo (−2, 0.5, 3.5), PC (2, 0.5, 2) | Oyun başında `FurnitureManager` prefab'larından oluşturur. `BardakRafi` prefab'ında `TepsiYeri1/2` + 2 `Tepsi` (rafın çocuğu); GlassShelf stok 10; CayOcagi TeaStove (Cay + CayYapragi × 1); Lavabo Sink (2.5 sn, tepsi 1.5 sn/bardak); PC ComputerStation (MalzemeKatalogu); Depo StorageRack |
 | `KahveMakinesi` (Cube) — **başta pasif** | (-1, 0.5, 3) | TeaStove (Kahve + KahveCekirdegi × 1) |
 | `OraletSemaveri` (Cube) — **başta pasif** | (1, 0.5, 3) | TeaStove (Oralet + OraletTozu × 1) |
-| `Lavabo` (Cube) | (2, 0.5, 3) | Sink (washDuration 2.5) |
 | `SahlepMakinesi` (Cube, 1×1×0.8, krem) — **başta pasif** | (3.5, 0.5, 3) | TeaStove (Sahlep + SahlepTozu × 1) — `Icecek Istasyonlarini Kur` kurar |
 | ~~`Masa1/2/3`~~ — **D2'den beri sahnede masa YOK** | — | Masalar oyun başında `FurnitureManager` tarafından `Masa` prefab'ından oluşturulur (varsayılan düzen / kayıt). Prefab'da `OkeyTakimi` (yerel 0.3, 0.6, 0.3), `IskambilDestesi` (−0.3, 0.52, 0.3), `DominoTakimi` (0.3, 0.53, −0.3) — collider yok, `UpgradeVisual` açar |
 | `GirisNoktasi` (Empty) | (0, 0, -4.5) | — (spawn + exit) |
 | `Spawner` (Empty) | — | CustomerSpawner (**profiles**: EmekliDayi, Ogrenci, Esnaf, Kabadayi — `Musteri Profillerini Bagla` bağlar) |
-| `YonetimPC` (Cube) | (2, 0.5, 2) | ComputerStation (catalog: MalzemeKatalogu) |
 | `TeslimatNoktasi` (Empty) | (2, 0, -3.5) | — (kapının yanı, koliler buraya düşer) |
 | `Mahalle` (Empty) | — | — |
 | ├ `Sokak` (Plane) | (0, 0, -10), scale (1.5,1,1) | — |
 | ├ `BakkalBinasi` (Cube, scale 3) | (-4, 1.5, -9) | PropertyBuilding (BakkalMulk) + tabela child'ı |
 | ├ `TerziBinasi` (Cube, scale 3) | (0, 1.5, -12.5) | PropertyBuilding (TerziMulk) |
 | └ `KirathaneBinasi` (Cube, scale 3) | (4, 1.5, -9) | PropertyBuilding (KirathaneMulk) |
-| `Depo` (Cube) | (-2, 0.5, 3.5) | StorageRack |
 | `KumarMasasi` (Cube) — **başta pasif** | (-4, 0.4, 3.5) | GamblingTable + **GamblerSpawner** + tabela child'ı (Gizli Kumarhane upgrade'i açar) |
 | `MafyaNoktasi` (Empty) | (1.5, 0.9, -4) | — (tahsildar burada belirir, y=0.9 kapsül yere bassın diye) |
 | `PolisNoktasi` (Empty) | (-1.5, 0.9, -4) | — (memur burada belirir) |
@@ -819,7 +836,7 @@ Masalar artık sahneye elle konmuş sabit objeler değil: **veriden oluşturulan
 - `MahalleFisiltilari` (WhisperData) — fısıltı metinleri, kumarhane upgrade referansı, itibar barajları (60/140/240)
 - `ArayuzMetinleri` (TextPreset) — sahne/prefab metin alanlarının yeni değerleri; `Kan Bagi > Metinleri Uygula` yazar
 - `MusteriProfilleri/` (CustomerProfile) — `EmekliDayi`, `Ogrenci`, `Esnaf`, `Kabadayi` (değerler bölüm 6.8, 10c-1)
-- `MasaEsya` (FurnitureData: 100 TL, **baseLimit 4**), `EsyaVeritabani` (FurnitureDatabase), `VarsayilanDuzen` (FurnitureLayout: Masa1/Masa2 yerleri), **`EsyaKatalogu`** (FurnitureCatalog: PC'nin EŞYALAR sekmesi)
+- `MasaEsya` (FurnitureData: 100 TL, **baseLimit 4**), `CayOcagiEsya` / `LavaboEsya` / `BardakRafiEsya` / `DepoEsya` / `YonetimPCEsya` (Station, satılmıyor, baseLimit 1), `EsyaVeritabani` (FurnitureDatabase), `VarsayilanDuzen` (FurnitureLayout: Masa1/Masa2 yerleri), **`EsyaKatalogu`** (FurnitureCatalog: PC'nin EŞYALAR sekmesi)
 
 > ✅ **Sahne GERÇEK değerlerde** (Adım 9a-1). Hızlı test için `Kan Bagi > Denge > Test Degerlerini Uygula`, geri dönmek için `Gercek Degerleri Uygula`. Mod değiştirdikten sonra sahneyi kaydet; sıfırdan test için `Kan Bagi > Kaydi Sil`.
 
@@ -835,7 +852,9 @@ Masalar artık sahneye elle konmuş sabit objeler değil: **veriden oluşturulan
 
 **Adım D3 bitti ve test edildi.** Masalar F ile tek tek kalkıp elde hayalet oluyor, 0.1 m adımla bakılan yere gidiyor, tekerlekle 5° (Shift 45°) dönüyor, yeşil/kırmızı geçerlilik çalışıyor, sol tık bırakıyor, sağ tık iptal ediyor; "Yeni Masa" PC'den alınınca elde hayalet geliyor.
 
-**Adım D4 bitti ve test edildi.** PC'de EŞYALAR sekmesinden masa alınıyor (100 TL, koyunca ödeniyor, iptalde ödenmiyor, sınır 4); "Yeni Masa" upgrade'i kalktı; PC paneli düzeltildi (sekmeler 44 px ve her sayfada sabit, okunur renkler, Kaydet yazısı, Türkçe başlık/adlar, yazım hataları). **Sıradaki iş: D5 — Bütün eşyalar taşınabilir** (ocak, makineler, lavabo, bardak rafı, depo, PC eşyaya dönüşür; makineler EŞYALAR'dan alınır; sabit sahne + `UpgradeUnlocker` düzeni kalkar; menü kilidi "makine dükkanda mı"ya döner — plan ayrıca onaylanacak).
+**Adım D4 bitti ve test edildi.** PC'de EŞYALAR sekmesinden masa alınıyor (100 TL, koyunca ödeniyor, iptalde ödenmiyor, sınır 4); "Yeni Masa" upgrade'i kalktı; PC paneli düzeltildi (sekmeler 44 px ve her sayfada sabit, okunur renkler, Kaydet yazısı, Türkçe başlık/adlar, yazım hataları).
+
+**Adım D5a bitti ve test edildi.** Çay ocağı, lavabo, bardak rafı (tepsileriyle), depo ve PC F ile taşınabiliyor; meşgul eşya taşınmıyor; PC ekranı, ilerleme çubuğu, gün sonu, lavabo ve Sanayi Ocağı sabit sahne objelerine bağlı değil; eski kayıtta eksik temel eşya varsayılan yerine konuyor. **Sıradaki iş: D5b — Makineler eşya kataloğuna** (kahve/oralet/sahlep makinesi EŞYALAR'dan, fiyat/itibar aynı; menü ve malzeme kilidi "makine dükkanda mı"; her makineden 1 — plan ayrıca onaylanacak).
 
 **Adım 10c-2 bitti ve test edildi.** İskambil (200 TL, itibar 40, +%30) ve Domino (350 TL, itibar 100, +%20) masalarda beliriyor; müşteriler içtikten sonra oyun meraklarına göre bir tur daha sipariş veriyor, ciro iki satışı da sayıyor, ikinci turda bekletmenin cezası yok.
 
@@ -1032,7 +1051,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**10a-2a**~~ ✅ | Mahalle fısıltıları (olaylara eşlik eden ton satırı + ilk sabah yönlendirmesi) — **bitti** | Ucuz, kimliği oyunun içine taşır |
 | ~~**10a-2b**~~ ✅ | Mevcut metinlerin tonu (sadece tablodakiler), `ArayuzMetinleri` + `Metinleri Uygula` — **bitti** | Fısıltılarla aynı tonu mevcut arayüze yayar |
 | ~~**10c**~~ ✅ | Müşteri ve stok çeşitliliği — **bitti** (10c-1 profiller, 10c-2 masa oyunları, 10c-3 sahlep; 10c-4 bahçe → D bölümüne taşındı) | Faz 2'den kalan |
-| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi, D2 ✅ eşya altyapısı, D3 ✅ yerleştirme modu, D4 ✅ eşya satın alma; sıradaki D5 bütün eşyalar taşınabilir): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
+| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi, D2 ✅ eşya altyapısı, D3 ✅ yerleştirme modu, D4 ✅ eşya satın alma, D5a ✅ temel eşyalar taşınabilir; sıradaki D5b makineler kataloğa): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
 | **11** | Görsel cila, ses, ana menü, kayıt slotları | **En sona**: mekanikler değişince geometri/model yeniden yapılır |
@@ -1057,7 +1076,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum (2026-10-17): GitHub bağlantısı kuruldu, tüm commit'ler push edildi** (ilk push: 17 commit, ~2.7 MB). Yerel `main` = `origin/main`.
 ```
-(yeni)   Adim D4: esya satin alma ve PC paneli duzeltmeleri
+(yeni)   Adim D5a: temel esyalar tasinabilir - ocak, lavabo, raf, depo, PC
+83e895a  Adim D4: esya satin alma ve PC paneli duzeltmeleri
 123c3c7  Adim D3: yerlestirme modu - elde hayalet, tek tek tasima
 a449009  Adim D2: esya altyapisi - FurnitureManager, kayit, oyun ici NavMesh
 65b19d0  Adim D1: tepsi - 8 bardaklik servis ve toplama
@@ -1095,7 +1115,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (D5 — Bütün eşyalar taşınabilir: ocak, makineler, lavabo, raf, depo, PC) planını anlat, onay al**, sonra kod yaz. Planda **oyuncunun ne göreceğini** açıkça yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
+3. **Sıradaki adımın (D5b — Makineler eşya kataloğuna: kahve/oralet/sahlep EŞYALAR'dan, menü/malzeme kilidi "makine dükkanda mı") planını anlat, onay al**, sonra kod yaz. Planda **oyuncunun ne göreceğini** açıkça yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.

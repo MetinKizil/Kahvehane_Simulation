@@ -1,3 +1,4 @@
+using KanBagi.Furniture;
 using KanBagi.Interaction;
 using KanBagi.Items;
 using KanBagi.Player;
@@ -14,7 +15,7 @@ namespace KanBagi.Shop
     /// bardak basi sure tekli yikamadan kisadir. Temiz-bos bardaklar tepside kalir.
     /// Is bitince tepsi tekrar alinabilir (oyuncu tepsiye bakip alir).
     /// </summary>
-    public class Sink : TimedStation
+    public class Sink : TimedStation, IFurnitureMoveCheck
     {
         [Header("Stok")]
         [Tooltip("Yikanan bardagin iade edilecegi raf. Bos birakilirsa sahnedeki ilk raf bulunur.")]
@@ -50,13 +51,26 @@ namespace KanBagi.Shop
         private Vector3 SlotPosition => glassSlot != null ? glassSlot.position : transform.position + slotOffset;
         private Quaternion SlotRotation => glassSlot != null ? glassSlot.rotation : Quaternion.identity;
 
-        private void Awake()
+        /// <summary>
+        /// Iade edilecek raf, ihtiyac aninda bulunur: D5'ten beri raf tasinabilir esya, lavabodan sonra
+        /// olusturulmus veya kayittan yeniden kurulmus olabilir.
+        /// </summary>
+        private GlassShelf Shelf
         {
-            if (targetShelf == null)
-                targetShelf = FindFirstObjectByType<GlassShelf>();
+            get
+            {
+                if (targetShelf == null) targetShelf = FindFirstObjectByType<GlassShelf>();
+                return targetShelf;
+            }
+        }
 
-            if (targetShelf == null)
-                Debug.LogError("[Sink] Temiz bardak rafi bulunamadi. Sahneye GlassShelf ekle.", this);
+        /// <summary>Yikama surerken veya ustunde tepsi varken lavabo tasinamaz.</summary>
+        public bool CanMove(out string reason)
+        {
+            reason = IsBusy ? "Lavabo yikiyor, tasinamaz"
+                   : TrayOnSink != null ? "Lavabonun ustunde tepsi var"
+                   : null;
+            return reason == null;
         }
 
         public override string GetPrompt(PlayerContext player)
@@ -85,7 +99,7 @@ namespace KanBagi.Shop
 
         public override void Interact(PlayerContext player)
         {
-            if (IsBusy || targetShelf == null || TrayOnSink != null) return;
+            if (IsBusy || Shelf == null || TrayOnSink != null) return;
 
             PlayerHands hands = player.Hands;
             if (hands == null || hands.IsEmpty) return;
@@ -122,7 +136,7 @@ namespace KanBagi.Shop
             Destroy(glassBeingWashed.gameObject);
             glassBeingWashed = null;
 
-            targetShelf.AddCleanGlass();
+            Shelf.AddCleanGlass();
         }
 
         // ---- Tepsi ----
@@ -157,7 +171,7 @@ namespace KanBagi.Shop
             // Yikanan bardaklar yok edilir ama stoktan dusmez: temiz olarak rafa doner.
             foreach (TeaGlass glass in trayOnSink.FindAll(IsWashable))
             {
-                if (trayOnSink.TryRemoveAndDestroy(glass)) targetShelf.AddCleanGlass();
+                if (trayOnSink.TryRemoveAndDestroy(glass)) Shelf.AddCleanGlass();
             }
 
             trayHoldable.SetPickupEnabled(true);

@@ -256,17 +256,18 @@ namespace KanBagi.Furniture
 
         private bool CanControl() => playerLock == null || playerLock.IsControlEnabled;
 
-        /// <summary>Dolu masa tasinmaz: musteri oturuyorsa veya ustunde bardak varsa.</summary>
+        /// <summary>
+        /// Esyanin uzerindeki her kural sorulur (masa dolu mu, ocak calisiyor mu, PC kullaniliyor mu...);
+        /// biri hayir derse esya kalkmaz.
+        /// </summary>
         private static bool CanPickUp(PlacedFurniture furniture, out string reason)
         {
-            reason = null;
-
-            if (furniture.TryGetComponent(out Table targetTable) && (!targetTable.IsFree || targetTable.HasGlass))
+            foreach (IFurnitureMoveCheck check in furniture.GetComponents<IFurnitureMoveCheck>())
             {
-                reason = "Masa dolu, tasinamaz";
-                return false;
+                if (!check.CanMove(out reason)) return false;
             }
 
+            reason = null;
             return true;
         }
 

@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a464912ec4dabf48917a1902a6e0699, type: 3}
+  m_Name: BardakRafiEsya
+  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.FurnitureData
+  displayName: "Bardak Rafı"
+  category: 1
+  prefab: {fileID: 7142994435633507999, guid: d4f90038771074846a061f26bcdc6451, type: 3}
+  price: 0
+  baseLimit: 1

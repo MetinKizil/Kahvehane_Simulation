@@ -242,7 +242,32 @@ namespace KanBagi.Furniture
                 CreateInstance(furnitureData, entry.position, entry.yaw);
             }
 
+            SpawnMissingDefaults();
             OnLayoutChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Varsayilan duzendeki bir esya TURU kayitta hic yoksa (orn. D5'ten once kaydedilmis oyunda ocak/PC/lavabo
+        /// esya degildi) varsayilan yerine konur. Yoksa eski kayit ocaksiz, PC'siz acilirdi.
+        /// Oyuncunun sonradan aldigi esyalar (masa) varsayilanda zaten oldugu icin etkilenmez.
+        /// </summary>
+        private void SpawnMissingDefaults()
+        {
+            if (defaultLayout == null) return;
+
+            var present = new HashSet<FurnitureData>();
+            foreach (PlacedFurniture furniture in placed)
+            {
+                if (furniture != null && furniture.Data != null) present.Add(furniture.Data);
+            }
+
+            foreach (FurnitureLayoutEntry entry in defaultLayout.Entries)
+            {
+                if (entry.Furniture == null || present.Contains(entry.Furniture)) continue;
+
+                CreateInstance(entry.Furniture, entry.Position, entry.Yaw);
+                Debug.Log($"[FurnitureManager] Kayitta '{entry.Furniture.name}' yoktu, varsayilan yerine kondu.", this);
+            }
         }
 
         private void OnDestroy()

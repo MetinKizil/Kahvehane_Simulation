@@ -33,6 +33,9 @@ namespace KanBagi.Shop
             // Fizik kapali kalir (tepsi yerinde dursun); collider geri acilir ki tekrar alinabilsin.
             released.Detach(PlacePosition, PlaceRotation, restorePhysics: false);
             released.SetPickupEnabled(true);
+
+            // Tepsi yerin cocugu olur: raf (D5'ten beri tasinabilir) tasininca ustundeki tepsi de gelir.
+            released.transform.SetParent(transform, worldPositionStays: true);
         }
 
         private static bool HasTrayInHands(PlayerHands hands) =>

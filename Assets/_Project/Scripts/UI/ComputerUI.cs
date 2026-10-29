@@ -15,12 +15,13 @@ namespace KanBagi.UI
     /// Yonetim PC'sinin ekrani. Katalogdaki her urun icin bir satir uretir ve
     /// para/stok event'leri geldikce satirlari tazeler.
     /// Icinde hicbir satin alma mantigi yoktur (ANAYASA: UI, oyun mantigindan ayri).
+    ///
+    /// D5'ten beri PC tasinabilir bir esya (oyun sirasinda olusturulur, kayittan yeniden kurulur):
+    /// UI tek bir PC'ye baglanmaz, HERHANGI bir PC'nin ekrani acilinca (ComputerStation.AnyScreenToggled) o PC'ye hizmet eder.
     /// </summary>
     public class ComputerUI : MonoBehaviour
     {
         [Header("Baglantilar")]
-        [Tooltip("Bos birakilirsa sahnedeki ilk ComputerStation bulunur.")]
-        [SerializeField] private ComputerStation station;
         [Tooltip("Ekran paneli. Baslangicta kapali olmali.")]
         [SerializeField] private GameObject screenRoot;
         [Tooltip("Urun satirlarinin ekleneceği obje (genelde Vertical Layout Group'lu bir panel).")]
@@ -44,28 +45,31 @@ namespace KanBagi.UI
 
         private readonly List<CatalogEntryUI> rows = new List<CatalogEntryUI>();
         private Coroutine saveMessageRoutine;
+        // Ekrani su an acik olan PC (kapaliyken null).
+        private ComputerStation station;
 
         private void Start()
         {
-            if (station == null) station = FindFirstObjectByType<ComputerStation>();
-
-            if (station == null || screenRoot == null || entryContainer == null || entryPrefab == null)
+            if (screenRoot == null || entryContainer == null || entryPrefab == null)
             {
                 Debug.LogError(
-                    "[ComputerUI] Eksik baglanti var. 'Screen Root', 'Entry Container' ve 'Entry Prefab' " +
-                    "alanlarini doldur; sahnede ComputerStation oldugundan emin ol.", this);
+                    "[ComputerUI] Eksik baglanti var. 'Screen Root', 'Entry Container' ve 'Entry Prefab' alanlarini doldur.", this);
                 enabled = false;
                 return;
             }
 
-            station.OnScreenToggled += HandleScreenToggled;
+            ComputerStation.AnyScreenToggled += HandleScreenToggled;
 
-            if (closeButton != null) closeButton.onClick.AddListener(station.CloseScreen);
+            if (closeButton != null) closeButton.onClick.AddListener(HandleCloseClicked);
             if (saveButton != null) saveButton.onClick.AddListener(HandleSaveClicked);
             if (saveStatusText != null) saveStatusText.text = string.Empty;
 
-            BuildRows();
             screenRoot.SetActive(false);
+        }
+
+        private void HandleCloseClicked()
+        {
+            if (station != null) station.CloseScreen();
         }
 
         /// <summary>Kaydetme isini SaveManager yapar; UI sadece cagirip sonucu yazar.</summary>
@@ -95,12 +99,12 @@ namespace KanBagi.UI
             saveMessageRoutine = null;
         }
 
-        /// <summary>Katalogdaki satirlari bir kere uretir; sonra sadece tazelenir.</summary>
-        private void BuildRows()
+        /// <summary>Katalogdaki satirlari ilk acilista bir kere uretir; sonra sadece tazelenir.</summary>
+        private void BuildRows(ShopCatalog catalog)
         {
-            if (station.Catalog == null) return;
+            if (rows.Count > 0 || catalog == null) return;
 
-            foreach (ShopCatalog.CatalogEntry entry in station.Catalog.Entries)
+            foreach (ShopCatalog.CatalogEntry entry in catalog.Entries)
             {
                 if (entry == null || !entry.IsValid) continue;
 
@@ -110,12 +114,17 @@ namespace KanBagi.UI
             }
         }
 
-        private void HandleScreenToggled(bool isOpen)
+        private void HandleScreenToggled(ComputerStation toggled, bool isOpen)
         {
+            // Baska bir PC kapandiysa (ve bu ekran onu gostermiyorsa) karisma.
+            if (!isOpen && toggled != station) return;
+
+            station = isOpen ? toggled : null;
             screenRoot.SetActive(isOpen);
 
             if (isOpen)
             {
+                BuildRows(toggled.Catalog);
                 Subscribe();
                 RefreshAll();
             }
@@ -158,11 +167,8 @@ namespace KanBagi.UI
 
         private void OnDestroy()
         {
-            if (station != null)
-            {
-                station.OnScreenToggled -= HandleScreenToggled;
-                if (closeButton != null) closeButton.onClick.RemoveListener(station.CloseScreen);
-            }
+            ComputerStation.AnyScreenToggled -= HandleScreenToggled;
+            if (closeButton != null) closeButton.onClick.RemoveListener(HandleCloseClicked);
 
             if (saveButton != null) saveButton.onClick.RemoveListener(HandleSaveClicked);
 

@@ -14,3 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.FurnitureDatabase
   furniture:
   - {fileID: 11400000, guid: 62a10f579da6f8744a1afc8ff09c5a3c, type: 2}
+  - {fileID: 11400000, guid: b81c2a52a26787e48a5085b761022f85, type: 2}
+  - {fileID: 11400000, guid: e34c43d71a59fd847be0427363ed021a, type: 2}
+  - {fileID: 11400000, guid: b9cd827df92f7044b80778b073afbfcd, type: 2}
+  - {fileID: 11400000, guid: cd4cdbc3944552946bf2dfede11b5966, type: 2}
+  - {fileID: 11400000, guid: 2f55db6daf0a71f4fab114ae11f55a0b, type: 2}

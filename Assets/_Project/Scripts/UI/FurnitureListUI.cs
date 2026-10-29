@@ -22,15 +22,12 @@ namespace KanBagi.UI
         [Tooltip("Satirlarin dizilecegi obje. Bos birakilirsa bu objenin kendisi.")]
         [SerializeField] private Transform entryContainer;
         [SerializeField] private FurnitureEntryUI entryPrefab;
-        [Tooltip("Bos birakilirsa sahnedeki ilk ComputerStation.")]
-        [SerializeField] private ComputerStation computer;
 
         private readonly List<FurnitureEntryUI> rows = new List<FurnitureEntryUI>();
 
         private void Start()
         {
             if (entryContainer == null) entryContainer = transform;
-            if (computer == null) computer = FindFirstObjectByType<ComputerStation>();
 
             if (catalog == null || entryPrefab == null)
             {
@@ -69,6 +66,8 @@ namespace KanBagi.UI
         /// <summary>Ekrani kapatir ve esyayi PC'yi kullanan oyuncunun eline hayalet olarak verir.</summary>
         private void HandleBuy(FurnitureData data)
         {
+            // PC tasinabilir esya (D5): satin alma aninda ekrani acik olan PC bulunur.
+            ComputerStation computer = ComputerStation.FindOpen();
             if (computer == null || computer.ScreenUser == null) return;
             if (!computer.ScreenUser.TryGetComponent(out FurniturePlacer placer))
             {

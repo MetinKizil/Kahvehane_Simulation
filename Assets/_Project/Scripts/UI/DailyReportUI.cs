@@ -32,9 +32,6 @@ namespace KanBagi.UI
         [SerializeField] private TMP_Text reputationText;
         [SerializeField] private Button nextDayButton;
 
-        [Tooltip("Bos birakilirsa sahnedeki ilk ComputerStation bulunur. Ozet acilirken PC ekrani kapatilir.")]
-        [SerializeField] private ComputerStation computerStation;
-
         [Header("Gorunum")]
         [SerializeField] private string titleFormat = "GUN {0} OZETI";
         [SerializeField] private string servedFormat = "Servis edilen musteri: {0}";
@@ -71,8 +68,6 @@ namespace KanBagi.UI
                 enabled = false;
                 return;
             }
-
-            if (computerStation == null) computerStation = FindFirstObjectByType<ComputerStation>();
 
             dayCycle.OnDayEnded += HandleDayEnded;
 
@@ -123,7 +118,9 @@ namespace KanBagi.UI
         private void HandleDayEnded(int day)
         {
             // Iki panel ust uste binmesin: PC ekrani acikken gun bittiyse kapatilir.
-            if (computerStation != null && computerStation.IsScreenOpen) computerStation.CloseScreen();
+            // PC tasinabilir esya oldugu icin (D5) o an aranir.
+            ComputerStation openComputer = ComputerStation.FindOpen();
+            if (openComputer != null) openComputer.CloseScreen();
 
             Fill(day);
             contentRoot.SetActive(true);

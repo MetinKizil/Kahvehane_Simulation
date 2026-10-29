@@ -1,4 +1,5 @@
 using KanBagi.Data;
+using KanBagi.Furniture;
 using KanBagi.Interaction;
 using KanBagi.Inventory;
 using KanBagi.Items;
@@ -17,7 +18,7 @@ namespace KanBagi.Shop
     /// her E bir bardak daha siraya ekler (kac kez basilirsa o kadar bardak). Is bitince tepsi
     /// tekrar alinabilir olur (oyuncu tepsiye bakip alir).
     /// </summary>
-    public class TeaStove : TimedStation
+    public class TeaStove : TimedStation, IFurnitureMoveCheck
     {
         [Header("Icecek")]
         [Tooltip("Bu ocagin hazirladigi icecek (Cay ItemData asset'i).")]
@@ -54,6 +55,15 @@ namespace KanBagi.Shop
                 trayHoldable = null;
                 return null;
             }
+        }
+
+        /// <summary>Calisirken veya ustunde bardak/tepsi varken ocak tasinamaz.</summary>
+        public bool CanMove(out string reason)
+        {
+            reason = IsBusy ? "Ocak calisiyor, tasinamaz"
+                   : glassOnStove != null || TrayOnStove != null ? "Ocagin ustunde bardak/tepsi var"
+                   : null;
+            return reason == null;
         }
 
         private Vector3 SlotPosition => glassSlot != null ? glassSlot.position : transform.position + slotOffset;

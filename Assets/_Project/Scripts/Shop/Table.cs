@@ -1,4 +1,5 @@
 using KanBagi.Customers;
+using KanBagi.Furniture;
 using KanBagi.Interaction;
 using KanBagi.Items;
 using KanBagi.Player;
@@ -12,7 +13,7 @@ namespace KanBagi.Shop
     /// Masa kimin oturdugunu ve uzerinde bardak olup olmadigini bilir;
     /// musteri davranisina veya paraya karismaz (SOLID).
     /// </summary>
-    public class Table : MonoBehaviour, IInteractable
+    public class Table : MonoBehaviour, IInteractable, IFurnitureMoveCheck
     {
         [Header("Oturma Noktasi")]
         [Tooltip("Bos birakilirsa asagidaki ofset kullanilir.")]
@@ -37,6 +38,13 @@ namespace KanBagi.Shop
         /// bardak lavaboda yok edildiginde yuva kendiliginden bosalir.
         /// </summary>
         public bool HasGlass => placedGlassItem != null && !placedGlassItem.IsHeld;
+
+        /// <summary>Dolu masa tasinmaz: musteri oturuyor/yuruyorsa veya ustunde bardak varsa.</summary>
+        public bool CanMove(out string reason)
+        {
+            reason = !IsFree || HasGlass ? "Masa dolu, tasinamaz" : null;
+            return reason == null;
+        }
 
         public Vector3 SeatPosition => seatPoint != null
             ? seatPoint.position

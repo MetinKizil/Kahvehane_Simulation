@@ -34,6 +34,13 @@ namespace KanBagi.Shop
         /// <summary>Is bittiginde tetiklenir.</summary>
         public event Action<TimedStation> OnWorkFinished;
 
+        /// <summary>
+        /// HERHANGI bir istasyonun isi ilerleyince / bitince. Ilerleme cubugu buna abone olur:
+        /// D5'ten beri istasyonlar tasinabilir esya, oyun sirasinda olusturulur; tek tek baglanmak yetmez.
+        /// </summary>
+        public static event Action<TimedStation, float> AnyProgressChanged;
+        public static event Action<TimedStation> AnyWorkFinished;
+
         public abstract string GetPrompt(PlayerContext player);
         public abstract void Interact(PlayerContext player);
 
@@ -41,6 +48,12 @@ namespace KanBagi.Shop
         public void SetDurationMultiplier(float multiplier)
         {
             DurationMultiplier = Mathf.Clamp(multiplier, 0.05f, 10f);
+        }
+
+        private void ReportProgress(float progress)
+        {
+            OnProgressChanged?.Invoke(this, progress);
+            AnyProgressChanged?.Invoke(this, progress);
         }
 
         /// <summary>Verilen sure boyunca isi yurutur, bitince onComplete'i cagirir.</summary>
@@ -54,7 +67,7 @@ namespace KanBagi.Shop
         private IEnumerator WorkRoutine(float duration, Action onComplete)
         {
             IsBusy = true;
-            OnProgressChanged?.Invoke(this, 0f);
+            ReportProgress(0f);
 
             // Sure sifir/negatif ise anlik bitir; bolume girip hata almayalim.
             if (duration > 0f)
@@ -63,7 +76,7 @@ namespace KanBagi.Shop
                 while (elapsed < duration)
                 {
                     elapsed += Time.deltaTime;
-                    OnProgressChanged?.Invoke(this, Mathf.Clamp01(elapsed / duration));
+                    ReportProgress(Mathf.Clamp01(elapsed / duration));
                     yield return null;
                 }
             }
@@ -71,6 +84,7 @@ namespace KanBagi.Shop
             IsBusy = false;
             onComplete?.Invoke();
             OnWorkFinished?.Invoke(this);
+            AnyWorkFinished?.Invoke(this);
         }
     }
 }

@@ -9,6 +9,8 @@ namespace KanBagi.UI
     /// Istasyonlarin (ocak, lavabo...) ilerleme cubugu.
     /// SADECE TimedStation event'lerini dinler; is mantigi icermez
     /// (ANAYASA: UI, oyun mantigindan ayri).
+    /// D5'ten beri istasyonlar tasinabilir esya (oyun sirasinda olusur) => tek tek degil,
+    /// TimedStation'in "herhangi bir istasyon" event'lerine abone olunur.
     /// </summary>
     public class ProgressBarUI : MonoBehaviour
     {
@@ -19,35 +21,18 @@ namespace KanBagi.UI
         [SerializeField] private Image fillImage;
         [SerializeField] private TMP_Text labelText;
 
-        [Header("Istasyonlar")]
-        [Tooltip("Bos birakilirsa sahnedeki tum istasyonlar otomatik bulunur.")]
-        [SerializeField] private TimedStation[] stations;
-
         private void Start()
         {
-            // Inactive'ler de dahil: kilitli istasyonlar (kahve makinesi vb.) sonradan acildiginda
-            // yeniden arama yapmadan calisir.
-            if (stations == null || stations.Length == 0)
-                stations = FindObjectsByType<TimedStation>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-
-            foreach (TimedStation station in stations)
-            {
-                station.OnProgressChanged += HandleProgressChanged;
-                station.OnWorkFinished += HandleWorkFinished;
-            }
+            TimedStation.AnyProgressChanged += HandleProgressChanged;
+            TimedStation.AnyWorkFinished += HandleWorkFinished;
 
             SetBarVisible(false);
         }
 
         private void OnDestroy()
         {
-            foreach (TimedStation station in stations)
-            {
-                if (station == null) continue;
-
-                station.OnProgressChanged -= HandleProgressChanged;
-                station.OnWorkFinished -= HandleWorkFinished;
-            }
+            TimedStation.AnyProgressChanged -= HandleProgressChanged;
+            TimedStation.AnyWorkFinished -= HandleWorkFinished;
         }
 
         private void HandleProgressChanged(TimedStation station, float progress)
