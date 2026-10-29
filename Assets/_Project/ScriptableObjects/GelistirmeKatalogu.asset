@@ -13,11 +13,8 @@ MonoBehaviour:
   m_Name: GelistirmeKatalogu
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.UpgradeCatalog
   upgrades:
-  - {fileID: 11400000, guid: f4a1da74fb48fb74caad985543506ee9, type: 2}
-  - {fileID: 11400000, guid: 10f656ab4238dcf4c9870ed2514fd561, type: 2}
   - {fileID: 11400000, guid: 4adf4d7166207e441bf0d7490e7a9175, type: 2}
   - {fileID: 11400000, guid: c4b9bc6b8fe3b7e44a0c76ca56cd1859, type: 2}
   - {fileID: 11400000, guid: ec9dfc1e91e92d1489f7e092bbe7231b, type: 2}
   - {fileID: 11400000, guid: 5f4236a6210f4727977195d84d8e5539, type: 2}
   - {fileID: 11400000, guid: 360332cb2fc749f381855f88518fdfcf, type: 2}
-  - {fileID: 11400000, guid: 9acb20d5a1f744d3a7d408917721c4a5, type: 2}

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using KanBagi.Core;
 using KanBagi.Data;
 using KanBagi.Economy;
+using KanBagi.Shop;
 using UnityEngine;
 
 namespace KanBagi.Furniture
@@ -98,6 +99,34 @@ namespace KanBagi.Furniture
             OnLayoutChanged?.Invoke();
         }
 
+        // ---- Istasyon sorgulari (menu ve malzeme kilidi) ----
+
+        /// <summary>Dukkanda bu icecegi yapan bir makine var mi? Menu buna bakar (D5b: upgrade yerine).</summary>
+        public bool HasStationMaking(ItemData beverage)
+        {
+            if (beverage == null) return false;
+
+            foreach (PlacedFurniture furniture in placed)
+            {
+                if (furniture != null && furniture.TryGetComponent(out TeaStove stove) && stove.Beverage == beverage) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Dukkanda bu malzemeyi kullanan bir makine var mi? PC'deki malzeme kilidi buna bakar.</summary>
+        public bool HasStationUsing(ItemData consumable)
+        {
+            if (consumable == null) return false;
+
+            foreach (PlacedFurniture furniture in placed)
+            {
+                if (furniture != null && furniture.TryGetComponent(out TeaStove stove) && stove.RequiredConsumable == consumable) return true;
+            }
+
+            return false;
+        }
+
         // ---- Satin alma ----
 
         /// <summary>Dukkanda bu esyadan kac tane var?</summary>
@@ -115,7 +144,12 @@ namespace KanBagi.Furniture
         /// <summary>Bu esyadan en fazla kac tane olabilir (0 = sinirsiz). D6'da genisletme bolgeleri artiracak.</summary>
         public int GetLimit(FurnitureData data) => data != null ? data.BaseLimit : 0;
 
-        /// <summary>Sinir ve para yetiyor mu? Yetmiyorsa oyuncuya gosterilecek sebep doner.</summary>
+        /// <summary>Esyanin itibar sarti karsilaniyor mu?</summary>
+        public bool MeetsReputation(FurnitureData data) =>
+            data != null && (data.RequiredReputation <= 0 ||
+                             (ReputationManager.Instance != null && ReputationManager.Instance.CurrentReputation >= data.RequiredReputation));
+
+        /// <summary>Sinir, itibar ve para yetiyor mu? Yetmiyorsa oyuncuya gosterilecek sebep doner.</summary>
         public bool CanPurchase(FurnitureData data, out string reason)
         {
             reason = null;
@@ -125,6 +159,12 @@ namespace KanBagi.Furniture
             if (limit > 0 && CountOf(data) >= limit)
             {
                 reason = $"{data.DisplayName} siniri dolu ({limit})";
+                return false;
+            }
+
+            if (!MeetsReputation(data))
+            {
+                reason = $"Itibar {data.RequiredReputation} gerekli";
                 return false;
             }
 

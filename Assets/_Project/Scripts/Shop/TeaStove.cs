@@ -35,6 +35,12 @@ namespace KanBagi.Shop
         [SerializeField] private Transform glassSlot;
         [SerializeField] private Vector3 slotOffset = new Vector3(0f, 0.6f, 0f);
 
+        /// <summary>Bu ocagin yaptigi icecek. Menu "dukkanda bunu yapan makine var mi" diye sorar.</summary>
+        public ItemData Beverage => beverageData;
+
+        /// <summary>Bir bardak icin harcanan malzeme (yoksa null). PC'deki malzeme kilidi buna bakar.</summary>
+        public ItemData RequiredConsumable => requiredConsumable;
+
         private TeaGlass glassOnStove;
         private HoldableItem holdableOnStove;
 

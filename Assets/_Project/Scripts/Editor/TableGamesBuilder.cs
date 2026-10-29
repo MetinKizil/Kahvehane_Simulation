@@ -167,7 +167,7 @@ namespace KanBagi.EditorTools
             serialized.ApplyModifiedProperties();
         }
 
-        /// <summary>Ayni upgrade'e bagli bilesen zaten varsa onu doner (tekrar calistirinca cogalmasin). BeverageStationBuilder da kullanir.</summary>
+        /// <summary>Ayni upgrade'e bagli bilesen zaten varsa onu doner (tekrar calistirinca cogalmasin).</summary>
         internal static T FindByUpgrade<T>(GameObject owner, UpgradeData upgrade) where T : Component
         {
             foreach (T component in owner.GetComponents<T>())
@@ -179,7 +179,7 @@ namespace KanBagi.EditorTools
             return null;
         }
 
-        /// <summary>Upgrade'i UpgradeManager'in katalogunda yoksa ekler. Eklendiyse true. BeverageStationBuilder da kullanir.</summary>
+        /// <summary>Upgrade'i UpgradeManager'in katalogunda yoksa ekler. Eklendiyse true.</summary>
         internal static bool AddToCatalog(UpgradeManager upgradeManager, UpgradeData upgrade)
         {
             var catalog = new SerializedObject(upgradeManager).FindProperty("catalog").objectReferenceValue as UpgradeCatalog;

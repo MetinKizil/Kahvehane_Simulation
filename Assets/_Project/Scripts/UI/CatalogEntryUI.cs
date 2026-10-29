@@ -1,6 +1,7 @@
 using KanBagi.Core;
 using KanBagi.Data;
 using KanBagi.Economy;
+using KanBagi.Furniture;
 using KanBagi.Inventory;
 using TMPro;
 using UnityEngine;
@@ -49,9 +50,9 @@ namespace KanBagi.UI
                 return;
             }
 
-            // Gerekli gelistirme alinmadiysa malzeme listede hic gorunmez.
-            bool isUnlocked = entry.RequiredUpgrade == null ||
-                              (UpgradeManager.Instance != null && UpgradeManager.Instance.IsPurchased(entry.RequiredUpgrade));
+            // Onu kullanan makine dukkanda yoksa malzeme listede hic gorunmez (D5b: upgrade yerine).
+            bool isUnlocked = !entry.RequiresStation ||
+                              (FurnitureManager.Instance != null && FurnitureManager.Instance.HasStationUsing(entry.Item));
 
             gameObject.SetActive(isUnlocked);
             if (!isUnlocked) return;

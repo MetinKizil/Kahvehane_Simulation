@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a464912ec4dabf48917a1902a6e0699, type: 3}
+  m_Name: OraletSemaveriEsya
+  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.FurnitureData
+  displayName: Oralet Semaveri
+  category: 1
+  prefab: {fileID: 8350944557048089055, guid: 682ea754649b8d9438be1eccaa7e2bc4, type: 3}
+  price: 100
+  requiredReputation: 0
+  baseLimit: 1

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using KanBagi.Core;
 using KanBagi.Data;
 using KanBagi.Economy;
 using KanBagi.Furniture;
@@ -48,12 +49,16 @@ namespace KanBagi.UI
 
             if (EconomyManager.Instance != null) EconomyManager.Instance.OnMoneyChanged += HandleMoneyChanged;
             if (FurnitureManager.Instance != null) FurnitureManager.Instance.OnLayoutChanged += RefreshAll;
+            if (ReputationManager.Instance != null) ReputationManager.Instance.OnReputationChanged += HandleReputationChanged;
         }
 
         // Sayfa her acildiginda guncel sayilar gorunsun.
         private void OnEnable() => RefreshAll();
 
         private void HandleMoneyChanged(int money) => RefreshAll();
+
+        // Itibar kilitli makine (sahlep) itibar yetince acilsin.
+        private void HandleReputationChanged(int reputation) => RefreshAll();
 
         private void RefreshAll()
         {
@@ -84,6 +89,7 @@ namespace KanBagi.UI
         {
             if (EconomyManager.Instance != null) EconomyManager.Instance.OnMoneyChanged -= HandleMoneyChanged;
             if (FurnitureManager.Instance != null) FurnitureManager.Instance.OnLayoutChanged -= RefreshAll;
+            if (ReputationManager.Instance != null) ReputationManager.Instance.OnReputationChanged -= HandleReputationChanged;
         }
     }
 }

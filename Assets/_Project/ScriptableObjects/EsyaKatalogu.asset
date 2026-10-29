@@ -12,6 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f3bbf82d1664980a57eb9bb3e85959c, type: 3}
   m_Name: EsyaKatalogu
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.FurnitureCatalog
-  tabTitle: "EŞYALAR"
+  tabTitle: "E\u015EYALAR"
   items:
   - {fileID: 11400000, guid: 62a10f579da6f8744a1afc8ff09c5a3c, type: 2}
+  - {fileID: 11400000, guid: 4516118ba3fb3ea43abb2d48fcab7271, type: 2}
+  - {fileID: 11400000, guid: a2a97c550a14e4c46b2ddf1848a5c02a, type: 2}
+  - {fileID: 11400000, guid: 0d7caf462776bf64f8b8d4f224112de9, type: 2}

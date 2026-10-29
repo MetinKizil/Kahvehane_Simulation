@@ -31,6 +31,9 @@ namespace KanBagi.Data
         [Tooltip("Satin alma fiyati (TL). Esya yerlestirilince odenir.")]
         [SerializeField] private int price = 100;
 
+        [Tooltip("Satin almak icin gereken itibar. 0 = sart yok.")]
+        [SerializeField] private int requiredReputation;
+
         [Header("Sinir")]
         [Tooltip("Dukkanda en fazla kac tane olabilir (ana salon). 0 = sinirsiz. Genisletme bolgeleri (D6) artiracak.")]
         [SerializeField] private int baseLimit;
@@ -39,6 +42,7 @@ namespace KanBagi.Data
         public FurnitureCategory Category => category;
         public GameObject Prefab => prefab;
         public int Price => price;
+        public int RequiredReputation => requiredReputation;
         public int BaseLimit => baseLimit;
     }
 }

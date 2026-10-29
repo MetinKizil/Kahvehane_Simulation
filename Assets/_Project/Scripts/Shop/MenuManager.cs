@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using KanBagi.Core;
 using KanBagi.Data;
+using KanBagi.Furniture;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -9,28 +9,27 @@ namespace KanBagi.Shop
 {
     /// <summary>
     /// Dukkanin o an satabildigi iceceklerin TEK sahibi.
-    /// Musteriler ne isteyeceklerini buraya sorar; hangi makinenin acik oldugunu bilmez (SOLID).
-    /// Menu, satin alinan gelistirmelerle buyur: UpgradeManager'a abone olur (Observer Pattern).
+    /// Musteriler ne isteyeceklerini buraya sorar; hangi makinenin nerede oldugunu bilmez (SOLID).
+    ///
+    /// D5b'den beri kural: bir icecek, DUKKANDA ONU YAPAN BIR MAKINE VARSA menudedir (upgrade kilidi kalkti).
+    /// Esya duzeni degisince (makine kondu, kayit yuklendi) FurnitureManager'a abone olarak menu tazelenir.
     /// </summary>
     public class MenuManager : MonoBehaviour
     {
-        /// <summary>Menudeki tek bir icecek ve varsa onu acan gelistirme.</summary>
+        /// <summary>Dukkanin sunabilecegi bir icecek.</summary>
         [Serializable]
         public class MenuEntry
         {
             [SerializeField] private ItemData beverage;
-            [Tooltip("Bos birakilirsa icecek en bastan menudedir. Doluysa o gelistirme alininca menuye girer.")]
-            [SerializeField] private UpgradeData requiredUpgrade;
 
             public ItemData Beverage => beverage;
-            public UpgradeData RequiredUpgrade => requiredUpgrade;
             public bool IsValid => beverage != null && beverage.Type == ItemType.Beverage;
         }
 
         public static MenuManager Instance { get; private set; }
 
         [Header("Menu")]
-        [Tooltip("Dukkanin sunabilecegi tum icecekler. Kilitli olanlar gelistirme alininca acilir.")]
+        [Tooltip("Dukkanin sunabilecegi tum icecekler. Onu yapan makine dukkana konunca menuye girer.")]
         [SerializeField] private List<MenuEntry> entries = new List<MenuEntry>();
 
         private readonly List<ItemData> availableBeverages = new List<ItemData>();
@@ -40,7 +39,7 @@ namespace KanBagi.Shop
 
         public bool HasAnyBeverage => availableBeverages.Count > 0;
 
-        /// <summary>Menu degistiginde tetiklenir (yeni makine alindi vb.).</summary>
+        /// <summary>Menu degistiginde tetiklenir (yeni makine kondu vb.).</summary>
         public event Action OnMenuChanged;
 
         private void Awake()
@@ -56,13 +55,13 @@ namespace KanBagi.Shop
 
         private void Start()
         {
-            // Start'ta kuruyoruz ki UpgradeManager'in Awake'i garantiyle bitmis olsun.
-            RebuildMenu();
-
-            if (UpgradeManager.Instance != null)
-                UpgradeManager.Instance.OnUpgradePurchased += HandleUpgradePurchased;
+            // Esyalar FurnitureManager.Start'ta (order 50) kurulur; o kurulunca OnLayoutChanged menuyu yeniden kurar.
+            if (FurnitureManager.Instance != null)
+                FurnitureManager.Instance.OnLayoutChanged += RebuildMenu;
             else
-                Debug.LogError("[MenuManager] UpgradeManager bulunamadi. 'Managers' objesine ekle.", this);
+                Debug.LogError("[MenuManager] FurnitureManager bulunamadi. 'Managers' objesine ekle.", this);
+
+            RebuildMenu();
         }
 
         /// <summary>Musteri ne isteyecegini buradan secer.</summary>
@@ -75,16 +74,15 @@ namespace KanBagi.Shop
 
         public bool IsOnMenu(ItemData beverage) => beverage != null && availableBeverages.Contains(beverage);
 
-        private void HandleUpgradePurchased(UpgradeData upgrade) => RebuildMenu();
-
         private void RebuildMenu()
         {
             availableBeverages.Clear();
+            FurnitureManager furniture = FurnitureManager.Instance;
 
             foreach (MenuEntry entry in entries)
             {
                 if (entry == null || !entry.IsValid) continue;
-                if (!IsUnlocked(entry.RequiredUpgrade)) continue;
+                if (furniture == null || !furniture.HasStationMaking(entry.Beverage)) continue;
                 if (availableBeverages.Contains(entry.Beverage)) continue;
 
                 availableBeverages.Add(entry.Beverage);
@@ -93,17 +91,10 @@ namespace KanBagi.Shop
             OnMenuChanged?.Invoke();
         }
 
-        private static bool IsUnlocked(UpgradeData upgrade)
-        {
-            if (upgrade == null) return true;
-
-            return UpgradeManager.Instance != null && UpgradeManager.Instance.IsPurchased(upgrade);
-        }
-
         private void OnDestroy()
         {
-            if (UpgradeManager.Instance != null)
-                UpgradeManager.Instance.OnUpgradePurchased -= HandleUpgradePurchased;
+            if (FurnitureManager.Instance != null)
+                FurnitureManager.Instance.OnLayoutChanged -= RebuildMenu;
 
             if (Instance == this) Instance = null;
         }

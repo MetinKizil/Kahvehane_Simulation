@@ -147,6 +147,7 @@ MonoBehaviour:
   countFormat: "D\xFCkkanda {0} / {1}"
   unlimitedCountFormat: "D\xFCkkanda {0}"
   limitReachedLabel: "S\u0131n\u0131r dolu"
+  reputationLockedFormat: "\u0130tibar {0} gerekli"
 --- !u!1 &1871246451306126537
 GameObject:
   m_ObjectHideFlags: 0

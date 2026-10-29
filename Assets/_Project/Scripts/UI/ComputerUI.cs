@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using KanBagi.Core;
 using KanBagi.Data;
 using KanBagi.Economy;
+using KanBagi.Furniture;
 using KanBagi.Inventory;
 using KanBagi.Shop;
 using TMPro;
@@ -139,22 +140,19 @@ namespace KanBagi.UI
         {
             if (EconomyManager.Instance != null) EconomyManager.Instance.OnMoneyChanged += HandleMoneyChanged;
             if (InventoryManager.Instance != null) InventoryManager.Instance.OnStockChanged += HandleStockChanged;
-            if (UpgradeManager.Instance != null) UpgradeManager.Instance.OnUpgradePurchased += HandleUpgradePurchased;
+            if (FurnitureManager.Instance != null) FurnitureManager.Instance.OnLayoutChanged += RefreshAll;
         }
 
         private void Unsubscribe()
         {
             if (EconomyManager.Instance != null) EconomyManager.Instance.OnMoneyChanged -= HandleMoneyChanged;
             if (InventoryManager.Instance != null) InventoryManager.Instance.OnStockChanged -= HandleStockChanged;
-            if (UpgradeManager.Instance != null) UpgradeManager.Instance.OnUpgradePurchased -= HandleUpgradePurchased;
+            if (FurnitureManager.Instance != null) FurnitureManager.Instance.OnLayoutChanged -= RefreshAll;
         }
 
         private void HandleMoneyChanged(int currentMoney) => RefreshAll();
 
         private void HandleStockChanged(ItemData item, int newCount) => RefreshAll();
-
-        // Yeni makine alininca malzemesi listede belirsin.
-        private void HandleUpgradePurchased(UpgradeData upgrade) => RefreshAll();
 
         private void RefreshAll()
         {

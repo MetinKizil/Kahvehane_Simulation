@@ -20,13 +20,13 @@ namespace KanBagi.Data
             [SerializeField] private ItemData item;
             [Tooltip("Bir pakette kac olcek/adet var.")]
             [SerializeField] private int unitsPerPack = 10;
-            [Tooltip("Bos birakilirsa malzeme en bastan satilir. Doluysa o gelistirme alinana kadar listede gorunmez " +
-                     "(kahve makinen yokken cekirdek satin alip para harcamayasin).")]
-            [SerializeField] private UpgradeData requiredUpgrade;
+            [Tooltip("Isaretliyse malzeme, onu kullanan makine dukkanda olana kadar listede gorunmez " +
+                     "(kahve makinen yokken cekirdek alip para harcamayasin). D5b'den beri upgrade kilidi yerine bu.")]
+            [SerializeField] private bool requiresStation;
 
             public ItemData Item => item;
 
-            public UpgradeData RequiredUpgrade => requiredUpgrade;
+            public bool RequiresStation => requiresStation;
 
             public int UnitsPerPack => Mathf.Max(1, unitsPerPack);
 

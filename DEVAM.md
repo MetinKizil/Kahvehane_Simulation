@@ -595,7 +595,7 @@ En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 
 **Yeni bir içeceğin oyuna tam girmesi 10 bağlantı ister** (kahve/oralet elle yapılmıştı, biri unutulursa sessizce bozulur): içecek `ItemData`, malzeme `ItemData`, `UpgradeData`, geliştirme kataloğu, malzeme kataloğu (upgrade'e kilitli), **ürün veritabanı (kayıt!)**, `MenuManager` (upgrade'e kilitli), sahnede `TeaStove` + `UpgradeUnlocker`, Sanayi Ocağı listesi (`StationSpeedBoost`), `StockUI`. İlerleme çubuğu istasyonları kendisi bulur.
 
 - Veri: `Sahlep.asset`, `SahlepTozu.asset`, `SahlepMakinesiUpgrade.asset` (Türkçe metinler asset'te).
-- **`Kan Bagi > Icecek Istasyonlarini Kur` (`BeverageStationBuilder`, genel):** dosyanın başındaki **`Stations` tablosundaki** her içecek için 3–10 arası bağlantıların hepsini kurar; raporu `eklendi / zaten vardi` diye basar. Var olan istasyonu `beverageData`'dan tanır, **tekrar çalıştırılabilir, çoğaltmaz.** Kahve/oralet tabloda yok (elle kurulu, dokunulmadı). **Yeni içecek = veri asset'leri + tabloya bir satır + menü + NavMesh bake.**
+- **`Kan Bagi > Icecek Istasyonlarini Kur` (`BeverageStationBuilder`, genel) — D5b'de SİLİNDİ, yerine bölüm 6.9 D5b:** dosyanın başındaki **`Stations` tablosundaki** her içecek için 3–10 arası bağlantıların hepsini kurar; raporu `eklendi / zaten vardi` diye basar. Var olan istasyonu `beverageData`'dan tanır, **tekrar çalıştırılabilir, çoğaltmaz.** Kahve/oralet tabloda yok (elle kurulu, dokunulmadı). **Yeni içecek = veri asset'leri + tabloya bir satır + menü + NavMesh bake.**
 - `TableGamesBuilder`'daki `FindByUpgrade`, `AddToCatalog`, `GetOrCreateMaterial` `internal` yapıldı; yeni builder kopyalamadan kullanıyor (davranış değişmedi).
 - Kurulumdan sonra `NavMesh'i Yeniden Bake Et` → `NavMesh Kontrol Et`: **12 eşyanın hepsinde delik var.**
 - **Oyun kodu değişmedi** — `TeaStove`, menü, stok ve kayıt sistemleri sahlebi olduğu gibi kaldırdı.
@@ -631,7 +631,7 @@ En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 
 | D3 ✅ | Yerleştirme modu | Hayalet önizleme, 0.1 m adım, 5° döndürme (Shift 45°), çakışma/zemin/oturma noktası kontrolü, var olan eşyayı tek tek alıp taşıma; "Yeni Masa" elde hayalet. |
 | D4 ✅ | Eşya satın alma | PC'de eşya kataloğu → alınca elde hayalet, **koyunca öder**. Masa sabit 100 TL, **sınır 4** (genişletme artıracak). Sarf malzemesi kurye ile kalır. + PC paneli görünüm/yazım düzeltmeleri. |
 | D5a ✅ | Temel eşyalar taşınabilir | Çay ocağı, lavabo, bardak rafı (tepsileriyle), depo, PC eşyaya dönüştü; meşgul eşya taşınmaz; sabit sahne bağları kaldırıldı. |
-| D5b | Makineler eşya kataloğuna | Kahve/oralet/sahlep makinesi GELİŞTİRME'den EŞYALAR'a (fiyat ve itibar aynı); menü/malzeme kilidi "makine dükkanda mı"; her makineden 1, **artırılabilmesi dükkan genişletmelerinden sonra (D6)**. |
+| D5b ✅ | Makineler eşya kataloğuna | Kahve/oralet/sahlep makinesi GELİŞTİRME'den EŞYALAR'a (fiyat ve itibar aynı); menü/malzeme kilidi "makine dükkanda mı"; her makineden 1, **artırılabilmesi dükkan genişletmelerinden sonra (D6)**. |
 | D6 | Duvarlar + sıralı genişletme bölgeleri | İç/dış ayrımı (10d'den buraya kaydı), kapı. Yan oda → bahçe → üst kat; **Kumar Odası** + çoğaltılabilir kumar masası. **Dükkanın en büyük boyutu burada kesinleşir.** |
 | D7 | Çok kişilik masalar + grup müşteriler | 2'lik/4'lük masalar, 2–4 kişilik gruplar; birlikte gelir/gider, her kişi kendi siparişi. |
 | D8 | Masa oyunları masa bazında | Okey/iskambil/domino masaya konan eşya; 4 kişilik okey grubu okeyli masayı ister (10c-2'deki dükkan geneli etki buna dönüşür). |
@@ -745,9 +745,25 @@ Masalar artık sahneye elle konmuş sabit objeler değil: **veriden oluşturulan
 - **`FurnitureManager.SpawnMissingDefaults`**: kayıttan yüklenen düzende **varsayılan düzendeki bir eşya türü hiç yoksa** (D5'ten önceki kayıtta ocak/PC/lavabo eşya değildi) varsayılan yerine konur. Eski kayıtlar PC'siz/ocaksız açılmaz.
 - `Kan Bagi > Istasyonlari Esyaya Cevir` (`StationFurnitureBuilder`, **bir kez**): **açık** (kilitli olmayan) kök istasyonları (`TeaStove`, `Sink`, `GlassShelf`, `StorageRack`, `ComputerStation`) prefab'a (PlacedFurniture + NavMeshModifier "Not Walkable"), `FurnitureData`'ya (`<Ad>Esya`, Station, fiyat 0, **baseLimit 1**) ve `VarsayilanDuzen`'e çevirir; sahnedekileri siler. Bardak rafında önce `TepsiYeri1/2` + tepsileri rafın çocuğu yapar (dünya ölçeği korunur → tepsi ezilmez). Görünen adlar sonra asset'te Türkçeleştirildi: **Çay Ocağı, Lavabo, Bardak Rafı, Depo, Yönetim PC'si**.
 - Varsayılan düzen artık **7 eşya**: Masa ×2, BardakRafi (−2, 0.5, 2), CayOcagi (0, 0.5, 3), Depo (−2, 0.5, 3.5), Lavabo (2, 0.5, 3), YonetimPC (2, 0.5, 2).
-- Eskiyen builder'lar: `Tepsiyi Kur` (raf artık sahnede değil → hata verip durur), `Icecek Istasyonlarini Kur` (D5b'de yerini katalog alacak).
+- Eskiyen builder'lar: `Tepsiyi Kur` (raf artık sahnede değil → hata verip durur), ~~`Icecek Istasyonlarini Kur`~~ (D5b'de silindi).
 
 **Test:** beş eşya F ile taşınıyor/dönüyor, taşınan yerlerde çay/servis/tepsi/bulaşık/PC siparişi/depo/masa alma çalışıyor, meşgul eşya taşınmıyor, raf tepsileriyle taşınıyor, kayıttan düzen geri geliyor. Kullanıcı onayladı.
+
+### Adım D5b — Makineler eşya kataloğuna ✅
+**Oyuncu ne görür:** başta tezgâhta yalnızca çay ocağı var, menü sadece çay. PC → **EŞYALAR**'da masanın altında **Oralet Semaveri 100 TL, Kahve Makinesi 200 TL, Sahlep Makinesi 300 TL** (sahlep itibar 80'e kadar butonda **"İtibar 80 gerekli"**, basılmaz). Makine alınınca masa gibi elde hayalet olur, konunca para düşer, içecek **menüye girer** ve malzemesi PC → MALZEME'de **görünür**. Her makineden 1 ("Sınır dolu"); F ile taşınır (çalışırken taşınmaz). **GELİŞTİRME**'de artık makine yok (Sanayi Ocağı, Okey, İskambil, Domino, Gizli Kumarhane kaldı).
+
+**Kullanıcı kararları:** fiyat ve itibar şartları upgrade'dekiyle aynı; `Icecek Istasyonlarini Kur` builder'ı silindi; eski kayıtlar için `Kaydi Sil` (eski kayıtta alınmış makine upgrade'i "katalogda yok, atlandi" uyarısıyla düşer, makine verilmez).
+
+**Parçalar:**
+- **Kilit kuralı değişti: "upgrade alındı mı" → "dükkanda o makine var mı".**
+  - `FurnitureManager.HasStationMaking(beverage)` / `HasStationUsing(consumable)`: yerleştirilmiş eşyalardaki `TeaStove`'lara bakar (`TeaStove.Beverage`, `TeaStove.RequiredConsumable` getter'ları eklendi).
+  - **`MenuManager`**: `MenuEntry.requiredUpgrade` KALKTI (sadece `beverage`); menü `FurnitureManager.OnLayoutChanged`'de yeniden kurulur, içecek ancak onu yapan makine dükkandaysa menüdedir. `UpgradeManager`'a bağımlılığı yok.
+  - **`ShopCatalog.CatalogEntry`**: `requiredUpgrade` yerine **`requiresStation`** (bool). `CatalogEntryUI` satırı `HasStationUsing` false ise gizler. `ComputerUI` tazelemesi `OnUpgradePurchased` yerine `OnLayoutChanged`'e abone.
+- **İtibar şartı eşyada:** `FurnitureData.requiredReputation` (0 = yok); `FurnitureManager.MeetsReputation`; `CanPurchase` sırası **sınır → itibar ("Itibar {0} gerekli") → para**. `FurnitureEntryUI.reputationLockedFormat` (ArayuzMetinleri: "İtibar {0} gerekli") butonda fiyat yerine gösterilir; `FurnitureListUI` `ReputationManager.OnReputationChanged`'de de tazelenir.
+- `Kan Bagi > Makineleri Esyaya Cevir` (`MachineFurnitureBuilder`, **bir kez**): `Managers`'ta hedefi tek bir `TeaStove` olan `UpgradeUnlocker`'ları bulur (ucuzdan pahalıya). Her biri için prefab (açık, PlacedFurniture + NavMeshModifier "Not Walkable"), `<Ad>Esya` (`displayName`/fiyat/itibar upgrade'den, Station, baseLimit 1) → `EsyaVeritabani` + `EsyaKatalogu` (**varsayılan düzene girmez**, satın alınır); upgrade `GelistirmeKatalogu`'ndan çıkar; malzemesi `MalzemeKatalogu`'nda `requiresStation`; içecek `MenuManager`'da yoksa eklenir; unlocker ve sahnedeki pasif makine silinir. Kumar masası unlocker'ı dokunulmadı (D6).
+- **Silindi:** `BeverageStationBuilder` (`Icecek Istasyonlarini Kur`). Yeni içecek artık: içecek + malzeme `ItemData`, makine prefab'ı + `FurnitureData` (EsyaVeritabani + EsyaKatalogu), `MalzemeKatalogu` satırı (`requiresStation`), `MenuManager` satırı, `UrunVeriTabani`, `StockUI`. Sanayi Ocağı ve ilerleme çubuğu makineyi kendisi bulur.
+
+**Test listesi:** Kaydi Sil → başta sadece çay ve çay yaprağı; oralet semaveri alınıp konunca 100 TL düşer, oralet tozu listede belirir, müşteriler oralet ister; para yetmezken kahve butonu kapalı; sahlepte "İtibar 80 gerekli"; makine F ile taşınır (çalışırken taşınmaz); kayıttan makine yerinde ve içeceği menüde geri gelir. Kullanıcı "çalışıyor" dedi.
 
 **Değişecek mevcut parçalar (bilerek):** sabit eşyalar + `UpgradeUnlocker`, editörde NavMesh bake (`NavMesh'i Yeniden Bake Et`), `Icecek Istasyonlarini Kur` / `Masa Oyunlarini Kur` builder'ları, tek kişilik `Table`, tek eşya tutan eller, dükkan geneli masa oyunları. **Değişmeyenler:** müşteri profilleri, sipariş/ikinci tur, menü, stok/kurye, ekonomi, itibar, gün döngüsü, kayıt altyapısı, kumar/mafya/polis, fısıltılar, hikaye, co-op etkileşim katmanı.
 
@@ -760,7 +776,7 @@ Masalar artık sahneye elle konmuş sabit objeler değil: **veriden oluşturulan
 | `Zemin` (Plane) | (0,0,0) | **NavMeshSurface** — `Kan Bagi > NavMesh'i Yeniden Bake Et` ile bake edilir (elle Bake'e basma: kilitli eşyaların deliği açılmaz). Tüm eşyalarda "Not Walkable" `NavMeshModifier` var |
 | `Player` (Empty) | (0, 1.1, 0) | CharacterController, PlayerController, PlayerInteractor, PlayerHands, PlayerLock, **FurniturePlacer** |
 | └ `Main Camera` | (0, 0.6, 0) | — (child) |
-| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, PoliceManager, **BalanceLogger**, **4 × UpgradeUnlocker** (KahveMakinesi→KahveMakinesi, Oralet→OraletSemaveri, Kumarhane→KumarMasasi, SahlepMakinesi→SahlepMakinesi — masa/parça açıcıları D2'de kalktı), **2 × TableGameBoost** (İskambil 0.3, Domino 0.2), **FurnitureManager, NavMeshRuntimeBaker, UpgradeFurnitureGrant** (YeniMasa → masa (0, 0.4, −2)) |
+| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, PoliceManager, **BalanceLogger**, **1 × UpgradeUnlocker** (Kumarhane→KumarMasasi — masa/parça açıcıları D2'de, makine açıcıları D5b'de kalktı), **2 × TableGameBoost** (İskambil 0.3, Domino 0.2), **FurnitureManager, NavMeshRuntimeBaker, UpgradeFurnitureGrant** (YeniMasa → masa (0, 0.4, −2)) |
 | `EventSystem` | — | **Input System UI Input Module** (butonlar bunsuz çalışmaz) |
 | `Canvas` | — | InteractionPromptUI, HeldItemUI, ProgressBarUI, **ComputerUI** |
 | ├ `MoneyText` | sol üst (Pos Y -20) | MoneyUI |
@@ -784,9 +800,7 @@ Masalar artık sahneye elle konmuş sabit objeler değil: **veriden oluşturulan
 | &nbsp;&nbsp;├ `UpgradeSayfasi` (VLG, flexible height 1) | — | UpgradeListUI |
 | &nbsp;&nbsp;└ `EmlakSayfasi` (VLG, flexible height 1) | — | PropertyListUI |
 | ~~`BardakRafi`, `CayOcagi`, `Lavabo`, `Depo`, `YonetimPC`~~ — **D5a'dan beri sahnede YOK** | varsayılan düzen: raf (−2, 0.5, 2), ocak (0, 0.5, 3), lavabo (2, 0.5, 3), depo (−2, 0.5, 3.5), PC (2, 0.5, 2) | Oyun başında `FurnitureManager` prefab'larından oluşturur. `BardakRafi` prefab'ında `TepsiYeri1/2` + 2 `Tepsi` (rafın çocuğu); GlassShelf stok 10; CayOcagi TeaStove (Cay + CayYapragi × 1); Lavabo Sink (2.5 sn, tepsi 1.5 sn/bardak); PC ComputerStation (MalzemeKatalogu); Depo StorageRack |
-| `KahveMakinesi` (Cube) — **başta pasif** | (-1, 0.5, 3) | TeaStove (Kahve + KahveCekirdegi × 1) |
-| `OraletSemaveri` (Cube) — **başta pasif** | (1, 0.5, 3) | TeaStove (Oralet + OraletTozu × 1) |
-| `SahlepMakinesi` (Cube, 1×1×0.8, krem) — **başta pasif** | (3.5, 0.5, 3) | TeaStove (Sahlep + SahlepTozu × 1) — `Icecek Istasyonlarini Kur` kurar |
+| ~~`KahveMakinesi`, `OraletSemaveri`, `SahlepMakinesi`~~ — **D5b'den beri sahnede YOK** | satın alınınca oyuncunun koyduğu yer | PC → EŞYALAR'dan alınır, `FurnitureManager` prefab'tan oluşturur. Prefab'lar: TeaStove (Kahve + KahveCekirdegi / Oralet + OraletTozu / Sahlep + SahlepTozu × 1) |
 | ~~`Masa1/2/3`~~ — **D2'den beri sahnede masa YOK** | — | Masalar oyun başında `FurnitureManager` tarafından `Masa` prefab'ından oluşturulur (varsayılan düzen / kayıt). Prefab'da `OkeyTakimi` (yerel 0.3, 0.6, 0.3), `IskambilDestesi` (−0.3, 0.52, 0.3), `DominoTakimi` (0.3, 0.53, −0.3) — collider yok, `UpgradeVisual` açar |
 | `GirisNoktasi` (Empty) | (0, 0, -4.5) | — (spawn + exit) |
 | `Spawner` (Empty) | — | CustomerSpawner (**profiles**: EmekliDayi, Ogrenci, Esnaf, Kabadayi — `Musteri Profillerini Bagla` bağlar) |
@@ -827,16 +841,16 @@ Masalar artık sahneye elle konmuş sabit objeler değil: **veriden oluşturulan
 | `OraletTozu` | Consumable | 0 | 3 | 0 |
 | `SahlepTozu` | Consumable | 0 | 5 | 0 |
 
-- `MalzemeKatalogu` (ShopCatalog) — CayYapragi ×10 (20 TL), KahveCekirdegi ×10 (40 TL, kilitli), OraletTozu ×10 (30 TL, kilitli), **SahlepTozu ×10 (50 TL, kilitli)**
-- `GelistirmeKatalogu` (UpgradeCatalog) — ~~YeniMasaUpgrade~~ (D4'te çıktı; masa EŞYALAR'dan), KahveMakinesiUpgrade (200), OraletUpgrade (100), SanayiOcagiUpgrade (250), OkeyTakimiUpgrade (150), GizliKumarhaneUpgrade (1500 + **itibar 180**), **IskambilUpgrade (200 + itibar 40), DominoUpgrade (350 + itibar 100), SahlepMakinesiUpgrade (300 + itibar 80)**
-- `UrunVeritabani` (ItemDatabase) — 8 ItemData'nın tamamı (kayıt sistemi için, **yeni ürün eklenince buraya da eklenmeli** — `Icecek Istasyonlarini Kur` bunu otomatik yapar)
+- `MalzemeKatalogu` (ShopCatalog) — CayYapragi ×10 (20 TL), KahveCekirdegi ×10 (40 TL), OraletTozu ×10 (30 TL), **SahlepTozu ×10 (50 TL)** — son üçü `requiresStation` (makinesi dükkanda değilse gizli, D5b)
+- `GelistirmeKatalogu` (UpgradeCatalog) — ~~YeniMasaUpgrade~~ (D4'te çıktı; masa EŞYALAR'dan), ~~KahveMakinesiUpgrade, OraletUpgrade, SahlepMakinesiUpgrade~~ (D5b'de çıktı; makineler EŞYALAR'dan, asset'ler duruyor), SanayiOcagiUpgrade (250), OkeyTakimiUpgrade (150), GizliKumarhaneUpgrade (1500 + **itibar 180**), **IskambilUpgrade (200 + itibar 40), DominoUpgrade (350 + itibar 100)**
+- `UrunVeritabani` (ItemDatabase) — 8 ItemData'nın tamamı (kayıt sistemi için, **yeni ürün eklenince buraya da eklenmeli** — elle; `Icecek Istasyonlarini Kur` D5b'de silindi)
 - `BakkalMulk` (800 TL / 60 / itibar **60**), `TerziMulk` (1200 / 90 / **140**), `KirathaneMulk` (2000 / 160 / **240**) — 9a-3'te güncellendi
 - `EmlakKatalogu` (PropertyCatalog) — üç mülkün tamamı (**kayıt eşlemesi buradan yapılır, boş bırakılamaz**)
 - `GirisHikayesi` (StoryData) — giriş ekranının 5 sayfası ve buton yazıları
 - `MahalleFisiltilari` (WhisperData) — fısıltı metinleri, kumarhane upgrade referansı, itibar barajları (60/140/240)
 - `ArayuzMetinleri` (TextPreset) — sahne/prefab metin alanlarının yeni değerleri; `Kan Bagi > Metinleri Uygula` yazar
 - `MusteriProfilleri/` (CustomerProfile) — `EmekliDayi`, `Ogrenci`, `Esnaf`, `Kabadayi` (değerler bölüm 6.8, 10c-1)
-- `MasaEsya` (FurnitureData: 100 TL, **baseLimit 4**), `CayOcagiEsya` / `LavaboEsya` / `BardakRafiEsya` / `DepoEsya` / `YonetimPCEsya` (Station, satılmıyor, baseLimit 1), `EsyaVeritabani` (FurnitureDatabase), `VarsayilanDuzen` (FurnitureLayout: Masa1/Masa2 yerleri), **`EsyaKatalogu`** (FurnitureCatalog: PC'nin EŞYALAR sekmesi)
+- `MasaEsya` (FurnitureData: 100 TL, **baseLimit 4**), `CayOcagiEsya` / `LavaboEsya` / `BardakRafiEsya` / `DepoEsya` / `YonetimPCEsya` (Station, satılmıyor, baseLimit 1), **`OraletSemaveriEsya` (100 TL), `KahveMakinesiEsya` (200 TL), `SahlepMakinesiEsya` (300 TL + itibar 80)** (Station, baseLimit 1, D5b), `EsyaVeritabani` (FurnitureDatabase), `VarsayilanDuzen` (FurnitureLayout: Masa1/Masa2 yerleri), **`EsyaKatalogu`** (FurnitureCatalog: PC'nin EŞYALAR sekmesi — Masa, Oralet Semaveri, Kahve Makinesi, Sahlep Makinesi)
 
 > ✅ **Sahne GERÇEK değerlerde** (Adım 9a-1). Hızlı test için `Kan Bagi > Denge > Test Degerlerini Uygula`, geri dönmek için `Gercek Degerleri Uygula`. Mod değiştirdikten sonra sahneyi kaydet; sıfırdan test için `Kan Bagi > Kaydi Sil`.
 
@@ -854,7 +868,9 @@ Masalar artık sahneye elle konmuş sabit objeler değil: **veriden oluşturulan
 
 **Adım D4 bitti ve test edildi.** PC'de EŞYALAR sekmesinden masa alınıyor (100 TL, koyunca ödeniyor, iptalde ödenmiyor, sınır 4); "Yeni Masa" upgrade'i kalktı; PC paneli düzeltildi (sekmeler 44 px ve her sayfada sabit, okunur renkler, Kaydet yazısı, Türkçe başlık/adlar, yazım hataları).
 
-**Adım D5a bitti ve test edildi.** Çay ocağı, lavabo, bardak rafı (tepsileriyle), depo ve PC F ile taşınabiliyor; meşgul eşya taşınmıyor; PC ekranı, ilerleme çubuğu, gün sonu, lavabo ve Sanayi Ocağı sabit sahne objelerine bağlı değil; eski kayıtta eksik temel eşya varsayılan yerine konuyor. **Sıradaki iş: D5b — Makineler eşya kataloğuna** (kahve/oralet/sahlep makinesi EŞYALAR'dan, fiyat/itibar aynı; menü ve malzeme kilidi "makine dükkanda mı"; her makineden 1 — plan ayrıca onaylanacak).
+**Adım D5a bitti ve test edildi.** Çay ocağı, lavabo, bardak rafı (tepsileriyle), depo ve PC F ile taşınabiliyor; meşgul eşya taşınmıyor; PC ekranı, ilerleme çubuğu, gün sonu, lavabo ve Sanayi Ocağı sabit sahne objelerine bağlı değil; eski kayıtta eksik temel eşya varsayılan yerine konuyor.
+
+**Adım D5b bitti ve test edildi.** Kahve makinesi (200 TL), oralet semaveri (100 TL) ve sahlep makinesi (300 TL, itibar 80) artık PC → EŞYALAR'dan alınıp istenen yere konuyor; menü ve malzeme listesi "makine dükkanda mı"ya bakıyor; her makineden 1 tane; GELİŞTİRME'de makine kalmadı. **Sıradaki iş: D6 — Duvarlar, sıralı genişletme ve kumar odası** (yan oda → bahçe → üst kat; kumar masası eşya + birden fazla; genişletmeler masa/makine sınırlarını artırır — plan ayrıca onaylanacak).
 
 **Adım 10c-2 bitti ve test edildi.** İskambil (200 TL, itibar 40, +%30) ve Domino (350 TL, itibar 100, +%20) masalarda beliriyor; müşteriler içtikten sonra oyun meraklarına göre bir tur daha sipariş veriyor, ciro iki satışı da sayıyor, ikinci turda bekletmenin cezası yok.
 
@@ -1051,7 +1067,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**10a-2a**~~ ✅ | Mahalle fısıltıları (olaylara eşlik eden ton satırı + ilk sabah yönlendirmesi) — **bitti** | Ucuz, kimliği oyunun içine taşır |
 | ~~**10a-2b**~~ ✅ | Mevcut metinlerin tonu (sadece tablodakiler), `ArayuzMetinleri` + `Metinleri Uygula` — **bitti** | Fısıltılarla aynı tonu mevcut arayüze yayar |
 | ~~**10c**~~ ✅ | Müşteri ve stok çeşitliliği — **bitti** (10c-1 profiller, 10c-2 masa oyunları, 10c-3 sahlep; 10c-4 bahçe → D bölümüne taşındı) | Faz 2'den kalan |
-| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi, D2 ✅ eşya altyapısı, D3 ✅ yerleştirme modu, D4 ✅ eşya satın alma, D5a ✅ temel eşyalar taşınabilir; sıradaki D5b makineler kataloğa): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
+| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi, D2 ✅ eşya altyapısı, D3 ✅ yerleştirme modu, D4 ✅ eşya satın alma, D5a ✅ temel eşyalar taşınabilir, D5b ✅ makineler kataloğa; sıradaki D6 duvarlar + genişletme + kumar odası): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
 | **11** | Görsel cila, ses, ana menü, kayıt slotları | **En sona**: mekanikler değişince geometri/model yeniden yapılır |
@@ -1076,7 +1092,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum (2026-10-17): GitHub bağlantısı kuruldu, tüm commit'ler push edildi** (ilk push: 17 commit, ~2.7 MB). Yerel `main` = `origin/main`.
 ```
-(yeni)   Adim D5a: temel esyalar tasinabilir - ocak, lavabo, raf, depo, PC
+(yeni)   Adim D5b: makineler esya katalogunda - kahve, oralet, sahlep
+56393a6  Adim D5a: temel esyalar tasinabilir - ocak, lavabo, raf, depo, PC
 83e895a  Adim D4: esya satin alma ve PC paneli duzeltmeleri
 123c3c7  Adim D3: yerlestirme modu - elde hayalet, tek tek tasima
 a449009  Adim D2: esya altyapisi - FurnitureManager, kayit, oyun ici NavMesh
@@ -1115,7 +1132,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (D5b — Makineler eşya kataloğuna: kahve/oralet/sahlep EŞYALAR'dan, menü/malzeme kilidi "makine dükkanda mı") planını anlat, onay al**, sonra kod yaz. Planda **oyuncunun ne göreceğini** açıkça yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
+3. **Sıradaki adımın (D6 — Duvarlar, sıralı genişletme yan oda → bahçe → üst kat, kumar odası + birden fazla kumar masası, genişletmeyle masa/makine sınırı artışı) planını anlat, onay al**, sonra kod yaz. Planda **oyuncunun ne göreceğini** açıkça yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.
@@ -1130,7 +1147,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 - **Denge değerlerini Inspector'da elle değiştirme** — `BalancePresetApplier`'ın `Settings` tablosuna yaz, menüden uygula. Değerler tek yerde ve izlenebilir kalır.
 - **NavMesh'i elle bake etme.** Pasif (kilitli) eşyalar bake'e girmez, `NavMeshObstacle`'lı objeler de NavMeshSurface ayarı yüzünden girmezdi → NPC'ler eşyanın içinden/üstünden yürür. Her zaman `Kan Bagi > NavMesh'i Yeniden Bake Et` + sahneyi kaydet + `NavMesh Kontrol Et`. Yeni eşya kök obje olarak ve collider'lı eklenmeli ki komut onu bulsun.
 - **Türkçe oyun metni koda yazılmaz** — ScriptableObject asset'ine yazılır (kod ASCII kuralı). TMP fontu Türkçe karakterleri gösteriyor.
-- **Yeni içeceği elle bağlama** — 10 ayrı yere bağlanması gerekiyor, biri unutulursa (özellikle ürün veritabanı → kayıt) sessizce bozulur. Veri asset'lerini yaz, `BeverageStationBuilder.Stations` tablosuna satır ekle, `Icecek Istasyonlarini Kur` → kaydet → `NavMesh'i Yeniden Bake Et` → kaydet.
+- **Yeni içeceği elle bağlama** — birçok yere bağlanması gerekiyor, biri unutulursa (özellikle ürün veritabanı → kayıt) sessizce bozulur. D5b'den beri liste bölüm 6.9 D5b "Silindi" maddesinde (makine prefab + FurnitureData, MalzemeKatalogu `requiresStation`, MenuManager, UrunVeriTabani, StockUI); `BeverageStationBuilder` artık yok, yeni içecek gelince ona göre küçük bir builder yaz.
 - **Arayüz metnini Inspector'da elle değiştirme** — `ArayuzMetinleri.asset`'e yaz, `Kan Bagi > Metinleri Uygula`. Bir builder prefab'ı yeniden ürettiyse bu komutu tekrar çalıştır, yoksa metinler ASCII'ye döner.
 - **Commit'ten önce sahnede test değerleri kalmış mı bak** (`startingMoney: 250`, `dayDurationMinutes: 6`). 10a-2b testinden sonra sahne test değerleriyle kaydedilmişti; commit'ten önce `Gercek Degerleri Uygula` + kaydet yapıldı.
 - **Builder menüsünü kod değişikliğinden hemen sonra çalıştırma** — Unity derlemeyi bitirmeden tıklanırsa ESKİ kodla kurar (10a-1'de panel eski boyutla kuruldu). Console temizlenene / derleme çubuğu kaybolana kadar bekle, gerekirse `Ctrl+R`.

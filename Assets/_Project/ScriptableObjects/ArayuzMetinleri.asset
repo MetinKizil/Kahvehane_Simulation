@@ -96,3 +96,6 @@ MonoBehaviour:
   - component: FurnitureEntryUI
     field: limitReachedLabel
     text: "Sınır dolu"
+  - component: FurnitureEntryUI
+    field: reputationLockedFormat
+    text: "İtibar {0} gerekli"
