@@ -28,6 +28,7 @@ namespace KanBagi.Illegal
         private readonly List<Gambler> activeGamblers = new List<Gambler>();
         private GamblingTable table;
         private DayCycleManager dayCycle;
+        private HiddenHatch hatch;
 
         private void Awake()
         {
@@ -52,7 +53,9 @@ namespace KanBagi.Illegal
                 dayCycle.OnShopOpened += HandleEveryoneLeaves;
             }
 
-            table.OnHiddenChanged += HandleHiddenChanged;
+            // Kapak ve masa ayni bodrumla birlikte acilir; kapagin Awake'i bu Start'tan once calismis olur.
+            hatch = HiddenHatch.Instance;
+            if (hatch != null) hatch.OnStateChanged += HandleHatchChanged;
         }
 
         private void OnEnable()
@@ -72,10 +75,11 @@ namespace KanBagi.Illegal
             }
         }
 
-        /// <summary>Gece olmali, ortu acik olmali, bos sandalye olmali, gun sonu paneli acik olmamali.</summary>
+        /// <summary>Gece olmali, bodrum kapagi acik olmali, bos sandalye olmali, gun sonu paneli acik olmamali.</summary>
         private bool CanSpawn()
         {
-            if (!table.IsOpen || table.IsHidden || !table.HasFreeSeat) return false;
+            if (!table.IsOpen || !table.HasFreeSeat) return false;
+            if (hatch != null && !hatch.IsOpen) return false;
 
             return dayCycle == null || !dayCycle.IsWaitingForNextDay;
         }
@@ -102,10 +106,10 @@ namespace KanBagi.Illegal
             activeGamblers.Remove(gambler);
         }
 
-        /// <summary>Ortu kapandi: kumar bitti, herkes kalkar.</summary>
-        private void HandleHiddenChanged(bool isHidden)
+        /// <summary>Kapak kapaniyor: kumar bitti, herkes kalkip merdivenden cikar (kapak sonra kapanir).</summary>
+        private void HandleHatchChanged(HiddenHatch.HatchState state)
         {
-            if (isHidden) HandleEveryoneLeaves(0);
+            if (state == HiddenHatch.HatchState.Closing) HandleEveryoneLeaves(0);
         }
 
         private void HandleEveryoneLeaves(int day)
@@ -119,7 +123,7 @@ namespace KanBagi.Illegal
 
         private void OnDestroy()
         {
-            if (table != null) table.OnHiddenChanged -= HandleHiddenChanged;
+            if (hatch != null) hatch.OnStateChanged -= HandleHatchChanged;
 
             if (dayCycle == null) return;
 

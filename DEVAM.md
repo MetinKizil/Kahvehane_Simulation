@@ -375,7 +375,7 @@ Assets/_Project/
   - `FinePaidToday` — günlük özet bunu okur. Ceza `TrySpendMoney`'den geçtiği için zaten `Expenses`'ta; **`NetProfit`'te tekrar düşülmez**, satır sadece bilgi amaçlı (kumar/haraçtan farklı).
 - `PoliceOfficer`: bilinçli olarak boş `Interact()` — memurla pazarlık yok, iş masayı zamanında örtmekti.
 - `PoliceNotificationUI`: uyarı (sarı) / memur geldi (kırmızı) / sonuç mesajları.
-- `PolicePrefabBuilder` (**Editor**): `Kan Bagi > Polis Prefabini Olustur` + **`Kan Bagi > Kumar Ortusunu Olustur ve Bagla`** (örtüyü üretip `coverVisual` alanına kendisi bağlar).
+- `PolicePrefabBuilder` (**Editor**): `Kan Bagi > Polis Prefabini Olustur` + ~~`Kumar Ortusunu Olustur ve Bagla`~~ (D6c'de silindi; saklanma artık bodrum kapağında).
 - `DayCycleManager`'a `OpenHour` / `CloseHour` getter'ları eklendi (baskın saatini seçmek için).
 
 ---
@@ -634,9 +634,10 @@ En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 
 | D5b ✅ | Makineler eşya kataloğuna | Kahve/oralet/sahlep makinesi GELİŞTİRME'den EŞYALAR'a (fiyat ve itibar aynı); menü/malzeme kilidi "makine dükkanda mı"; her makineden 1, **artırılabilmesi dükkan genişletmelerinden sonra (D6)**. |
 | D6a ✅ | Duvarlar + kapı | Ana salonun 4 duvarı (her taraf ayrı obje), önde 2 m kapı; iç/dış ayrımı (10d'den buraya kaydı). |
 | D6b ✅ | Genişletme altyapısı + Yan Oda | `UpgradeData` önkoşul + sınır bonusu, `UpgradeUnlocker.hideTargets` (yıkılan duvar), `ShopFloor`, genişletme builder'ı; **Yan Oda** (600 TL, itibar 30, masa +3); PC sayfaları kaydırılabilir. |
-| D6c | Kumar Odası (bodrum) + kumar masası eşyası | **Bodrum kat, 10×10 m**, ayrı dal; kumar masası EŞYALAR'dan, birden fazla, **sadece kumar odasına** konur. |
-| D6d | Kalan 5 bölge | Büyük Yan Oda, Arka Salon, Geniş Arka Salon, Bahçe, Büyük Bahçe — `ExpansionZoneBuilder.Zones` tablosuna satır. |
-| D6e | Üst Kat | **En son** (Büyük Bahçe'den sonra), en pahalı; merdiven, üst zemin, tavan/ışık. **Dükkanın en büyük boyutu burada kesinleşir.** |
+| D6c ✅ | Kumar Odası (bodrum) + gizli kapak | **Bodrum kat, 10×10 m**, ayrı dal; sol arka köşede merdiven; **gizli kapak** kapalıyken polis bulamaz (masa örtüsü kalktı); kumarbazlar sadece kapak açıkken gelir. |
+| D6d | Rulet masası | Gerçek rulet: dönen çark, 0–36, **8 kişiye kadar**; oyuncu KIRMIZI/SİYAH (2 kat) ve **tek sayı (35 kat)** bahsi; EŞYALAR'dan **1. 800 TL, 2. 1000 TL**, en fazla 2, **sadece bodruma** (bodruma da başka eşya konamaz). |
+| D6e | Kalan 5 bölge | Büyük Yan Oda, Arka Salon, Geniş Arka Salon, Bahçe, Büyük Bahçe — `ExpansionZoneBuilder.Zones` tablosuna satır. |
+| D6f | Üst Kat | **En son** (Büyük Bahçe'den sonra), en pahalı; merdiven, üst zemin, tavan/ışık. **Dükkanın en büyük boyutu burada kesinleşir.** |
 | D7 | Çok kişilik masalar + grup müşteriler | 2'lik/4'lük masalar, 2–4 kişilik gruplar; birlikte gelir/gider, her kişi kendi siparişi. |
 | D8 | Masa oyunları masa bazında | Okey/iskambil/domino masaya konan eşya; 4 kişilik okey grubu okeyli masayı ister (10c-2'deki dükkan geneli etki buna dönüşür). |
 | D9 | Kişiselleştirme / cafe | Mobilya kataloğu, duvar kâğıdı, zemin. (Dükkan boyutunu etkilemediği için mahalleden sonraya da kayabilir — kullanıcıya sorulacak.) |
@@ -822,6 +823,30 @@ Hepsi alınınca masa sınırı 4 → 28.
 
 **Test:** GELİŞTİRME'de Yan Oda + kaydırma, satın alınca duvar kalkıp oda açılıyor, yan odaya masa konuyor (birleşim çizgisinde de), müşteri oturuyor, masa sınırı 7, kayıttan oda açık geliyor. Kullanıcı "çalışıyor" dedi.
 
+### Adım D6c — Kumar Odası (bodrum) + gizli kapak ✅
+**Oyuncu ne görür:** GELİŞTİRME'de "Gizli Kumarhane" yerine **"Kumar Odası — 1500 TL"** (itibar 180). Almadan önce: sahnede kumar masası yok, **sol arka köşedeki 1.5×5 m'ye eşya konamaz** (hayalet kırmızı). Alınca o köşede zeminle aynı hizada **ahşap kapak** belirir: E **"Kapağı aç"** → kapak sol duvara doğru dikilir, korkuluk görünür, **11 basamaklı merdivenden 3 m aşağıdaki bodruma** inilir (tavanlı, sarı lambalı, 10×10). Kumar masası bodrumun ortasında (örtüsü yok; gündüz "Gündüz kumar oynanmaz"). Gece kapak **açıksa** kumarbazlar kapıdan girip merdivenden iner; **kapalıysa** gelmez. **"Kapağı kapat"** → "Kapak kapanıyor - 2 kişi çıkıyor": yeni kumarbaz gelmez, içerdekiler yürüyerek çıkar; son kişi çıkınca **ve merdivende kimse (oyuncu dahil) kalmayınca** kapak kendiliğinden kapanır. Polis: "Köşede ekip arabası var! Bodrum kapağını kapat, çabuk!" — kapak kapalıysa temiz, açıksa yakalanırsın. Kayıttan yüklemede kapak **kapalı** başlar.
+
+**Kullanıcı kararları (D6c planı):**
+1. Kumar Odası = **bodrum, 10×10, ayrı dal**; merdiven **sol duvar boyunca arka köşede, 1.5×5 m**; oraya **eşya konmaz**.
+2. **Bodruma sadece kumar (rulet) masası** konur.
+3. **Polisten saklanma = gizli zemin kapağı** (masa örtüsü kalktı). Kapak kapanırken kumarbazlar **kaybolmaz, yürüyerek çıkar** (seçenek a); yüklemede kapak kapalı.
+4. Kumar masası **rulet masası** olacak (D6d): gerçek çark, **7–8 kişi**, kırmızı/siyah + **tek sayıya 35 kat**; **1. masa 800, 2. masa 1000 TL, en fazla 2**.
+5. D6c (bodrum + kapak) ve D6d (rulet) **ayrı adım**.
+
+**Parçalar:**
+- **`HiddenHatch`** (`KanBagi.Illegal`, IInteractable, collider'la aynı objede `Bodrum/KumarOdasi/Mentese/Kapak`): `Closed/Open/Closing`, `Instance` (tek kapak, dünya durumu), `OnStateChanged`. Kapalı: menteşe kapalı açıda (kapak yürünebilir zemin), `openOnlyObjects` (korkuluk) gizli. Açık: menteşeye `openRotation` (0,0,90). Kapanırken `Gambler.ActiveCount == 0` ve merdiven hacminde (`holeCenter/holeSize`) `CharacterController`/`NavMeshAgent` yokken kapanır. Kapalı↔açık değişince `NavMeshRuntimeBaker.RequestRebake()`.
+- **`GamblingTable`**: örtü mekaniği **kalktı** (`IsHidden`, `SetHidden`, `coverVisual`, `exposedVisuals`, `OnHiddenChanged`, hide/reveal metinleri). Gündüz E: `closedMessage`.
+- **`GamblerSpawner`**: kapak açık değilse kumarbaz yok; kapak `Closing` olunca herkes `LeaveNow`. **`Gambler.ActiveCount`** (static sayaç).
+- **`PoliceManager.ResolveRaid`**: kapak kapalıysa temiz; değilse sahnede açık bir `GamblingTable` varsa yakalanırsın.
+- **`ReservedArea`** (`KanBagi.Furniture`): collider'sız yasak kutu; `FurniturePlacer.OverlapsReservedArea` hayaleti kırmızı yapar (yürümeyi/E ışınını engellemez).
+- **`NavMeshRuntimeBaker.RequestRebake()`** (static): eşya/upgrade dışı yol değişiklikleri için.
+- `Kan Bagi > Bodrumu Kur` (`BasementBuilder`, tekrar çalıştırılabilir): ana zeminin mesh'i **`Meshes/ZeminMerdivenBoslugu.asset`** ile değişir (dış ölçüler aynı, sol arka köşede delik). `Bodrum` kökü: `MerdivenAlani` (ReservedArea 1.5×4×5), `MerdivenKapagiYeri` (alınana kadar deliği kapatan Plane), `KumarOdasi` (**kapalı**): `Zemin` (y −3), `Duvarlar`, `Tavan` (ana zeminin 5 cm altı; ana zemin tek yüzlü), `Merdiven` (11 basamak × 25 cm rise × 0.35 m; dipte ~1.15 m düzlük), `Korkuluk`, `Mentese/Kapak`, `Isiklar` (2 sarı nokta ışık), `KumarMasasi` (ortaya taşındı, `Ortu` silindi). Gizli Kumarhane açıcısı: targets `KumarOdasi`, hideTargets `MerdivenKapagiYeri`.
+- `GizliKumarhaneUpgrade.asset`: ad **"Kumar Odası"**, açıklama bodrum/kapak (asset adı aynı → **eski kayıtlar bozulmaz**). Fısıltı: "Bodrum hazır. Kepenk inince kapağı aç, masa döner."
+- Silindi: `Kumar Ortusunu Olustur ve Bagla` (PolicePrefabBuilder). ArayuzMetinleri: HiddenHatch 3 metin, GamblingTable `closedMessage`, polis uyarısı.
+- ⚠️ **Yakalanan hata (D6c testi):** bodrum tavanı/duvarları "Not Walkable" işaretliydi; ana zeminin 5 cm altında oldukları için NavMesh bake'te üstteki zeminle **birleşip bütün salonu yürünemez yaptı** (Kumar Odası alınınca müşteriler kapıda kaldı). Çözüm: tavan ve bodrum duvarları **işaretsiz** (dikey duvarlar zaten engel). **Ders:** yürüyüş yüzeyinin hemen altına (adım yüksekliğinden yakın) "Not Walkable" bir yüzey koyma.
+
+**Test:** eşya köşeye konmuyor, kapak açılıp kapanıyor, merdivenden inilip çıkılıyor, kapalı kapak üstünden yürünüyor, Kumar Odası alınmışken müşteriler masaya geliyor, kapak merdivende biri varken kapanmıyor (salona çıkınca kapanıyor). Kullanıcı "çalışıyor" dedi. (Gece kumarbaz testi rulet masasına (D6d) kaldı.)
+
 **Değişecek mevcut parçalar (bilerek):** sabit eşyalar + `UpgradeUnlocker`, editörde NavMesh bake (`NavMesh'i Yeniden Bake Et`), `Icecek Istasyonlarini Kur` / `Masa Oyunlarini Kur` builder'ları, tek kişilik `Table`, tek eşya tutan eller, dükkan geneli masa oyunları. **Değişmeyenler:** müşteri profilleri, sipariş/ikinci tur, menü, stok/kurye, ekonomi, itibar, gün döngüsü, kayıt altyapısı, kumar/mafya/polis, fısıltılar, hikaye, co-op etkileşim katmanı.
 
 ---
@@ -868,7 +893,8 @@ Hepsi alınınca masa sınırı 4 → 28.
 | ├ `BakkalBinasi` (Cube, scale 3) | (-4, 1.5, -9) | PropertyBuilding (BakkalMulk) + tabela child'ı |
 | ├ `TerziBinasi` (Cube, scale 3) | (0, 1.5, -12.5) | PropertyBuilding (TerziMulk) |
 | └ `KirathaneBinasi` (Cube, scale 3) | (4, 1.5, -9) | PropertyBuilding (KirathaneMulk) |
-| `KumarMasasi` (Cube) — **başta pasif** | (-4, 0.4, 3.5) | GamblingTable + **GamblerSpawner** + tabela child'ı (Gizli Kumarhane upgrade'i açar) |
+| `Bodrum/KumarOdasi/KumarMasasi` (Cube) — **D6c: bodrumun ortasında**, `KumarOdasi` başta kapalı | (1, −2.6, 0) | GamblingTable + **GamblerSpawner** + tabela child'ı (örtü yok). Gizli Kumarhane (= Kumar Odası) açıcısı `KumarOdasi`'nı açar. D6d'de rulet masası eşyası yerini alacak |
+| `Bodrum` (Empty) | sol arka köşe x −5…−3.5, z 0…5 | **D6c:** `MerdivenAlani` (ReservedArea), `MerdivenKapagiYeri`, `KumarOdasi` (zemin y −3, duvar, tavan, merdiven, korkuluk, `Mentese/Kapak` = HiddenHatch, ışıklar). `Zemin` mesh'i `ZeminMerdivenBoslugu`. Elle kurulmaz: `Kan Bagi > Bodrumu Kur` |
 | `MafyaNoktasi` (Empty) | (1.5, 0.9, -4) | — (tahsildar burada belirir, y=0.9 kapsül yere bassın diye) |
 | `PolisNoktasi` (Empty) | (-1.5, 0.9, -4) | — (memur burada belirir) |
 | `Duvarlar` (Empty, NavMeshModifier "Not Walkable") | zemin kenarları | **D6a:** `DuvarSol` / `DuvarSag` / `DuvarArka` / `DuvarOn` (`KapiSolu`, `KapiSagi`, `KapiUstu`) — kapı x = 0, 2 m × 2.4 m. Elle kurulmaz: `Kan Bagi > Dukkan Duvarlarini Kur` |
@@ -883,7 +909,7 @@ Hepsi alınınca masa sınırı 4 → 28.
 - `KumarTabelasi` — **elle kurulmaz**, `Kan Bagi > Kumar Tabelasini Olustur ve Yerlestir`
 - `Tahsildar` — **elle kurulmaz, sahneye elle konmaz**, `Kan Bagi > Tahsildar Prefabini Olustur`; MafiaManager runtime'da üretir/yok eder
 - `PolisMemuru` — aynı şekilde `Kan Bagi > Polis Prefabini Olustur`; PoliceManager runtime'da üretir/yok eder
-- `KumarMasasi > Ortu` — `Kan Bagi > Kumar Ortusunu Olustur ve Bagla` menüsü üretip bağlar
+- ~~`KumarMasasi > Ortu`~~ — D6c'de kalktı (gizli kapak)
 - `Koli` (Cube 0.35/0.3/0.35 + **Rigidbody** + HoldableItem + DeliveryBox) — Rigidbody olmazsa koli havada asılı kalır
 - `Tepsi` — **elle kurulmaz**, `Kan Bagi > Tepsiyi Kur` üretir (kök ölçeksiz, HoldableItem + Tray)
 - `Kumarbaz` — **elle kurulmaz, sahneye elle konmaz**, `Kan Bagi > Kumarhaneyi Kur`; GamblerSpawner gece runtime'da üretir
@@ -902,7 +928,7 @@ Hepsi alınınca masa sınırı 4 → 28.
 | `SahlepTozu` | Consumable | 0 | 5 | 0 |
 
 - `MalzemeKatalogu` (ShopCatalog) — CayYapragi ×10 (20 TL), KahveCekirdegi ×10 (40 TL), OraletTozu ×10 (30 TL), **SahlepTozu ×10 (50 TL)** — son üçü `requiresStation` (makinesi dükkanda değilse gizli, D5b)
-- `GelistirmeKatalogu` (UpgradeCatalog) — ~~YeniMasaUpgrade~~ (D4'te çıktı; masa EŞYALAR'dan), ~~KahveMakinesiUpgrade, OraletUpgrade, SahlepMakinesiUpgrade~~ (D5b'de çıktı; makineler EŞYALAR'dan, asset'ler duruyor), SanayiOcagiUpgrade (250), OkeyTakimiUpgrade (150), GizliKumarhaneUpgrade (1500 + **itibar 180**), **IskambilUpgrade (200 + itibar 40), DominoUpgrade (350 + itibar 100)**, **YanOdaUpgrade (600 + itibar 30, masa +3 — D6b)**
+- `GelistirmeKatalogu` (UpgradeCatalog) — ~~YeniMasaUpgrade~~ (D4'te çıktı; masa EŞYALAR'dan), ~~KahveMakinesiUpgrade, OraletUpgrade, SahlepMakinesiUpgrade~~ (D5b'de çıktı; makineler EŞYALAR'dan, asset'ler duruyor), SanayiOcagiUpgrade (250), OkeyTakimiUpgrade (150), GizliKumarhaneUpgrade (**görünen ad "Kumar Odası" — D6c**, 1500 + **itibar 180**), **IskambilUpgrade (200 + itibar 40), DominoUpgrade (350 + itibar 100)**, **YanOdaUpgrade (600 + itibar 30, masa +3 — D6b)**
 - `UrunVeritabani` (ItemDatabase) — 8 ItemData'nın tamamı (kayıt sistemi için, **yeni ürün eklenince buraya da eklenmeli** — elle; `Icecek Istasyonlarini Kur` D5b'de silindi)
 - `BakkalMulk` (800 TL / 60 / itibar **60**), `TerziMulk` (1200 / 90 / **140**), `KirathaneMulk` (2000 / 160 / **240**) — 9a-3'te güncellendi
 - `EmlakKatalogu` (PropertyCatalog) — üç mülkün tamamı (**kayıt eşlemesi buradan yapılır, boş bırakılamaz**)
@@ -934,7 +960,9 @@ Hepsi alınınca masa sınırı 4 → 28.
 
 **Adım D6a bitti ve test edildi.** Ana salonun etrafında duvarlar ve önde kapı var; NPC'ler kapıdan girip çıkıyor, eşya duvara/dışarı konamıyor.
 
-**Adım D6b bitti ve test edildi.** GELİŞTİRME'den alınan **Yan Oda** (600 TL, itibar 30) sağ duvarı kaldırıp 5×10 m oda açıyor, masa sınırı 7 oluyor; genişletmeler önkoşul ("Önce: …") ve sınır bonusu taşıyor; PC sayfaları kayıyor. **Sıradaki iş: D6c — Kumar Odası (bodrum, 10×10, ayrı dal) + kumar masası eşyası** (EŞYALAR'dan, birden fazla, sadece kumar odasına; plan ayrıca onaylanacak).
+**Adım D6b bitti ve test edildi.** GELİŞTİRME'den alınan **Yan Oda** (600 TL, itibar 30) sağ duvarı kaldırıp 5×10 m oda açıyor, masa sınırı 7 oluyor; genişletmeler önkoşul ("Önce: …") ve sınır bonusu taşıyor; PC sayfaları kayıyor.
+
+**Adım D6c bitti ve test edildi.** Kumar Odası (1500 TL, itibar 180) bodrumu açıyor: sol arka köşede gizli kapak + merdiven, kapak kapalıyken polis bulamıyor, kapanırken kumarbazlar yürüyerek çıkıyor; bodrum NavMesh hatası (salon yürünemez oluyordu) düzeltildi. **Sıradaki iş: D6d — Rulet masası** (gerçek çark, 8 kişi, kırmızı/siyah + tek sayı 35 kat, 800/1000 TL, en fazla 2, sadece bodruma; plan ayrıca onaylanacak).
 
 **Adım 10c-2 bitti ve test edildi.** İskambil (200 TL, itibar 40, +%30) ve Domino (350 TL, itibar 100, +%20) masalarda beliriyor; müşteriler içtikten sonra oyun meraklarına göre bir tur daha sipariş veriyor, ciro iki satışı da sayıyor, ikinci turda bekletmenin cezası yok.
 
@@ -1131,7 +1159,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**10a-2a**~~ ✅ | Mahalle fısıltıları (olaylara eşlik eden ton satırı + ilk sabah yönlendirmesi) — **bitti** | Ucuz, kimliği oyunun içine taşır |
 | ~~**10a-2b**~~ ✅ | Mevcut metinlerin tonu (sadece tablodakiler), `ArayuzMetinleri` + `Metinleri Uygula` — **bitti** | Fısıltılarla aynı tonu mevcut arayüze yayar |
 | ~~**10c**~~ ✅ | Müşteri ve stok çeşitliliği — **bitti** (10c-1 profiller, 10c-2 masa oyunları, 10c-3 sahlep; 10c-4 bahçe → D bölümüne taşındı) | Faz 2'den kalan |
-| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi, D2 ✅ eşya altyapısı, D3 ✅ yerleştirme modu, D4 ✅ eşya satın alma, D5a ✅ temel eşyalar taşınabilir, D5b ✅ makineler kataloğa, D6a ✅ duvarlar + kapı, D6b ✅ genişletme altyapısı + Yan Oda; sıradaki D6c bodrum kumar odası): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
+| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi, D2 ✅ eşya altyapısı, D3 ✅ yerleştirme modu, D4 ✅ eşya satın alma, D5a ✅ temel eşyalar taşınabilir, D5b ✅ makineler kataloğa, D6a ✅ duvarlar + kapı, D6b ✅ genişletme altyapısı + Yan Oda, D6c ✅ bodrum + gizli kapak; sıradaki D6d rulet masası): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
 | **11** | Görsel cila, ses, ana menü, kayıt slotları | **En sona**: mekanikler değişince geometri/model yeniden yapılır |
@@ -1156,7 +1184,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum (2026-10-17): GitHub bağlantısı kuruldu, tüm commit'ler push edildi** (ilk push: 17 commit, ~2.7 MB). Yerel `main` = `origin/main`.
 ```
-(yeni)   Adim D6b: genisletme altyapisi ve yan oda
+(yeni)   Adim D6c: bodrum kumar odasi ve gizli kapak
+2150414  Adim D6b: genisletme altyapisi ve yan oda
 afc4962  Adim D6a: dukkan duvarlari ve kapi
 a0a2079  Adim D5b: makineler esya katalogunda - kahve, oralet, sahlep
 56393a6  Adim D5a: temel esyalar tasinabilir - ocak, lavabo, raf, depo, PC
@@ -1198,7 +1227,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (D6c — Kumar Odası: bodrum kat 10×10, ayrı dal, kumar masası EŞYALAR'dan birden fazla ve sadece kumar odasına; kararlar bölüm 6.9 D6a/D6b) planını anlat, onay al**, sonra kod yaz. Planda **oyuncunun ne göreceğini** açıkça yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
+3. **Sıradaki adımın (D6d — Rulet masası: gerçek çark, 8 kişi, kırmızı/siyah + tek sayı 35 kat, EŞYALAR'dan 800/1000 TL, en fazla 2, sadece bodruma; kararlar bölüm 6.9 D6c) planını anlat, onay al**, sonra kod yaz. Planda **oyuncunun ne göreceğini** açıkça yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.

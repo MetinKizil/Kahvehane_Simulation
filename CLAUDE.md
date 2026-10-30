@@ -60,6 +60,7 @@ Aşağıdaki dört ilke [andrej-karpathy-skills](https://github.com/multica-ai/a
 - **Gün sonu bekleyen sistem** yoksa (`OnDayEnded` dinleyicisi) oyun sessizce kilitlenir. Benzer beklemelerde guard koy.
 - **Kayıt yüklendikten sonra** upgrade/mülk event'leri **yeniden duyurulmalı**, yoksa kilitler kapalı kalır.
 - **`FindObjectsByType`** kilitli (pasif) objeleri bulmaz → gerekiyorsa `FindObjectsInactive.Include`.
+- **Yürüyüş yüzeyinin hemen altına "Not Walkable" yüzey koyma** (bodrum tavanı, kat arası): bake'te üstteki zeminle birleşip onu da yürünemez yapar (D6c: müşteriler kapıda kaldı). Gömülü/üst üste yüzeyleri işaretsiz bırak.
 - **NavMesh'i elle bake ettirme.** Pasif eşyalar bake'e girmez, NPC'ler içinden/üstünden yürür. Eşya değişince `Kan Bagi > NavMesh'i Yeniden Bake Et` + kaydet + `NavMesh Kontrol Et`.
 
 ## 7. Git

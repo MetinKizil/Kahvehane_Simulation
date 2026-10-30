@@ -327,7 +327,7 @@ namespace KanBagi.Furniture
                 current.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             }
 
-            bool valid = onFloor && !OverlapsSomething() && IsSeatClear();
+            bool valid = onFloor && !OverlapsSomething() && !OverlapsReservedArea() && IsSeatClear();
             if (valid != isValid)
             {
                 isValid = valid;
@@ -368,6 +368,22 @@ namespace KanBagi.Furniture
             }
 
             return false;
+        }
+
+        /// <summary>Esyanin ana kutusu (donuk kutunun eksen hizali sinirlari) esya konamayan bir alana degiyor mu?</summary>
+        private bool OverlapsReservedArea()
+        {
+            if (!TryGetMainBox(out Vector3 center, out Vector3 halfExtents)) return false;
+
+            Matrix4x4 rotation = Matrix4x4.Rotate(current.transform.rotation);
+            Vector3 extents = Vector3.zero;
+            for (int axis = 0; axis < 3; axis++)
+            {
+                Vector3 column = rotation.GetColumn(axis);
+                extents += new Vector3(Mathf.Abs(column.x), Mathf.Abs(column.y), Mathf.Abs(column.z)) * halfExtents[axis];
+            }
+
+            return ReservedArea.AnyOverlaps(new Bounds(center, extents * 2f));
         }
 
         /// <summary>Masanin oturma noktasi zeminde mi ve bos mu? (Sandalye tarafi duvara/tezgaha dayanmasin.)</summary>

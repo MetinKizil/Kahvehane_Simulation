@@ -2,19 +2,15 @@ using KanBagi.Illegal;
 using KanBagi.UI;
 using TMPro;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace KanBagi.EditorTools
 {
     /// <summary>
-    /// Iki parca uretir:
-    /// 1) Polis memuru prefab'i (PoliceManager baskin aninda sahneye koyar)
-    /// 2) Kumar masasinin ORTUSU (masanin uzerine oturan kapak) ve GamblingTable'a baglanmasi
+    /// Polis memuru prefab'ini uretir (PoliceManager baskin aninda sahneye koyar).
+    /// Kumar masasinin ortusu D6c'de kalkti: polisten saklanma artik bodrum kapaginda (HiddenHatch).
     ///
-    /// SADECE EDITOR.
-    /// Menu: Kan Bagi > Polis Prefabini Olustur
-    ///       Kan Bagi > Kumar Ortusunu Olustur ve Bagla
+    /// SADECE EDITOR. Menu: Kan Bagi > Polis Prefabini Olustur
     /// </summary>
     public static class PolicePrefabBuilder
     {
@@ -24,7 +20,6 @@ namespace KanBagi.EditorTools
         private const string OfficerPath = PrefabFolder + "/PolisMemuru.prefab";
         private const string BodyMaterialPath = MaterialFolder + "/PolisGovde.mat";
         private const string BoardMaterialPath = MaterialFolder + "/PolisPano.mat";
-        private const string CoverMaterialPath = MaterialFolder + "/KumarOrtusu.mat";
 
         private const float SignHeight = 1.4f;
         private static readonly Vector3 BoardScale = new Vector3(1.3f, 0.7f, 0.05f);
@@ -35,7 +30,6 @@ namespace KanBagi.EditorTools
         private static readonly Vector2 TextSize = new Vector2(1.2f, 0.4f);
         private static readonly Color BodyColor = new Color(0.12f, 0.2f, 0.42f);
         private static readonly Color BoardColor = new Color(0.07f, 0.11f, 0.24f);
-        private static readonly Color CoverColor = new Color(0.32f, 0.26f, 0.18f);
 
         [MenuItem("Kan Bagi/Polis Prefabini Olustur")]
         public static void BuildOfficerPrefab()
@@ -61,65 +55,6 @@ namespace KanBagi.EditorTools
 
             Debug.Log($"[PolicePrefabBuilder] Polis prefab'i olusturuldu: {OfficerPath}\n" +
                       "Managers > Police Manager > Officer Prefab alanina ata. Sahneye elle koyma.");
-        }
-
-        /// <summary>
-        /// Kumar masasinin uzerine oturan ortuyu olusturur ve GamblingTable'in
-        /// 'Cover Visual' alanina baglar. Masa ortulu basladigi icin ortu acik gelir.
-        /// </summary>
-        [MenuItem("Kan Bagi/Kumar Ortusunu Olustur ve Bagla")]
-        public static void CreateAndBindCover()
-        {
-            EnsureFolders();
-
-            GamblingTable[] tables = Object.FindObjectsByType<GamblingTable>(
-                FindObjectsInactive.Include, FindObjectsSortMode.None);
-
-            if (tables.Length == 0)
-            {
-                Debug.LogWarning("[PolicePrefabBuilder] Sahnede GamblingTable bulunamadi.");
-                return;
-            }
-
-            foreach (GamblingTable table in tables)
-            {
-                if (table == null) continue;
-
-                RemoveOldCover(table);
-                AttachCover(table);
-            }
-
-            EditorSceneManager.MarkAllScenesDirty();
-            Debug.Log($"[PolicePrefabBuilder] {tables.Length} masaya ortu eklendi ve baglandi. Sahneyi kaydet (Ctrl+S).");
-        }
-
-        private static void RemoveOldCover(GamblingTable table)
-        {
-            Transform existing = table.transform.Find("Ortu");
-            if (existing != null) Object.DestroyImmediate(existing.gameObject);
-        }
-
-        private static void AttachCover(GamblingTable table)
-        {
-            GameObject cover = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cover.name = "Ortu";
-            cover.transform.SetParent(table.transform, worldPositionStays: false);
-
-            // Masanin uzerini kaplasin: biraz genis, ince bir kapak.
-            cover.transform.localPosition = new Vector3(0f, 0.6f, 0f);
-            cover.transform.localScale = new Vector3(1.1f, 0.12f, 1.1f);
-
-            // Ortu isin hedefi olmamali: oyuncu masaya bakabilsin.
-            Collider coverCollider = cover.GetComponent<Collider>();
-            if (coverCollider != null) Object.DestroyImmediate(coverCollider);
-
-            var renderer = cover.GetComponent<MeshRenderer>();
-            if (renderer != null)
-                renderer.sharedMaterial = GetOrCreateMaterial(CoverMaterialPath, "KumarOrtusu", CoverColor);
-
-            var serialized = new SerializedObject(table);
-            serialized.FindProperty("coverVisual").objectReferenceValue = cover;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void CreateSign(Transform parent)

@@ -15,7 +15,7 @@ MonoBehaviour:
   fields:
   - component: PoliceNotificationUI
     field: warningMessage
-    text: "Köşede ekip arabası var! Masayı ört, çabuk!"
+    text: "Köşede ekip arabası var! Bodrum kapağını kapat, çabuk!"
   - component: PoliceNotificationUI
     field: arrivedMessage
     text: "Memur içeride, gözü her yerde."
@@ -41,11 +41,17 @@ MonoBehaviour:
     field: playFormat
     text: "Masaya otur ({0} TL)"
   - component: GamblingTable
-    field: hideMessage
-    text: "Masayı ört"
-  - component: GamblingTable
-    field: revealMessage
-    text: "Örtüyü kaldır"
+    field: closedMessage
+    text: "Gündüz kumar oynanmaz"
+  - component: HiddenHatch
+    field: openMessage
+    text: "Kapağı aç"
+  - component: HiddenHatch
+    field: closeMessage
+    text: "Kapağı kapat"
+  - component: HiddenHatch
+    field: closingFormat
+    text: "Kapak kapanıyor - {0} kişi çıkıyor"
   - component: GamblingTable
     field: noMoneyFormat
     text: "{0} TL lazım"

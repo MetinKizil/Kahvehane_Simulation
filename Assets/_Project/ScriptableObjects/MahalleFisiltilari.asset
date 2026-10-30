@@ -18,7 +18,7 @@ MonoBehaviour:
   mafiaRefused: "Haracı ödemedin. Bu mahallede bunun bir bedeli olur."
   propertyPurchasedFormat: "{0} artık bizim. Amcanın sokağından bir taş daha söküldü."
   gamblingHallUpgrade: {fileID: 11400000, guid: ec9dfc1e91e92d1489f7e092bbe7231b, type: 2}
-  gamblingHallOpened: "Arka oda hazır. Kepenk inince masa açılır."
+  gamblingHallOpened: "Bodrum hazır. Kepenk inince kapağı aç, masa döner."
   reputationWhispers:
   - threshold: 60
     message: "Esnaf artık selam veriyor."

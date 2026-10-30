@@ -36,9 +36,13 @@ namespace KanBagi.Illegal
         /// <summary>Kumarbaz dukkandan ciktiginda tetiklenir. Spawner buna abone olur.</summary>
         public event Action<Gambler> OnLeft;
 
+        /// <summary>Sahnedeki kumarbaz sayisi. Bodrum kapagi kapanmadan once hepsinin cikmasini bekler (D6c).</summary>
+        public static int ActiveCount { get; private set; }
+
         private void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
+            ActiveCount++;
         }
 
         /// <summary>Spawner tarafindan cagrilir; kumarbazin yasam dongusunu baslatir.</summary>
@@ -157,6 +161,7 @@ namespace KanBagi.Illegal
         {
             // Beklenmedik yok olmalarda sandalye kilitli kalmasin.
             ReleaseSeat();
+            ActiveCount = Mathf.Max(0, ActiveCount - 1);
         }
     }
 }

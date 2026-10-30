@@ -28,7 +28,8 @@ namespace KanBagi.Illegal
     }
 
     /// <summary>
-    /// Arka odadaki gizli kumar masasi. SADECE dukkan KAPALIYKEN (gece) oynanir.
+    /// Bodrumdaki (Kumar Odasi, D6c) kumar masasi. SADECE dukkan KAPALIYKEN (gece) oynanir.
+    /// Polisten saklanma masada degil, bodrumun kapaginda (HiddenHatch).
     /// Kendi kurallarini bilir; polisi, mafyayi veya raporu bilmez (SOLID).
     /// Her el suphe biriktirir - 8c'de polis bunu okuyacak.
     /// </summary>
@@ -51,19 +52,13 @@ namespace KanBagi.Illegal
         [Tooltip("Kumarbazlarin oynadigi her elde suphe bu kadar artar.")]
         [SerializeField] private int suspicionPerHouseRound = 1;
 
-        [Header("Gizleme")]
-        [Tooltip("Masa ortuluyken acilan obje (ortu/brandu). Polis gelince bunu kapatmis olmalisin.")]
-        [SerializeField] private GameObject coverVisual;
-        [Tooltip("Masa ortuluyken gizlenecek objeler (tabela, cuha vb.).")]
-        [SerializeField] private GameObject[] exposedVisuals;
-
         [Header("Ipucu Metinleri")]
         [Tooltip("{0} bahis tutari.")]
         [SerializeField] private string playFormat = "Kumar Oyna ({0} TL)";
         [Tooltip("{0} bahis tutari.")]
         [SerializeField] private string noMoneyFormat = "{0} TL gerekli";
-        [SerializeField] private string hideMessage = "Masayi Gizle";
-        [SerializeField] private string revealMessage = "Ortuyu Ac";
+        [Tooltip("Gunduz masaya bakinca. Polisten saklanma artik bodrum kapaginda (HiddenHatch, D6c).")]
+        [SerializeField] private string closedMessage = "Gunduz kumar oynanmaz";
 
         [Header("Sandalyeler (Kumarbaz NPC)")]
         [Tooltip("En fazla kac kumarbaz otursun.")]
@@ -95,21 +90,10 @@ namespace KanBagi.Illegal
         /// <summary>Kumar su anda oynanabilir mi? (Gece olmali.)</summary>
         public bool IsOpen => DayCycleManager.Instance == null || !DayCycleManager.Instance.IsShopOpen;
 
-        /// <summary>
-        /// Masa ortulu mu? Polis baskininda ortusuz yakalanirsan bedeli agir olur.
-        /// Guvenli tarafta kalmak icin ORTULU basliyor.
-        /// </summary>
-        public bool IsHidden { get; private set; } = true;
-
-        /// <summary>Ortu durumu degisince tetiklenir.</summary>
-        public event Action<bool> OnHiddenChanged;
-
         private void Start()
         {
             if (DayCycleManager.Instance != null)
                 DayCycleManager.Instance.OnShopClosed += HandleShopClosed;
-
-            RefreshVisuals();
         }
 
         /// <summary>Bos bir sandalyeyi kumarbaza ayirir. Bos yoksa false doner.</summary>
@@ -215,34 +199,9 @@ namespace KanBagi.Illegal
                 Gizmos.DrawWireSphere(candidate, 0.2f);
         }
 
-        /// <summary>Ortuyu acar/kapatir. Polis gelmeden once kapatmak oyuncunun isi.</summary>
-        public void SetHidden(bool hidden)
-        {
-            if (IsHidden == hidden) return;
-
-            IsHidden = hidden;
-            RefreshVisuals();
-            OnHiddenChanged?.Invoke(IsHidden);
-        }
-
-        private void RefreshVisuals()
-        {
-            if (coverVisual != null) coverVisual.SetActive(IsHidden);
-
-            if (exposedVisuals == null) return;
-
-            foreach (GameObject exposed in exposedVisuals)
-            {
-                if (exposed != null) exposed.SetActive(!IsHidden);
-            }
-        }
-
         public string GetPrompt(PlayerContext player)
         {
-            // Gunduz kumar oynanmaz; o yuzden E tusu gunduz ORTUYU yonetir.
-            if (!IsOpen) return IsHidden ? revealMessage : hideMessage;
-
-            if (IsHidden) return revealMessage;
+            if (!IsOpen) return closedMessage;
 
             int money = EconomyManager.Instance != null ? EconomyManager.Instance.CurrentMoney : 0;
             if (money < betAmount) return string.Format(noMoneyFormat, betAmount);
@@ -252,14 +211,7 @@ namespace KanBagi.Illegal
 
         public void Interact(PlayerContext player)
         {
-            // Gunduz: sadece ortuyu ac/kapat. Gece: ortu kapaliysa once ac, sonra oyna.
-            if (!IsOpen || IsHidden)
-            {
-                SetHidden(!IsHidden);
-                return;
-            }
-
-            if (EconomyManager.Instance == null) return;
+            if (!IsOpen || EconomyManager.Instance == null) return;
             if (!EconomyManager.Instance.TrySpendMoney(betAmount)) return;
 
             PlayRound();
@@ -271,8 +223,8 @@ namespace KanBagi.Illegal
         /// </summary>
         public void PlayHouseRound()
         {
-            // Ortu kapandiysa veya sabah olduysa el sayilmaz (kumarbaz kalkmak uzere).
-            if (!IsOpen || IsHidden) return;
+            // Sabah olduysa el sayilmaz (kumarbaz kalkmak uzere).
+            if (!IsOpen) return;
 
             if (EconomyManager.Instance != null) EconomyManager.Instance.AddMoney(houseRakePerRound);
             NightNet += houseRakePerRound;

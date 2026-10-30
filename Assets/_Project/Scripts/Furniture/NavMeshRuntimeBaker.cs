@@ -19,7 +19,17 @@ namespace KanBagi.Furniture
         [Tooltip("Bos birakilirsa sahnedeki ilk NavMeshSurface (Zemin) bulunur.")]
         [SerializeField] private NavMeshSurface surface;
 
+        private static NavMeshRuntimeBaker instance;
+
         private Coroutine pendingBake;
+
+        /// <summary>Esya/upgrade disinda yolu degistiren seyler (bodrum kapagi, D6c) icin: sahnedeki baker'a bake ister.</summary>
+        public static void RequestRebake()
+        {
+            if (instance != null) instance.RequestBake();
+        }
+
+        private void Awake() => instance = this;
 
         private void Start()
         {
@@ -59,6 +69,7 @@ namespace KanBagi.Furniture
 
         private void OnDestroy()
         {
+            if (instance == this) instance = null;
             if (FurnitureManager.Instance != null) FurnitureManager.Instance.OnLayoutChanged -= RequestBake;
             if (UpgradeManager.Instance != null) UpgradeManager.Instance.OnUpgradePurchased -= HandleUpgradePurchased;
         }

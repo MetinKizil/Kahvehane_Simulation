@@ -16,7 +16,7 @@ namespace KanBagi.UI
         [SerializeField] private TMP_Text messageText;
 
         [Header("Mesajlar")]
-        [SerializeField] private string warningMessage = "DEVRIYE MAHALLEDE! Kumar masasini ort!";
+        [SerializeField] private string warningMessage = "DEVRIYE MAHALLEDE! Bodrum kapagini kapat!";
         [SerializeField] private string arrivedMessage = "POLIS DUKKANDA - etrafa bakiyor";
         [Tooltip("{0} kesilen ceza.")]
         [SerializeField] private string bustedFormat = "YAKALANDIN! Ceza: {0} TL";

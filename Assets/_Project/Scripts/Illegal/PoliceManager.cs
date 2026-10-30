@@ -135,18 +135,14 @@ namespace KanBagi.Illegal
             DespawnOfficer();
         }
 
-        /// <summary>Denetim: ACIK duran (pasif olmayan) ve ortusuz bir kumar masasi var mi?</summary>
+        /// <summary>
+        /// Denetim: bodrum kapagi kapaliysa memur kumar odasini bulamaz (D6c).
+        /// Kapak acik (veya kapaniyor) ve sahnede acik bir kumar masasi varsa yakalanirsin.
+        /// </summary>
         private void ResolveRaid()
         {
-            bool busted = false;
-
-            foreach (GamblingTable table in FindObjectsByType<GamblingTable>(FindObjectsSortMode.None))
-            {
-                if (table == null || table.IsHidden) continue;
-
-                busted = true;
-                break;
-            }
+            bool hidden = HiddenHatch.Instance != null && HiddenHatch.Instance.IsClosed;
+            bool busted = !hidden && FindFirstObjectByType<GamblingTable>() != null;
 
             int fine = busted ? ApplyPenalty() : ApplyReliefAndGetZero();
             OnRaidResolved?.Invoke(busted, fine);
