@@ -38,8 +38,51 @@ MonoBehaviour:
     field: noMoneyFormat
     text: "{0} TL lazım"
   - component: GamblingTable
-    field: playFormat
-    text: "Masaya otur ({0} TL)"
+    field: numberBetFormat
+    text: "{0} sayısına {1} TL koy (35 kat)"
+  - component: GamblingTable
+    field: redBetFormat
+    text: "Kırmızıya {0} TL koy (2 kat)"
+  - component: GamblingTable
+    field: blackBetFormat
+    text: "Siyaha {0} TL koy (2 kat)"
+  - component: GamblingTable
+    field: stakeSuffixFormat
+    text: "  [masada {0} TL]"
+  - component: GamblingTable
+    field: spinningMessage
+    text: "Çark dönüyor"
+  - component: GamblingTable
+    field: tableHint
+    text: "Bahis için bir sayıya veya renge bak"
+  - component: GamblingSignUI
+    field: openTitleFormat
+    text: "RULET  {0} TL"
+  - component: GamblingSignUI
+    field: closedTitle
+    text: "GÜNDÜZ KAPALI"
+  - component: GamblingSignUI
+    field: bettingTitleFormat
+    text: "BAHİSLER AÇIK  {0}"
+  - component: GamblingSignUI
+    field: spinningTitle
+    text: "ÇARK DÖNÜYOR"
+  - component: GamblingSignUI
+    field: blackName
+    text: "SİYAH"
+  - component: GamblingSignUI
+    field: greenName
+    text: "YEŞİL"
+  - component: GamblingSignUI
+    field: winFormat
+    text: "KAZANDIN  +{0} TL"
+  - component: GamblingSignUI
+    field: loseFormat
+    text: "KAYBETTİN  -{0} TL"
+  - component: TextMeshPro
+    field: m_text
+    objectPath: RuletMasasi/BahisAlanlari/SiyahAlanYazi
+    text: "SİYAH"
   - component: GamblingTable
     field: closedMessage
     text: "Gündüz kumar oynanmaz"

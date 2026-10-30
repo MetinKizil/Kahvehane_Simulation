@@ -277,7 +277,11 @@ namespace KanBagi.EditorTools
             return room;
         }
 
-        /// <summary>Kumar masasi bodrumun ortasina (merdivenden uzak) iner, ayni yukseklik farkiyla. Eski ortu silinir.</summary>
+        /// <summary>
+        /// Kumar masasi bodrumun ortasina (merdivenden uzak) iner. Yukseklik masanin KENDI olcusunden: rulet masasi (D6d,
+        /// 'Govde' cocugu) pivotu zeminde, eski Cube masa pivotu ortada. Eski konuma bakilmaz: builder tekrar calisinca
+        /// zaten bodrumdaki masa bir kez daha asagi itiliyordu. Eski ortu silinir.
+        /// </summary>
         private static void MoveTable(GamblingTable table, Transform room, Bounds main, float y)
         {
             Transform cover = table.transform.Find("Ortu");
@@ -285,7 +289,7 @@ namespace KanBagi.EditorTools
 
             Undo.SetTransformParent(table.transform, room, "Kumar Masasi");
             Undo.RecordObject(table.transform, "Kumar Masasi");
-            float heightAboveFloor = table.transform.position.y - y;
+            float heightAboveFloor = table.transform.Find("Govde") != null ? 0f : table.transform.lossyScale.y * 0.5f;
             table.transform.position = new Vector3(main.center.x + 1f, y - Depth + heightAboveFloor, main.center.z);
             table.gameObject.SetActive(true);
         }

@@ -61,6 +61,7 @@ Aşağıdaki dört ilke [andrej-karpathy-skills](https://github.com/multica-ai/a
 - **Kayıt yüklendikten sonra** upgrade/mülk event'leri **yeniden duyurulmalı**, yoksa kilitler kapalı kalır.
 - **`FindObjectsByType`** kilitli (pasif) objeleri bulmaz → gerekiyorsa `FindObjectsInactive.Include`.
 - **Yürüyüş yüzeyinin hemen altına "Not Walkable" yüzey koyma** (bodrum tavanı, kat arası): bake'te üstteki zeminle birleşip onu da yürünemez yapar (D6c: müşteriler kapıda kaldı). Gömülü/üst üste yüzeyleri işaretsiz bırak.
+- **Builder'da 3D TextMeshPro'ya otomatik boyut verme:** kapalı objede hiç hesaplanmaz, yazı 36 puntoda (metrelerce) kalır; NavMesh (Render Meshes) onu engel sayar. Sabit punto kullan (3D TMP'de punto 1 ≈ 0.1 m) ve dekoratif yazılara `NavMeshModifier.ignoreFromBuild` ekle (D6d-1).
 - **NavMesh'i elle bake ettirme.** Pasif eşyalar bake'e girmez, NPC'ler içinden/üstünden yürür. Eşya değişince `Kan Bagi > NavMesh'i Yeniden Bake Et` + kaydet + `NavMesh Kontrol Et`.
 
 ## 7. Git

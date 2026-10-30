@@ -414,10 +414,16 @@ MonoBehaviour:
   titleText: {fileID: 4191824257618152825}
   resultText: {fileID: 6148855128599421176}
   totalText: {fileID: 1260020090273903784}
-  openTitleFormat: BAHIS {0} TL
-  closedTitle: GUNDUZ KAPALI
+  openTitleFormat: RULET  {0} TL
+  closedTitle: "G\xDCND\xDCZ KAPALI"
+  bettingTitleFormat: "BAH\u0130SLER A\xC7IK  {0}"
+  spinningTitle: "\xC7ARK D\xD6N\xDCYOR"
+  resultTitleFormat: '{0}  {1}'
+  redName: KIRMIZI
+  blackName: "S\u0130YAH"
+  greenName: "YE\u015E\u0130L"
   winFormat: KAZANDIN  +{0} TL
-  loseFormat: KAYBETTIN  -{0} TL
+  loseFormat: "KAYBETT\u0130N  -{0} TL"
   idleResult: '-'
   houseFormat: KASAYA +{0} TL
   totalFormat: 'Gece: {0} TL'

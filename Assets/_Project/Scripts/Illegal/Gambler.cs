@@ -7,7 +7,7 @@ using Random = UnityEngine.Random;
 namespace KanBagi.Illegal
 {
     /// <summary>
-    /// Gece arka odaya gelen kumarbaz: masaya yurur, oturur, birkac el oynar ve gider.
+    /// Gece bodruma (Kumar Odasi) gelen kumarbaz: rulet masasina yurur, oturur, birkac tur oynar ve gider.
     /// Oyuncuya ozel hicbir seye dokunmaz (dunya NPC'si, co-op uyumlu).
     /// Ne zaman gelecegine GamblerSpawner, masanin kurallarina GamblingTable karar verir (SOLID).
     /// Durum makinesi coroutine ile yurutulur.
@@ -16,10 +16,8 @@ namespace KanBagi.Illegal
     public class Gambler : MonoBehaviour
     {
         [Header("Oyun")]
-        [Tooltip("Iki el arasindaki sure (gercek saniye).")]
-        [SerializeField] private float roundInterval = 4f;
-        [Tooltip("Kac el oynayip kalkacagi (min - max, dahil).")]
-        [SerializeField] private Vector2Int roundsRange = new Vector2Int(4, 8);
+        [Tooltip("Kac rulet turu oynayip kalkacagi (min - max, dahil). Turun suresini masa belirler.")]
+        [SerializeField] private Vector2Int roundsRange = new Vector2Int(3, 6);
 
         [Header("Hareket")]
         [Tooltip("Hedefe bu mesafeye gelince varmis sayilir.")]
@@ -31,6 +29,7 @@ namespace KanBagi.Illegal
         private GamblingTable table;
         private Vector3 exitPosition;
         private int seatIndex = -1;
+        private int roundsPlayed;
         private bool isLeaving;
 
         /// <summary>Kumarbaz dukkandan ciktiginda tetiklenir. Spawner buna abone olur.</summary>
@@ -53,12 +52,13 @@ namespace KanBagi.Illegal
             StartCoroutine(LifeRoutine());
         }
 
-        /// <summary>Ortu kapandi, gun bitti veya dukkan acildi: ne yapiyorsa birakip cikar.</summary>
+        /// <summary>Kapak kapaniyor, gun bitti veya dukkan acildi: ne yapiyorsa birakip cikar.</summary>
         public void LeaveNow()
         {
             if (isLeaving) return;
 
             StopAllCoroutines();
+            if (table != null) table.OnRoundFinished -= HandleRoundFinished;
             StartCoroutine(LeaveRoutine());
         }
 
@@ -74,17 +74,19 @@ namespace KanBagi.Illegal
             yield return MoveToRoutine(table.GetSeatPosition(seatIndex));
             SitDown();
 
+            // Parayi ve supheyi masa her turda oturanlara gore isler; kumarbaz sadece oynadigi turu sayar.
             int rounds = Random.Range(roundsRange.x, roundsRange.y + 1);
-            for (int i = 0; i < rounds; i++)
-            {
-                yield return new WaitForSeconds(roundInterval);
+            roundsPlayed = 0;
+            table.NotifySeated(seatIndex, this);
+            table.OnRoundFinished += HandleRoundFinished;
 
-                // Parayi ve supheyi masa isler; kumarbaz sadece "bir el oynandi" der.
-                table.PlayHouseRound();
-            }
+            while (roundsPlayed < rounds) yield return null;
 
+            table.OnRoundFinished -= HandleRoundFinished;
             yield return LeaveRoutine();
         }
+
+        private void HandleRoundFinished() => roundsPlayed++;
 
         private IEnumerator LeaveRoutine()
         {
@@ -160,6 +162,7 @@ namespace KanBagi.Illegal
         private void OnDestroy()
         {
             // Beklenmedik yok olmalarda sandalye kilitli kalmasin.
+            if (table != null) table.OnRoundFinished -= HandleRoundFinished;
             ReleaseSeat();
             ActiveCount = Mathf.Max(0, ActiveCount - 1);
         }

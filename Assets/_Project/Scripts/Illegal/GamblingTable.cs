@@ -1,8 +1,9 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using KanBagi.Core;
 using KanBagi.Economy;
 using KanBagi.Interaction;
-using System.Collections.Generic;
 using KanBagi.Player;
 using UnityEngine;
 using UnityEngine.AI;
@@ -10,7 +11,7 @@ using Random = UnityEngine.Random;
 
 namespace KanBagi.Illegal
 {
-    /// <summary>Bir kumar elinin sonucu. Hem tabela hem gunluk ozet bunu okur.</summary>
+    /// <summary>Bir rulet turunun oyuncu icin sonucu. Hem tabela hem gunluk ozet bunu okur.</summary>
     public readonly struct GamblingRoundResult
     {
         public readonly bool Won;
@@ -27,74 +28,323 @@ namespace KanBagi.Illegal
         public int Net => Payout - Stake;
     }
 
+    public enum RoulettePhase
+    {
+        Idle,      // Kimse yok veya gunduz
+        Betting,   // Bahisler acik (geri sayim)
+        Spinning,  // Cark donuyor, bahis kapali
+        Result     // Sonuc gosteriliyor
+    }
+
     /// <summary>
-    /// Bodrumdaki (Kumar Odasi, D6c) kumar masasi. SADECE dukkan KAPALIYKEN (gece) oynanir.
-    /// Polisten saklanma masada degil, bodrumun kapaginda (HiddenHatch).
-    /// Kendi kurallarini bilir; polisi, mafyayi veya raporu bilmez (SOLID).
-    /// Her el suphe biriktirir - 8c'de polis bunu okuyacak.
+    /// Bodrumdaki (Kumar Odasi) RULET masasi (D6d). SADECE dukkan KAPALIYKEN (gece) oynanir.
+    /// Tur: masada oturan kumarbaz veya oyuncu bahsi varsa bahis suresi (geri sayim) -> cark doner -> sonuc.
+    /// Oyuncu masadaki alanlara (RouletteBetSpot) bakip E ile 100 TL'lik fis koyar: sayi 35 kat, renk 2 kat (0 gelirse renkler kaybeder).
+    /// Oturan her kumarbaz her turda kasaya pay birakir ve suphe biriktirir.
+    /// Polisten saklanma masada degil, bodrumun kapaginda (HiddenHatch). Kendi kurallarini bilir; polisi/raporu bilmez (SOLID).
     /// </summary>
     public class GamblingTable : MonoBehaviour, IInteractable
     {
         [Header("Bahis")]
         [SerializeField] private int betAmount = 100;
-        [Tooltip("Kazanma olasiligi (0-1). 0.45 = %45.")]
-        [SerializeField] [Range(0f, 1f)] private float winChance = 0.45f;
-        [Tooltip("Kazaninca bahsin kac katini geri alir. 2 = bahis + ayni kadar kar.")]
-        [SerializeField] private float payoutMultiplier = 2f;
-
-        [Header("Supheli Is")]
-        [Tooltip("Her el sonunda suphe bu kadar artar.")]
+        [Tooltip("Sayiya bahis kazaninca fisin kac katini geri alir (36 = bahis + 35 kat kar).")]
+        [SerializeField] private int straightMultiplier = 36;
+        [Tooltip("Renge bahis kazaninca fisin kac katini geri alir (2 = bahis + ayni kadar kar).")]
+        [SerializeField] private int colorMultiplier = 2;
+        [Tooltip("Oyuncunun bahis koydugu her turda suphe bu kadar artar.")]
         [SerializeField] private int suspicionPerRound = 3;
 
+        [Header("Tur")]
+        [SerializeField] private int bettingSeconds = 8;
+        [SerializeField] private float spinSeconds = 5f;
+        [SerializeField] private float resultSeconds = 3f;
+
         [Header("Kumarhane (NPC Kumarbazlar)")]
-        [Tooltip("Kumarbazlarin oynadigi her elde kasaya giren masa parasi (TL).")]
-        [SerializeField] private int houseRakePerRound = 25;
-        [Tooltip("Kumarbazlarin oynadigi her elde suphe bu kadar artar.")]
-        [SerializeField] private int suspicionPerHouseRound = 1;
+        [Tooltip("Oturan her kumarbazin her turda kasaya biraktigi pay (TL).")]
+        [SerializeField] private int houseRakePerGambler = 80;
+        [Tooltip("Oturan her kumarbaz icin her turda suphe bu kadar artar.")]
+        [SerializeField] private int suspicionPerGambler = 3;
+
+        [Header("Baglantilar")]
+        [Tooltip("Carkin gorunumu. Bos birakilirsa cocuklarda aranir.")]
+        [SerializeField] private RouletteWheel wheel;
 
         [Header("Ipucu Metinleri")]
-        [Tooltip("{0} bahis tutari.")]
-        [SerializeField] private string playFormat = "Kumar Oyna ({0} TL)";
-        [Tooltip("{0} bahis tutari.")]
+        [Tooltip("{0} sayi, {1} fis tutari.")]
+        [SerializeField] private string numberBetFormat = "{0} sayisina {1} TL koy (35 kat)";
+        [Tooltip("{0} fis tutari.")]
+        [SerializeField] private string redBetFormat = "Kirmiziya {0} TL koy (2 kat)";
+        [Tooltip("{0} fis tutari.")]
+        [SerializeField] private string blackBetFormat = "Siyaha {0} TL koy (2 kat)";
+        [Tooltip("Alanda zaten bahis varsa sona eklenir. {0} alandaki toplam.")]
+        [SerializeField] private string stakeSuffixFormat = "  [masada {0} TL]";
+        [SerializeField] private string spinningMessage = "Cark donuyor";
+        [SerializeField] private string tableHint = "Bahis icin bir sayiya veya renge bak";
+        [Tooltip("{0} fis tutari.")]
         [SerializeField] private string noMoneyFormat = "{0} TL gerekli";
-        [Tooltip("Gunduz masaya bakinca. Polisten saklanma artik bodrum kapaginda (HiddenHatch, D6c).")]
+        [Tooltip("Gunduz masaya bakinca.")]
         [SerializeField] private string closedMessage = "Gunduz kumar oynanmaz";
 
         [Header("Sandalyeler (Kumarbaz NPC)")]
         [Tooltip("En fazla kac kumarbaz otursun.")]
-        [SerializeField] private int maxSeats = 2;
+        [SerializeField] private int maxSeats = 8;
         [Tooltip("Sandalyenin masa kenarina uzakligi (metre). NavMesh ajan yaricapindan (0.5) buyuk olmali.")]
         [SerializeField] private float seatClearance = 0.6f;
         [Tooltip("Iki sandalye arasindaki en kucuk mesafe (metre).")]
-        [SerializeField] private float seatSpacing = 1f;
+        [SerializeField] private float seatSpacing = 0.75f;
+        [Tooltip("Masanin +X ucunda carkin/krupiyenin kapladigi uzunluk: buraya sandalye konmaz.")]
+        [SerializeField] private float wheelEndLength = 0.6f;
 
         // Sandalyeler elle verilmez: masanin collider'indan, NavMesh'te GERCEKTEN yurunebilir
-        // noktalar secilerek hesaplanir. Masa tasininca sandalyeler de kendiliginden dogru yere gelir.
+        // noktalar secilerek hesaplanir.
         private Vector3[] seatPositions;
         private Gambler[] seatOccupants;
+        private bool[] seated;
+
+        private readonly Dictionary<RouletteBetSpot, int> stakes = new Dictionary<RouletteBetSpot, int>();
+        private readonly Dictionary<RouletteBetSpot, int> gamblerChips = new Dictionary<RouletteBetSpot, int>();
+        private RouletteBetSpot[] spots;
 
         public int BetAmount => betAmount;
+
+        public RoulettePhase Phase { get; private set; } = RoulettePhase.Idle;
 
         /// <summary>Kumarbazlar icin bos sandalye var mi?</summary>
         public bool HasFreeSeat => FindFreeSeat() >= 0;
 
-        /// <summary>Bu gecenin toplam kar/zarari. Her gece basinda sifirlanir.</summary>
+        /// <summary>Bu gecenin toplam kar/zarari (oyuncu + kasa payi). Her gece basinda sifirlanir.</summary>
         public int NightNet { get; private set; }
 
-        /// <summary>Bir el oynandiginda tetiklenir. Tabela ve gunluk ozet abone olur.</summary>
+        /// <summary>Oyuncunun bahisli turu bitince tetiklenir. Tabela ve gunluk ozet abone olur.</summary>
         public event Action<GamblingRoundResult> OnRoundPlayed;
 
-        /// <summary>Kumarbazlar bir el oynayinca kasaya giren masa parasi ile tetiklenir. Tabela ve gunluk ozet abone olur.</summary>
+        /// <summary>Turda kumarbazlardan kasaya giren toplam pay ile tetiklenir. Tabela ve gunluk ozet abone olur.</summary>
         public event Action<int> OnHouseRound;
+
+        /// <summary>Tur asamasi degisince (ve bahis suresinde her saniye) tetiklenir. Ikinci deger: kalan saniye.</summary>
+        public event Action<RoulettePhase, int> OnPhaseChanged;
+
+        /// <summary>Top bir sayiya dustugunde tetiklenir.</summary>
+        public event Action<int> OnResult;
+
+        /// <summary>Tur tamamen bitince tetiklenir. Kumarbazlar oynadiklari turu buradan sayar.</summary>
+        public event Action OnRoundFinished;
 
         /// <summary>Kumar su anda oynanabilir mi? (Gece olmali.)</summary>
         public bool IsOpen => DayCycleManager.Instance == null || !DayCycleManager.Instance.IsShopOpen;
+
+        private int SeatedCount
+        {
+            get
+            {
+                if (seated == null) return 0;
+
+                int count = 0;
+                for (int i = 0; i < seated.Length; i++)
+                {
+                    if (seated[i] && seatOccupants[i] != null) count++;
+                }
+
+                return count;
+            }
+        }
+
+        private int TotalStake
+        {
+            get
+            {
+                int total = 0;
+                foreach (int amount in stakes.Values) total += amount;
+                return total;
+            }
+        }
+
+        private void Awake()
+        {
+            if (wheel == null) wheel = GetComponentInChildren<RouletteWheel>(true);
+            spots = GetComponentsInChildren<RouletteBetSpot>(true);
+        }
 
         private void Start()
         {
             if (DayCycleManager.Instance != null)
                 DayCycleManager.Instance.OnShopClosed += HandleShopClosed;
         }
+
+        // Masa bodrumla birlikte acilir/kapanir; tur dongusu acik oldugu surece calisir.
+        private void OnEnable() => StartCoroutine(RoundLoop());
+
+        // ---- Oyuncu ----
+
+        public string GetPrompt(PlayerContext player)
+        {
+            if (!IsOpen) return closedMessage;
+            return Phase == RoulettePhase.Spinning || Phase == RoulettePhase.Result ? spinningMessage : tableHint;
+        }
+
+        public void Interact(PlayerContext player) { }
+
+        public string GetBetPrompt(RouletteBetSpot spot)
+        {
+            if (!IsOpen) return closedMessage;
+            if (Phase == RoulettePhase.Spinning || Phase == RoulettePhase.Result) return spinningMessage;
+
+            int money = EconomyManager.Instance != null ? EconomyManager.Instance.CurrentMoney : 0;
+            if (money < betAmount) return string.Format(noMoneyFormat, betAmount);
+
+            string prompt;
+            switch (spot.Kind)
+            {
+                case RouletteBetKind.Number: prompt = string.Format(numberBetFormat, spot.Number, betAmount); break;
+                case RouletteBetKind.Red: prompt = string.Format(redBetFormat, betAmount); break;
+                default: prompt = string.Format(blackBetFormat, betAmount); break;
+            }
+
+            return stakes.TryGetValue(spot, out int stake) ? prompt + string.Format(stakeSuffixFormat, stake) : prompt;
+        }
+
+        /// <summary>
+        /// Oyuncu bir alana fis koyar. Bahisler sadece gece ve cark donmuyorken alinir.
+        /// Para bahis aninda duser (TrySpendMoney); gunluk ozet bunu tur sonunda giderden geri alir.
+        /// </summary>
+        public void PlaceBet(RouletteBetSpot spot)
+        {
+            if (spot == null || !IsOpen || EconomyManager.Instance == null) return;
+            if (Phase == RoulettePhase.Spinning || Phase == RoulettePhase.Result) return;
+            if (!EconomyManager.Instance.TrySpendMoney(betAmount)) return;
+
+            stakes.TryGetValue(spot, out int stake);
+            stakes[spot] = stake + betAmount;
+            RefreshChips(spot);
+        }
+
+        // ---- Tur dongusu ----
+
+        private IEnumerator RoundLoop()
+        {
+            var idleWait = new WaitForSeconds(0.5f);
+            var second = new WaitForSeconds(1f);
+
+            while (true)
+            {
+                SetPhase(RoulettePhase.Idle, 0);
+                while (!IsOpen || (SeatedCount == 0 && stakes.Count == 0)) yield return idleWait;
+
+                PlaceGamblerChips();
+                for (int left = bettingSeconds; left > 0; left--)
+                {
+                    SetPhase(RoulettePhase.Betting, left);
+                    yield return second;
+                }
+
+                // Basladigi tur gunduze tassa bile tamamlanir (alinmis bahis iade edilmez, odenir).
+                int result = Random.Range(0, RouletteRules.PocketCount);
+                SetPhase(RoulettePhase.Spinning, 0);
+                if (wheel != null) wheel.Spin(result, spinSeconds);
+                yield return new WaitForSeconds(spinSeconds);
+
+                Resolve(result);
+                SetPhase(RoulettePhase.Result, 0);
+                OnResult?.Invoke(result);
+                SetHighlight(result, true);
+
+                yield return new WaitForSeconds(resultSeconds);
+
+                SetHighlight(result, false);
+                ClearChips();
+                OnRoundFinished?.Invoke();
+            }
+        }
+
+        /// <summary>
+        /// Oyuncu bahisleri ve kasa payi. Kumarhane parasinin TEK gecis noktasi burasi (ileride co-op'ta RPC siniri).
+        /// </summary>
+        private void Resolve(int result)
+        {
+            int stake = 0;
+            int payout = 0;
+
+            foreach (KeyValuePair<RouletteBetSpot, int> bet in stakes)
+            {
+                stake += bet.Value;
+                if (bet.Key.Wins(result))
+                    payout += bet.Value * (bet.Key.Kind == RouletteBetKind.Number ? straightMultiplier : colorMultiplier);
+            }
+
+            if (stake > 0)
+            {
+                if (payout > 0 && EconomyManager.Instance != null) EconomyManager.Instance.AddMoney(payout);
+
+                var roundResult = new GamblingRoundResult(payout > stake, stake, payout);
+                NightNet += roundResult.Net;
+                if (SuspicionManager.Instance != null) SuspicionManager.Instance.Add(suspicionPerRound);
+
+                OnRoundPlayed?.Invoke(roundResult);
+            }
+
+            int gamblers = SeatedCount;
+            if (gamblers <= 0) return;
+
+            int rake = gamblers * houseRakePerGambler;
+            if (EconomyManager.Instance != null) EconomyManager.Instance.AddMoney(rake);
+            NightNet += rake;
+            if (SuspicionManager.Instance != null) SuspicionManager.Instance.Add(gamblers * suspicionPerGambler);
+
+            OnHouseRound?.Invoke(rake);
+        }
+
+        private void SetPhase(RoulettePhase phase, int secondsLeft)
+        {
+            Phase = phase;
+            OnPhaseChanged?.Invoke(phase, secondsLeft);
+        }
+
+        /// <summary>Gorsellik: oturan her kumarbaz rastgele bir alana fis koyar (para hesabina girmez).</summary>
+        private void PlaceGamblerChips()
+        {
+            if (spots == null || spots.Length == 0) return;
+
+            for (int i = 0; i < SeatedCount; i++)
+            {
+                RouletteBetSpot spot = spots[Random.Range(0, spots.Length)];
+                gamblerChips.TryGetValue(spot, out int count);
+                gamblerChips[spot] = count + 1;
+                RefreshChips(spot);
+            }
+        }
+
+        private void RefreshChips(RouletteBetSpot spot)
+        {
+            stakes.TryGetValue(spot, out int stake);
+            gamblerChips.TryGetValue(spot, out int npc);
+            spot.SetChips(stake / Mathf.Max(1, betAmount), npc);
+        }
+
+        private void ClearChips()
+        {
+            var touched = new HashSet<RouletteBetSpot>(stakes.Keys);
+            touched.UnionWith(gamblerChips.Keys);
+            stakes.Clear();
+            gamblerChips.Clear();
+
+            foreach (RouletteBetSpot spot in touched)
+            {
+                if (spot != null) spot.SetChips(0, 0);
+            }
+        }
+
+        private void SetHighlight(int result, bool highlighted)
+        {
+            if (spots == null) return;
+
+            foreach (RouletteBetSpot spot in spots)
+            {
+                if (spot != null && spot.Kind == RouletteBetKind.Number && spot.Number == result)
+                    spot.SetHighlighted(highlighted);
+            }
+        }
+
+        // ---- Sandalyeler ----
 
         /// <summary>Bos bir sandalyeyi kumarbaza ayirir. Bos yoksa false doner.</summary>
         public bool TryReserveSeat(Gambler gambler, out int seatIndex)
@@ -103,14 +353,25 @@ namespace KanBagi.Illegal
             if (seatIndex < 0 || gambler == null) return false;
 
             seatOccupants[seatIndex] = gambler;
+            seated[seatIndex] = false;
             return true;
+        }
+
+        /// <summary>Kumarbaz sandalyesine vardi: bundan sonraki turlarda kasaya pay birakir.</summary>
+        public void NotifySeated(int seatIndex, Gambler gambler)
+        {
+            if (seatOccupants == null || seatIndex < 0 || seatIndex >= seatOccupants.Length) return;
+            if (seatOccupants[seatIndex] == gambler) seated[seatIndex] = true;
         }
 
         /// <summary>Kumarbaz kalkinca sandalyeyi bosaltir (sadece gercek sahibi bosaltabilir).</summary>
         public void ReleaseSeat(int seatIndex, Gambler gambler)
         {
             if (seatOccupants == null || seatIndex < 0 || seatIndex >= seatOccupants.Length) return;
-            if (seatOccupants[seatIndex] == gambler) seatOccupants[seatIndex] = null;
+            if (seatOccupants[seatIndex] != gambler) return;
+
+            seatOccupants[seatIndex] = null;
+            seated[seatIndex] = false;
         }
 
         public Vector3 GetSeatPosition(int seatIndex) => seatPositions[seatIndex];
@@ -122,6 +383,7 @@ namespace KanBagi.Illegal
             {
                 seatPositions = CalculateSeats();
                 seatOccupants = new Gambler[seatPositions.Length];
+                seated = new bool[seatPositions.Length];
             }
 
             for (int i = 0; i < seatOccupants.Length; i++)
@@ -134,8 +396,7 @@ namespace KanBagi.Illegal
         }
 
         /// <summary>
-        /// Masanin dort kenarinda aday noktalar uretir; NavMesh'te yurunebilir olanlardan
-        /// birbirine yeterince uzak en fazla maxSeats tanesini sandalye yapar.
+        /// Aday noktalardan NavMesh'te yurunebilir olanlardan birbirine yeterince uzak en fazla maxSeats tanesini sandalye yapar.
         /// </summary>
         private Vector3[] CalculateSeats()
         {
@@ -158,29 +419,34 @@ namespace KanBagi.Illegal
             return seats.ToArray();
         }
 
-        /// <summary>Her kenarda, kenar boyunca iki nokta (ortadan seatSpacing/2 saga ve sola).</summary>
+        /// <summary>
+        /// Masanin yerel eksenlerinde (masa donse de dogru): iki uzun kenarda 3'er, carkin karsi ucunda 2 nokta.
+        /// Carkin oldugu +X ucuna sandalye konmaz (krupiye yeri).
+        /// </summary>
         private IEnumerable<Vector3> GetSeatCandidates()
         {
-            Bounds bounds = TryGetComponent(out Collider tableCollider)
-                ? tableCollider.bounds
-                : new Bounds(transform.position, Vector3.one);
+            if (!TryGetComponent(out BoxCollider box))
+            {
+                yield return transform.position;
+                yield break;
+            }
 
-            float y = bounds.min.y;
-            float half = seatSpacing * 0.5f;
-            float south = bounds.min.z - seatClearance;
-            float north = bounds.max.z + seatClearance;
-            float west = bounds.min.x - seatClearance;
-            float east = bounds.max.x + seatClearance;
-            Vector3 c = bounds.center;
+            Vector3 half = box.size * 0.5f;
+            float y = box.center.y - half.y;
+            float side = half.z + seatClearance;
+            float firstX = -half.x + 0.35f;
+            float lastX = half.x - wheelEndLength;
 
-            yield return new Vector3(c.x - half, y, south);
-            yield return new Vector3(c.x + half, y, south);
-            yield return new Vector3(c.x - half, y, north);
-            yield return new Vector3(c.x + half, y, north);
-            yield return new Vector3(west, y, c.z - half);
-            yield return new Vector3(west, y, c.z + half);
-            yield return new Vector3(east, y, c.z - half);
-            yield return new Vector3(east, y, c.z + half);
+            for (int i = 0; i < 3; i++)
+            {
+                float x = Mathf.Lerp(firstX, lastX, i / 2f);
+                yield return transform.TransformPoint(new Vector3(x, y, -side));
+                yield return transform.TransformPoint(new Vector3(x, y, side));
+            }
+
+            float endX = -half.x - seatClearance;
+            yield return transform.TransformPoint(new Vector3(endX, y, -seatSpacing * 0.5f));
+            yield return transform.TransformPoint(new Vector3(endX, y, seatSpacing * 0.5f));
         }
 
         /// <summary>Play'de hesaplanan sandalyeleri, editorde aday noktalari mor kure olarak gosterir.</summary>
@@ -197,57 +463,6 @@ namespace KanBagi.Illegal
 
             foreach (Vector3 candidate in GetSeatCandidates())
                 Gizmos.DrawWireSphere(candidate, 0.2f);
-        }
-
-        public string GetPrompt(PlayerContext player)
-        {
-            if (!IsOpen) return closedMessage;
-
-            int money = EconomyManager.Instance != null ? EconomyManager.Instance.CurrentMoney : 0;
-            if (money < betAmount) return string.Format(noMoneyFormat, betAmount);
-
-            return string.Format(playFormat, betAmount);
-        }
-
-        public void Interact(PlayerContext player)
-        {
-            if (!IsOpen || EconomyManager.Instance == null) return;
-            if (!EconomyManager.Instance.TrySpendMoney(betAmount)) return;
-
-            PlayRound();
-        }
-
-        /// <summary>
-        /// Kumarbazlar bir el oynadi: masa parasi kasaya girer, suphe artar.
-        /// Kumarhane parasinin TEK gecis noktasi burasi (ileride co-op'ta RPC siniri).
-        /// </summary>
-        public void PlayHouseRound()
-        {
-            // Sabah olduysa el sayilmaz (kumarbaz kalkmak uzere).
-            if (!IsOpen) return;
-
-            if (EconomyManager.Instance != null) EconomyManager.Instance.AddMoney(houseRakePerRound);
-            NightNet += houseRakePerRound;
-
-            if (SuspicionManager.Instance != null) SuspicionManager.Instance.Add(suspicionPerHouseRound);
-
-            OnHouseRound?.Invoke(houseRakePerRound);
-        }
-
-        private void PlayRound()
-        {
-            bool won = Random.value < winChance;
-            int payout = won ? Mathf.RoundToInt(betAmount * payoutMultiplier) : 0;
-
-            if (payout > 0) EconomyManager.Instance.AddMoney(payout);
-
-            var result = new GamblingRoundResult(won, betAmount, payout);
-            NightNet += result.Net;
-
-            // Her el mahalledeki supheyi biraz daha artirir.
-            if (SuspicionManager.Instance != null) SuspicionManager.Instance.Add(suspicionPerRound);
-
-            OnRoundPlayed?.Invoke(result);
         }
 
         /// <summary>Dukkan kapandi: yeni gece basliyor, gecelik hesap sifirlanir.</summary>

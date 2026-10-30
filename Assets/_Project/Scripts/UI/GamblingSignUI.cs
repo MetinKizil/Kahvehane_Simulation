@@ -20,9 +20,17 @@ namespace KanBagi.UI
         [SerializeField] private TMP_Text totalText;
 
         [Header("Gorunum")]
-        [Tooltip("{0} bahis tutari.")]
-        [SerializeField] private string openTitleFormat = "BAHIS {0} TL";
+        [Tooltip("{0} fis tutari. Masa bos/bekliyorken.")]
+        [SerializeField] private string openTitleFormat = "RULET  {0} TL";
         [SerializeField] private string closedTitle = "GUNDUZ KAPALI";
+        [Tooltip("{0} kalan saniye.")]
+        [SerializeField] private string bettingTitleFormat = "BAHISLER ACIK  {0}";
+        [SerializeField] private string spinningTitle = "CARK DONUYOR";
+        [Tooltip("{0} sayi, {1} renk adi.")]
+        [SerializeField] private string resultTitleFormat = "{0}  {1}";
+        [SerializeField] private string redName = "KIRMIZI";
+        [SerializeField] private string blackName = "SIYAH";
+        [SerializeField] private string greenName = "YESIL";
         [Tooltip("{0} kazanilan net tutar.")]
         [SerializeField] private string winFormat = "KAZANDIN  +{0} TL";
         [Tooltip("{0} kaybedilen tutar.")]
@@ -53,6 +61,8 @@ namespace KanBagi.UI
 
             table.OnRoundPlayed += HandleRoundPlayed;
             table.OnHouseRound += HandleHouseRound;
+            table.OnPhaseChanged += HandlePhaseChanged;
+            table.OnResult += HandleResult;
 
             dayCycle = DayCycleManager.Instance;
 
@@ -69,12 +79,38 @@ namespace KanBagi.UI
 
         private void HandleRoundPlayed(GamblingRoundResult result)
         {
-            if (result.Won)
+            // Bir turda birden fazla bahis olabilir: net kar/zarar gosterilir.
+            if (result.Net > 0)
                 SetText(resultText, string.Format(winFormat, result.Net), winColor);
             else
-                SetText(resultText, string.Format(loseFormat, result.Stake), loseColor);
+                SetText(resultText, string.Format(loseFormat, -result.Net), loseColor);
 
             RefreshTotal();
+        }
+
+        private void HandlePhaseChanged(RoulettePhase phase, int secondsLeft)
+        {
+            if (titleText == null) return;
+
+            switch (phase)
+            {
+                case RoulettePhase.Betting:
+                    SetText(titleText, string.Format(bettingTitleFormat, secondsLeft), Color.white);
+                    break;
+                case RoulettePhase.Spinning:
+                    SetText(titleText, spinningTitle, Color.white);
+                    break;
+                case RoulettePhase.Idle:
+                    RefreshTitle();
+                    break;
+            }
+        }
+
+        private void HandleResult(int number)
+        {
+            string colorName = number == 0 ? greenName : RouletteRules.IsRed(number) ? redName : blackName;
+            Color color = number == 0 ? winColor : RouletteRules.IsRed(number) ? loseColor : Color.white;
+            SetText(titleText, string.Format(resultTitleFormat, number, colorName), color);
         }
 
         private void HandleHouseRound(int rake)
@@ -96,6 +132,7 @@ namespace KanBagi.UI
             if (titleText == null) return;
 
             titleText.text = table.IsOpen ? string.Format(openTitleFormat, table.BetAmount) : closedTitle;
+            titleText.color = Color.white;
         }
 
         private void RefreshTotal()
@@ -120,6 +157,8 @@ namespace KanBagi.UI
             {
                 table.OnRoundPlayed -= HandleRoundPlayed;
                 table.OnHouseRound -= HandleHouseRound;
+                table.OnPhaseChanged -= HandlePhaseChanged;
+                table.OnResult -= HandleResult;
             }
 
             if (dayCycle == null) return;

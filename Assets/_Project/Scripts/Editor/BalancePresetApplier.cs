@@ -64,8 +64,8 @@ namespace KanBagi.EditorTools
 
             new Setting(typeof(GamblerSpawner), "spawnDelayRange.x", 3f, 2f),
             new Setting(typeof(GamblerSpawner), "spawnDelayRange.y", 6f, 3f),
-            new Setting(typeof(GamblingTable), "houseRakePerRound", 25f, 25f),
-            new Setting(typeof(GamblingTable), "suspicionPerHouseRound", 1f, 1f),
+            new Setting(typeof(GamblingTable), "houseRakePerGambler", 80f, 80f),
+            new Setting(typeof(GamblingTable), "suspicionPerGambler", 3f, 3f),
 
             new Setting(typeof(DeliveryManager), "deliveryDelay", 20f, 8f),
 
