@@ -22,6 +22,7 @@ namespace KanBagi.UI
         [SerializeField] private float messageDuration = 2f;
 
         private Coroutine messageRoutine;
+        private string zoneHint;
 
         private void Start()
         {
@@ -38,6 +39,7 @@ namespace KanBagi.UI
 
             placer.OnPlacingChanged += HandlePlacingChanged;
             placer.OnMessage += HandleMessage;
+            placer.OnZoneHintChanged += HandleZoneHint;
             hintText.enabled = false;
         }
 
@@ -64,8 +66,15 @@ namespace KanBagi.UI
             messageRoutine = null;
 
             // Mesaj bitince yerlestirme suruyorsa ipucu geri gelir.
-            hintText.text = placingHint;
+            hintText.text = zoneHint ?? placingHint;
             hintText.enabled = placer.IsPlacing;
+        }
+
+        /// <summary>Hayalet yanlis bolgedeyse sebep, kisa mesaj yokken ipucu satirinda gorunur.</summary>
+        private void HandleZoneHint(string hint)
+        {
+            zoneHint = hint;
+            if (messageRoutine == null && placer.IsPlacing) hintText.text = zoneHint ?? placingHint;
         }
 
         private void StopMessage()
@@ -82,6 +91,7 @@ namespace KanBagi.UI
 
             placer.OnPlacingChanged -= HandlePlacingChanged;
             placer.OnMessage -= HandleMessage;
+            placer.OnZoneHintChanged -= HandleZoneHint;
         }
     }
 }

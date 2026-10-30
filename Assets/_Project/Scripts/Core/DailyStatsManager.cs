@@ -17,8 +17,6 @@ namespace KanBagi.Core
         [Tooltip("Bos birakilirsa sahnedeki ilk CustomerSpawner bulunur.")]
         [SerializeField] private CustomerSpawner spawner;
 
-        private GamblingTable[] gamblingTables;
-
         public int CustomersServed { get; private set; }
         public int CustomersLost { get; private set; }
         public int Revenue { get; private set; }
@@ -76,14 +74,9 @@ namespace KanBagi.Core
             if (EconomyManager.Instance != null)
                 EconomyManager.Instance.OnMoneySpent += HandleMoneySpent;
 
-            // Kilitli (pasif) kumar masalari da dahil: upgrade ile acilinca hazir olsun.
-            gamblingTables = FindObjectsByType<GamblingTable>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-
-            foreach (GamblingTable gamblingTable in gamblingTables)
-            {
-                gamblingTable.OnRoundPlayed += HandleGamblingRound;
-                gamblingTable.OnHouseRound += HandleHouseRound;
-            }
+            // Rulet masalari oyun sirasinda alinip konuyor (D6d-2): tek tek degil, butun masalarin ortak olayina abone.
+            GamblingTable.AnyRoundPlayed += HandleGamblingRound;
+            GamblingTable.AnyHouseRound += HandleHouseRound;
 
             if (MafiaManager.Instance != null)
                 MafiaManager.Instance.OnDemandPaid += HandleProtectionPaid;
@@ -167,15 +160,8 @@ namespace KanBagi.Core
             if (SaveManager.Instance != null) SaveManager.Instance.OnLoaded -= ResetStats;
             if (MafiaManager.Instance != null) MafiaManager.Instance.OnDemandPaid -= HandleProtectionPaid;
 
-            if (gamblingTables == null) return;
-
-            foreach (GamblingTable gamblingTable in gamblingTables)
-            {
-                if (gamblingTable == null) continue;
-
-                gamblingTable.OnRoundPlayed -= HandleGamblingRound;
-                gamblingTable.OnHouseRound -= HandleHouseRound;
-            }
+            GamblingTable.AnyRoundPlayed -= HandleGamblingRound;
+            GamblingTable.AnyHouseRound -= HandleHouseRound;
 
             if (Instance == this) Instance = null;
         }

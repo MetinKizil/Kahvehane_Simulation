@@ -636,7 +636,7 @@ En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 
 | D6b ✅ | Genişletme altyapısı + Yan Oda | `UpgradeData` önkoşul + sınır bonusu, `UpgradeUnlocker.hideTargets` (yıkılan duvar), `ShopFloor`, genişletme builder'ı; **Yan Oda** (600 TL, itibar 30, masa +3); PC sayfaları kaydırılabilir. |
 | D6c ✅ | Kumar Odası (bodrum) + gizli kapak | **Bodrum kat, 10×10 m**, ayrı dal; sol arka köşede merdiven; **gizli kapak** kapalıyken polis bulamaz (masa örtüsü kalktı); kumarbazlar sadece kapak açıkken gelir. |
 | D6d-1 ✅ | Rulet oyunu | Bodrum masası rulet: çark, turlar, sayı (35 kat) ve renk (2 kat) bahsi, 8 sandalye, kumarbaz başına 80 TL / +3 şüphe. |
-| D6d-2 | Rulet masası eşyası | EŞYALAR'dan **1. 800 TL, 2. 1000 TL**, en fazla 2, Kumar Odası gerekli, **sadece bodruma** (bodruma da başka eşya konamaz); polis ve günlük özet bütün masalara bakar; sahnedeki sabit masa kalkar. |
+| D6d-2 ✅ | Rulet masası eşyası | EŞYALAR'dan **1. 800 TL, 2. 1000 TL**, en fazla 2, Kumar Odası gerekli, **sadece bodruma** (bodruma da başka eşya konamaz); polis ve günlük özet bütün masalara bakar; sahnedeki sabit masa kalkar. |
 | D6e | Kalan 5 bölge | Büyük Yan Oda, Arka Salon, Geniş Arka Salon, Bahçe, Büyük Bahçe — `ExpansionZoneBuilder.Zones` tablosuna satır. |
 | D6f | Üst Kat | **En son** (Büyük Bahçe'den sonra), en pahalı; merdiven, üst zemin, tavan/ışık. **Dükkanın en büyük boyutu burada kesinleşir.** |
 | D7 | Çok kişilik masalar + grup müşteriler | 2'lik/4'lük masalar, 2–4 kişilik gruplar; birlikte gelir/gider, her kişi kendi siparişi. |
@@ -864,6 +864,24 @@ Hepsi alınınca masa sınırı 4 → 28.
 
 **Test:** masa bodrum zemininde, yazılar okunuyor, gece kumarbazlar inip oturuyor, turlar dönüyor, sayı/renk bahsi ve ödemeler doğru, kapak kapanınca kumarbazlar çıkıyor. Kullanıcı "çalışıyor" dedi.
 
+### Adım D6d-2 — Rulet masası eşyası ✅
+**Oyuncu ne görür:** bodrum başta **masasız**. PC → EŞYALAR'da **"Rulet Masası"**: Kumar Odası yoksa butonda "Kumar Odası gerekli"; **1. masa 800 TL, 2. masa 1000 TL**, sonra "Sınır dolu" (en fazla 2). Satın alınca elde hayalet: **bodrumda yeşil**, salon/yan oda/merdivende kırmızı + ipucu satırında **"Sadece kumar odasına konabilir"**; normal eşya bodruma tutulunca **"Kumar odasına sadece rulet masası konur"**. Hayaletken masa kumarbaz çağırmaz, polis saymaz. F ile taşınır; masada kumarbaz/bahis/dönen tur varken **"Masada oyun var, taşınamaz"**; taşınınca sandalyeler yeniden hesaplanır. Her masanın kendi çarkı/turu/kumarbazları/tabelası; günlük özet "Kumar" satırı ikisinin toplamı; polis kapak açıkken herhangi bir masa varsa yakalar. Masalar kayda girer.
+
+**Kullanıcı kararları:** yanlış bölgede hayalet kırmızı **ve ipucu satırında sebep yazsın**; eski kayıtlarda Kumar Odası olsa da masa yeniden satın alınır.
+
+**Parçalar:**
+- **`FurnitureData`**: `priceStep` (her kopya için artış), `requiredUpgrade` (UpgradeData), `zone` (**`FurnitureZone`**: Main / GamblingRoom, yeni enum `KanBagi.Data`).
+- **`ShopFloor.zone`**: ana salon/genişletmeler Main (NavMeshSurface'li ana zemin de Main sayılır), bodrum zemini GamblingRoom.
+- **`FurnitureManager`**: `GetPrice` = fiyat + priceStep × adet; `MeetsUpgrade`; `CanPurchase` sırası sınır → gelişme ("{ad} gerekli") → itibar → para; `TryPurchase` `GetPrice` öder. `FurnitureEntryUI`: `upgradeLockedFormat`, buton fiyatı `GetPrice`.
+- **`FurniturePlacer`**: zeminin bölgesi eşyanınkiyle uyuşmazsa geçersiz + `OnZoneHintChanged` (mesajlar `gamblingRoomOnlyMessage`, `mainOnlyMessage`); `PlacementHintUI` kısa mesaj yokken sebebi gösterir. **`IPlacementPausable`** (yeni işaret arayüzü): hayaletken bu bileşenler kapatılır, bitince açılır (`GamblingTable`, `GamblerSpawner`).
+- **`GamblingTable`**: `IFurnitureMoveCheck` (`moveBlockedMessage`), `OnLayoutChanged`'de boşsa sandalyeleri sıfırlar, **static `AnyRoundPlayed` / `AnyHouseRound`**. **`DailyStatsManager`** artık bunlara abone (sonradan konan masalar da sayılır). **`PoliceManager`**: sadece `isActiveAndEnabled` masalar (hayalet sayılmaz).
+- **`GamblerSpawner`**: `entryPoint` boşsa **`CustomerSpawner.EntryPoint`** (yeni getter) kullanılır — prefab sahne objesi tutamaz.
+- `Kan Bagi > Rulet Masasini Esyaya Cevir` (`RouletteFurnitureBuilder`, bir kez): sahnedeki masadan **`Prefabs/RuletMasasi.prefab`** (PlacedFurniture, entryPoint boş) + **`RuletMasasiEsya`** ("Rulet Masası", 800, priceStep 200, sınır 2, GizliKumarhaneUpgrade gerekli, zone GamblingRoom) → EsyaVeritabani + EsyaKatalogu (varsayılan düzene girmez); bodrum zemini GamblingRoom; sahnedeki masa silindi.
+- `BasementBuilder`: masa **opsiyonel** (sadece eşyaya çevrilmemiş sahne masası varsa taşır), bodrum zeminini `MarkGamblingFloor` ile işaretler.
+- ⚠️ `Rulet Masasini Kur` (`RouletteTableBuilder`) artık sahnede masa olmadığı için çalışmaz (hata verip durur); rulet görünümü değişirse prefab'ı güncelleyecek hale getirilmeli.
+
+**Test:** gerekli gelişme etiketi, 800 → 1000 → sınır, bodrum dışında kırmızı + ipucu, normal eşya bodruma konmuyor, iki masada kumarbaz ve turlar, özet toplamı, oyun varken taşınmıyor, kayıttan masalar geliyor. Kullanıcı "çalışıyor" dedi.
+
 **Değişecek mevcut parçalar (bilerek):** sabit eşyalar + `UpgradeUnlocker`, editörde NavMesh bake (`NavMesh'i Yeniden Bake Et`), `Icecek Istasyonlarini Kur` / `Masa Oyunlarini Kur` builder'ları, tek kişilik `Table`, tek eşya tutan eller, dükkan geneli masa oyunları. **Değişmeyenler:** müşteri profilleri, sipariş/ikinci tur, menü, stok/kurye, ekonomi, itibar, gün döngüsü, kayıt altyapısı, kumar/mafya/polis, fısıltılar, hikaye, co-op etkileşim katmanı.
 
 ---
@@ -910,7 +928,7 @@ Hepsi alınınca masa sınırı 4 → 28.
 | ├ `BakkalBinasi` (Cube, scale 3) | (-4, 1.5, -9) | PropertyBuilding (BakkalMulk) + tabela child'ı |
 | ├ `TerziBinasi` (Cube, scale 3) | (0, 1.5, -12.5) | PropertyBuilding (TerziMulk) |
 | └ `KirathaneBinasi` (Cube, scale 3) | (4, 1.5, -9) | PropertyBuilding (KirathaneMulk) |
-| `Bodrum/KumarOdasi/RuletMasasi` (Empty, pivot zeminde) — **D6d-1**, `KumarOdasi` başta kapalı | (1, −3, 0) | BoxCollider 2.4×0.8×1.2 + NavMeshModifier + GamblingTable (rulet) + GamblerSpawner; `Govde`, `Cuha`, `BahisAlanlari` (37 hücre + KIRMIZI/SİYAH, RouletteBetSpot), `Cark` (RouletteWheel), `RuletMasasiTabelasi`. Elle kurulmaz: `Kan Bagi > Rulet Masasini Kur`. D6d-2'de eşyaya dönüşecek |
+| ~~`Bodrum/KumarOdasi/RuletMasasi`~~ — **D6d-2'den beri sahnede YOK** | oyuncunun bodruma koyduğu yer | PC → EŞYALAR'dan alınır (`RuletMasasiEsya`), `FurnitureManager` `Prefabs/RuletMasasi.prefab`'tan oluşturur (GamblingTable rulet + GamblerSpawner + BahisAlanlari + Cark + tabela). Bodrum zemini `ShopFloor` zone GamblingRoom |
 | `Bodrum` (Empty) | sol arka köşe x −5…−3.5, z 0…5 | **D6c:** `MerdivenAlani` (ReservedArea), `MerdivenKapagiYeri`, `KumarOdasi` (zemin y −3, duvar, tavan, merdiven, korkuluk, `Mentese/Kapak` = HiddenHatch, ışıklar). `Zemin` mesh'i `ZeminMerdivenBoslugu`. Elle kurulmaz: `Kan Bagi > Bodrumu Kur` |
 | `MafyaNoktasi` (Empty) | (1.5, 0.9, -4) | — (tahsildar burada belirir, y=0.9 kapsül yere bassın diye) |
 | `PolisNoktasi` (Empty) | (-1.5, 0.9, -4) | — (memur burada belirir) |
@@ -953,7 +971,7 @@ Hepsi alınınca masa sınırı 4 → 28.
 - `MahalleFisiltilari` (WhisperData) — fısıltı metinleri, kumarhane upgrade referansı, itibar barajları (60/140/240)
 - `ArayuzMetinleri` (TextPreset) — sahne/prefab metin alanlarının yeni değerleri; `Kan Bagi > Metinleri Uygula` yazar
 - `MusteriProfilleri/` (CustomerProfile) — `EmekliDayi`, `Ogrenci`, `Esnaf`, `Kabadayi` (değerler bölüm 6.8, 10c-1)
-- `MasaEsya` (FurnitureData: 100 TL, **baseLimit 4**), `CayOcagiEsya` / `LavaboEsya` / `BardakRafiEsya` / `DepoEsya` / `YonetimPCEsya` (Station, satılmıyor, baseLimit 1), **`OraletSemaveriEsya` (100 TL), `KahveMakinesiEsya` (200 TL), `SahlepMakinesiEsya` (300 TL + itibar 80)** (Station, baseLimit 1, D5b), `EsyaVeritabani` (FurnitureDatabase), `VarsayilanDuzen` (FurnitureLayout: Masa1/Masa2 yerleri), **`EsyaKatalogu`** (FurnitureCatalog: PC'nin EŞYALAR sekmesi — Masa, Oralet Semaveri, Kahve Makinesi, Sahlep Makinesi)
+- `MasaEsya` (FurnitureData: 100 TL, **baseLimit 4**), `CayOcagiEsya` / `LavaboEsya` / `BardakRafiEsya` / `DepoEsya` / `YonetimPCEsya` (Station, satılmıyor, baseLimit 1), **`OraletSemaveriEsya` (100 TL), `KahveMakinesiEsya` (200 TL), `SahlepMakinesiEsya` (300 TL + itibar 80)** (Station, baseLimit 1, D5b), **`RuletMasasiEsya` (800 TL + 200/kopya, sınır 2, Kumar Odası gerekli, zone GamblingRoom — D6d-2)**, `EsyaVeritabani` (FurnitureDatabase), `VarsayilanDuzen` (FurnitureLayout: Masa1/Masa2 yerleri), **`EsyaKatalogu`** (FurnitureCatalog: PC'nin EŞYALAR sekmesi — Masa, Oralet Semaveri, Kahve Makinesi, Sahlep Makinesi, Rulet Masası)
 
 > ✅ **Sahne GERÇEK değerlerde** (Adım 9a-1). Hızlı test için `Kan Bagi > Denge > Test Degerlerini Uygula`, geri dönmek için `Gercek Degerleri Uygula`. Mod değiştirdikten sonra sahneyi kaydet; sıfırdan test için `Kan Bagi > Kaydi Sil`.
 
@@ -981,7 +999,9 @@ Hepsi alınınca masa sınırı 4 → 28.
 
 **Adım D6c bitti ve test edildi.** Kumar Odası (1500 TL, itibar 180) bodrumu açıyor: sol arka köşede gizli kapak + merdiven, kapak kapalıyken polis bulamıyor, kapanırken kumarbazlar yürüyerek çıkıyor; bodrum NavMesh hatası (salon yürünemez oluyordu) düzeltildi.
 
-**Adım D6d-1 bitti ve test edildi.** Bodrumdaki masa gerçek rulet oldu: çark ve top, bahis geri sayımı, sayıya 35 kat / renge 2 kat bahis, 8 kumarbaz, tabelada sonuç; bodrum NavMesh ve masa yüksekliği hataları düzeltildi. **Sıradaki iş: D6d-2 — Rulet masası eşyası** (EŞYALAR: 1. 800 TL, 2. 1000 TL, en fazla 2, Kumar Odası gerekli, sadece bodruma; bodruma başka eşya konamaz; polis/özet bütün masalara bakar; plan ayrıca onaylanacak).
+**Adım D6d-1 bitti ve test edildi.** Bodrumdaki masa gerçek rulet oldu: çark ve top, bahis geri sayımı, sayıya 35 kat / renge 2 kat bahis, 8 kumarbaz, tabelada sonuç; bodrum NavMesh ve masa yüksekliği hataları düzeltildi.
+
+**Adım D6d-2 bitti ve test edildi.** Rulet masası EŞYALAR'dan alınıyor (800 → 1000 TL, en fazla 2, Kumar Odası gerekli), sadece bodruma konuyor (yanlış yerde ipucu), normal eşya bodruma konmuyor; iki masa ayrı çalışıyor, özet ve polis hepsini görüyor. **Sıradaki iş: D6e — Kalan 5 genişletme bölgesi** (Büyük Yan Oda, Arka Salon, Geniş Arka Salon, Bahçe, Büyük Bahçe — tablo bölüm 6.9 D6b; plan ayrıca onaylanacak).
 
 **Adım 10c-2 bitti ve test edildi.** İskambil (200 TL, itibar 40, +%30) ve Domino (350 TL, itibar 100, +%20) masalarda beliriyor; müşteriler içtikten sonra oyun meraklarına göre bir tur daha sipariş veriyor, ciro iki satışı da sayıyor, ikinci turda bekletmenin cezası yok.
 
@@ -1178,7 +1198,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**10a-2a**~~ ✅ | Mahalle fısıltıları (olaylara eşlik eden ton satırı + ilk sabah yönlendirmesi) — **bitti** | Ucuz, kimliği oyunun içine taşır |
 | ~~**10a-2b**~~ ✅ | Mevcut metinlerin tonu (sadece tablodakiler), `ArayuzMetinleri` + `Metinleri Uygula` — **bitti** | Fısıltılarla aynı tonu mevcut arayüze yayar |
 | ~~**10c**~~ ✅ | Müşteri ve stok çeşitliliği — **bitti** (10c-1 profiller, 10c-2 masa oyunları, 10c-3 sahlep; 10c-4 bahçe → D bölümüne taşındı) | Faz 2'den kalan |
-| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi, D2 ✅ eşya altyapısı, D3 ✅ yerleştirme modu, D4 ✅ eşya satın alma, D5a ✅ temel eşyalar taşınabilir, D5b ✅ makineler kataloğa, D6a ✅ duvarlar + kapı, D6b ✅ genişletme altyapısı + Yan Oda, D6c ✅ bodrum + gizli kapak, D6d-1 ✅ rulet oyunu; sıradaki D6d-2 rulet masası eşyası): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
+| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi, D2 ✅ eşya altyapısı, D3 ✅ yerleştirme modu, D4 ✅ eşya satın alma, D5a ✅ temel eşyalar taşınabilir, D5b ✅ makineler kataloğa, D6a ✅ duvarlar + kapı, D6b ✅ genişletme altyapısı + Yan Oda, D6c ✅ bodrum + gizli kapak, D6d-1 ✅ rulet oyunu, D6d-2 ✅ rulet masası eşyası; sıradaki D6e kalan 5 bölge): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
 | **11** | Görsel cila, ses, ana menü, kayıt slotları | **En sona**: mekanikler değişince geometri/model yeniden yapılır |
@@ -1203,7 +1223,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum (2026-10-17): GitHub bağlantısı kuruldu, tüm commit'ler push edildi** (ilk push: 17 commit, ~2.7 MB). Yerel `main` = `origin/main`.
 ```
-(yeni)   Adim D6d-1: rulet oyunu
+(yeni)   Adim D6d-2: rulet masasi esyasi
+2444d20  Adim D6d-1: rulet oyunu
 c0f049e  Adim D6c: bodrum kumar odasi ve gizli kapak
 2150414  Adim D6b: genisletme altyapisi ve yan oda
 afc4962  Adim D6a: dukkan duvarlari ve kapi
@@ -1247,7 +1268,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (D6d-2 — Rulet masası eşyası: EŞYALAR'dan 800/1000 TL, en fazla 2, Kumar Odası gerekli, sadece bodruma, bodruma başka eşya yok, polis/özet bütün masalar; kararlar bölüm 6.9 D6c/D6d-1) planını anlat, onay al**, sonra kod yaz. Planda **oyuncunun ne göreceğini** açıkça yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
+3. **Sıradaki adımın (D6e — Kalan 5 genişletme bölgesi: Büyük Yan Oda, Arka Salon, Geniş Arka Salon, Bahçe (çitli), Büyük Bahçe; fiyat/önkoşul tablosu bölüm 6.9 D6b, ExpansionZoneBuilder.Zones tablosuna satır) planını anlat, onay al**, sonra kod yaz. Planda **oyuncunun ne göreceğini** açıkça yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.

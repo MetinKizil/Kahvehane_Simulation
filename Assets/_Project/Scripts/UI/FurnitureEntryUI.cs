@@ -29,6 +29,8 @@ namespace KanBagi.UI
         [SerializeField] private string limitReachedLabel = "Sinir dolu";
         [Tooltip("Itibar yetmezken buton yazisi. {0} gereken itibar.")]
         [SerializeField] private string reputationLockedFormat = "Itibar {0} gerekli";
+        [Tooltip("Gereken gelistirme alinmamisken buton yazisi. {0} gelistirmenin adi.")]
+        [SerializeField] private string upgradeLockedFormat = "{0} gerekli";
 
         private FurnitureData furniture;
         private Action<FurnitureData> onBuy;
@@ -66,8 +68,9 @@ namespace KanBagi.UI
 
             if (buyButtonLabel != null)
                 buyButtonLabel.text = limitReached ? limitReachedLabel
+                    : !manager.MeetsUpgrade(furniture) ? string.Format(upgradeLockedFormat, furniture.RequiredUpgrade.UpgradeName)
                     : !manager.MeetsReputation(furniture) ? string.Format(reputationLockedFormat, furniture.RequiredReputation)
-                    : string.Format(priceFormat, furniture.Price);
+                    : string.Format(priceFormat, manager.GetPrice(furniture));
 
             if (buyButton != null) buyButton.interactable = manager.CanPurchase(furniture, out _);
         }

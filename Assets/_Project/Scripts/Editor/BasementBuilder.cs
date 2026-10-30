@@ -58,11 +58,12 @@ namespace KanBagi.EditorTools
 
             NavMeshSurface surface = Object.FindFirstObjectByType<NavMeshSurface>();
             UpgradeManager upgradeManager = Object.FindFirstObjectByType<UpgradeManager>(FindObjectsInactive.Include);
-            GamblingTable table = Object.FindFirstObjectByType<GamblingTable>(FindObjectsInactive.Include);
+            // Sahnede sabit kumar masasi (eski, esyaya cevrilmemis) varsa bodruma tasinir; D6d-2den beri masalar ESYALAR sayfasindan alinir.
+            GamblingTable table = FindSceneTable();
             var upgrade = AssetDatabase.LoadAssetAtPath<UpgradeData>(UpgradePath);
 
             if (surface == null || !surface.TryGetComponent(out Renderer floorRenderer) || !surface.TryGetComponent(out MeshFilter floorFilter) ||
-                upgradeManager == null || table == null || upgrade == null)
+                upgradeManager == null || upgrade == null)
             {
                 Debug.LogError("[BasementBuilder] Ana zemin (NavMeshSurface + Renderer + MeshFilter), UpgradeManager, kumar masasi " +
                                $"veya {UpgradePath} bulunamadi.");
@@ -77,7 +78,7 @@ namespace KanBagi.EditorTools
             }
 
             // Eski kurulum silinmeden once masa disari alinir (Bodrum ile birlikte yok olmasin).
-            Undo.SetTransformParent(table.transform, null, "Kumar Masasi");
+            if (table != null) Undo.SetTransformParent(table.transform, null, "Kumar Masasi");
             GameObject old = GameObject.Find("/" + RootName);
             if (old == null) old = FindInactiveRoot(RootName);
             if (old != null) Undo.DestroyObjectImmediate(old);
@@ -104,7 +105,7 @@ namespace KanBagi.EditorTools
                                            floorRenderer.sharedMaterial);
 
             GameObject room = BuildRoom(root.transform, main, hole, y);
-            MoveTable(table, room.transform, main, y);
+            if (table != null) MoveTable(table, room.transform, main, y);
 
             var unlockerData = new SerializedObject(unlocker);
             SerializedProperty targets = unlockerData.FindProperty("targets");
@@ -120,7 +121,7 @@ namespace KanBagi.EditorTools
             AssetDatabase.SaveAssets();
             EditorSceneManager.MarkSceneDirty(root.scene);
             Debug.Log($"[BasementBuilder] Bodrum kuruldu: {main.size.x:0.#} x {main.size.z:0.#} m, {Depth} m asagida; merdiven boslugu " +
-                      $"x {hole.xMin:0.##}..{hole.xMax:0.##}, z {hole.yMin:0.##}..{hole.yMax:0.##}. Kumar masasi bodruma tasindi, " +
+                      $"x {hole.xMin:0.##}..{hole.xMax:0.##}, z {hole.yMin:0.##}..{hole.yMax:0.##}. bodrum zemini kumar odasi bolgesi, " +
                       "acici baglandi. Sahneyi kaydet (Ctrl+S), sonra 'NavMesh'i Yeniden Bake Et' ve tekrar kaydet.");
         }
 
@@ -202,8 +203,9 @@ namespace KanBagi.EditorTools
             float t = WallThickness;
             float h = t * 0.5f;
 
-            CreatePlane(room.transform, "Zemin", new Vector3(main.center.x, floorY, main.center.z), main.size.x, main.size.z,
+            GameObject basementFloor = CreatePlane(room.transform, "Zemin", new Vector3(main.center.x, floorY, main.center.z), main.size.x, main.size.z,
                         TableGamesBuilder.GetOrCreateMaterial("BodrumZeminMat", BasementFloorColor));
+            MarkGamblingFloor(basementFloor);
 
             // Duvarlar (zeminin disina oturur, koseler kapali)
             // Duvar ve tavan "Not Walkable" ISARETLENMEZ: ustleri ana zeminin/sokagin hemen altinda; NavMesh bake'te
@@ -294,6 +296,27 @@ namespace KanBagi.EditorTools
             table.gameObject.SetActive(true);
         }
 
+
+        /// <summary>Bodrum zemini "kumar odasi" bolgesidir: oraya sadece rulet masasi konur (D6d-2). RouletteFurnitureBuilder da kullanir.</summary>
+        internal static void MarkGamblingFloor(GameObject floor)
+        {
+            if (!floor.TryGetComponent(out ShopFloor shopFloor)) shopFloor = floor.AddComponent<ShopFloor>();
+
+            var data = new SerializedObject(shopFloor);
+            data.FindProperty("zone").enumValueIndex = (int)FurnitureZone.GamblingRoom;
+            data.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>Sahnede kalmis, esyaya cevrilmemis (PlacedFurniture'siz) kumar masasi; yoksa null.</summary>
+        private static GamblingTable FindSceneTable()
+        {
+            foreach (GamblingTable table in Object.FindObjectsByType<GamblingTable>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (table.GetComponent<PlacedFurniture>() == null) return table;
+            }
+
+            return null;
+        }
         // ---- Yardimcilar ----
 
         private static GameObject FindInactiveRoot(string rootName)

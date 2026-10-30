@@ -84,6 +84,15 @@ MonoBehaviour:
     objectPath: RuletMasasi/BahisAlanlari/SiyahAlanYazi
     text: "SİYAH"
   - component: GamblingTable
+    field: moveBlockedMessage
+    text: "Masada oyun var, taşınamaz"
+  - component: FurniturePlacer
+    field: gamblingRoomOnlyMessage
+    text: "Sadece kumar odasına konabilir"
+  - component: FurniturePlacer
+    field: mainOnlyMessage
+    text: "Kumar odasına sadece rulet masası konur"
+  - component: GamblingTable
     field: closedMessage
     text: "Gündüz kumar oynanmaz"
   - component: HiddenHatch

@@ -46,6 +46,9 @@ namespace KanBagi.Customers
         public event Action<Customer> OnCustomerSpawned;
 
         private Vector3 SpawnPosition => spawnPoint != null ? spawnPoint.position : transform.position;
+
+        /// <summary>Dukkanin giris noktasi. Prefab olarak gelen kumar masasinin kumarbaz cagiricisi kapiyi buradan bulur (D6d-2).</summary>
+        public Transform EntryPoint => spawnPoint != null ? spawnPoint : transform;
         private Quaternion SpawnRotation => spawnPoint != null ? spawnPoint.rotation : transform.rotation;
         private Vector3 ExitPosition => exitPoint != null ? exitPoint.position : SpawnPosition;
 

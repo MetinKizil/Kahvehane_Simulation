@@ -150,6 +150,14 @@ namespace KanBagi.Furniture
             return data.BaseLimit + bonus;
         }
 
+        /// <summary>Bir sonraki kopyanin fiyati: temel fiyat + her mevcut kopya icin artis (rulet: 800, sonra 1000).</summary>
+        public int GetPrice(FurnitureData data) => data != null ? data.Price + data.PriceStep * CountOf(data) : 0;
+
+        /// <summary>Esyanin gerektirdigi gelistirme (varsa) alinmis mi?</summary>
+        public bool MeetsUpgrade(FurnitureData data) =>
+            data != null && (data.RequiredUpgrade == null ||
+                             (UpgradeManager.Instance != null && UpgradeManager.Instance.IsPurchased(data.RequiredUpgrade)));
+
         /// <summary>Esyanin itibar sarti karsilaniyor mu?</summary>
         public bool MeetsReputation(FurnitureData data) =>
             data != null && (data.RequiredReputation <= 0 ||
@@ -168,13 +176,19 @@ namespace KanBagi.Furniture
                 return false;
             }
 
+            if (!MeetsUpgrade(data))
+            {
+                reason = $"{data.RequiredUpgrade.UpgradeName} gerekli";
+                return false;
+            }
+
             if (!MeetsReputation(data))
             {
                 reason = $"Itibar {data.RequiredReputation} gerekli";
                 return false;
             }
 
-            if (EconomyManager.Instance == null || EconomyManager.Instance.CurrentMoney < data.Price)
+            if (EconomyManager.Instance == null || EconomyManager.Instance.CurrentMoney < GetPrice(data))
             {
                 reason = "Para yetmiyor";
                 return false;
@@ -190,7 +204,7 @@ namespace KanBagi.Furniture
         public bool TryPurchase(FurnitureData data, Vector3 position, float yaw)
         {
             if (!CanPurchase(data, out _)) return false;
-            if (!EconomyManager.Instance.TrySpendMoney(data.Price)) return false;
+            if (!EconomyManager.Instance.TrySpendMoney(GetPrice(data))) return false;
 
             return Spawn(data, position, yaw) != null;
         }

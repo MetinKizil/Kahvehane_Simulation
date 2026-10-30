@@ -142,7 +142,15 @@ namespace KanBagi.Illegal
         private void ResolveRaid()
         {
             bool hidden = HiddenHatch.Instance != null && HiddenHatch.Instance.IsClosed;
-            bool busted = !hidden && FindFirstObjectByType<GamblingTable>() != null;
+            bool busted = false;
+            if (!hidden)
+            {
+                // Elde hayalet olan (tasinan/yeni alinan) masa sayilmaz: bileseni kapali.
+                foreach (GamblingTable table in FindObjectsByType<GamblingTable>(FindObjectsSortMode.None))
+                {
+                    if (table.isActiveAndEnabled) busted = true;
+                }
+            }
 
             int fine = busted ? ApplyPenalty() : ApplyReliefAndGetZero();
             OnRaidResolved?.Invoke(busted, fine);

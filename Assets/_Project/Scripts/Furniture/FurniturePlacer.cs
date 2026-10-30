@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using KanBagi.Data;
 using KanBagi.Interaction;
 using KanBagi.Player;
@@ -48,6 +49,12 @@ namespace KanBagi.Furniture
         [Tooltip("Cakisma kontrolunde kutu bu oranla kucultulur (yan yana degmeye izin ver).")]
         [SerializeField] private float overlapShrink = 0.95f;
 
+        [Header("Bolge mesajlari")]
+        [Tooltip("Kumar odasina ait esya (rulet) baska yere tutulunca ipucu satirinda.")]
+        [SerializeField] private string gamblingRoomOnlyMessage = "Sadece kumar odasina konabilir";
+        [Tooltip("Normal esya kumar odasina tutulunca ipucu satirinda.")]
+        [SerializeField] private string mainOnlyMessage = "Kumar odasina sadece rulet masasi konur";
+
         [Header("Hayalet")]
         [SerializeField] private Color validColor = new Color(0.3f, 0.9f, 0.4f, 0.45f);
         [SerializeField] private Color invalidColor = new Color(0.95f, 0.3f, 0.3f, 0.45f);
@@ -79,6 +86,8 @@ namespace KanBagi.Furniture
         private Table table;
         // Doluysa tasinan sey PC'den yeni alinmis (henuz odenmemis) bir esyanin hayaleti.
         private FurnitureData pendingPurchase;
+        private readonly List<MonoBehaviour> pausedBehaviours = new List<MonoBehaviour>();
+        private string zoneHint;
 
         public bool IsPlacing => current != null;
 
@@ -87,6 +96,9 @@ namespace KanBagi.Furniture
 
         /// <summary>Kisa bilgi mesaji ("Masa dolu, tasinamaz"). Ipucu UI'i gosterir.</summary>
         public event Action<string> OnMessage;
+
+        /// <summary>Hayalet yanlis bolgedeyken sebep ("Sadece kumar odasina konabilir"), dogru yere gelince null. Ipucu UI'i gosterir.</summary>
+        public event Action<string> OnZoneHintChanged;
 
         private void Awake()
         {
@@ -212,7 +224,7 @@ namespace KanBagi.Furniture
 
             if (!isValid)
             {
-                OnMessage?.Invoke("Buraya konamaz");
+                OnMessage?.Invoke(zoneHint ?? "Buraya konamaz");
                 return;
             }
 
@@ -296,6 +308,16 @@ namespace KanBagi.Furniture
             table = furniture.GetComponent<Table>();
             if (table != null) table.enabled = false; // OnDisable -> TableManager'dan cikar
 
+            // Hayaletken calismamasi gerekenler (rulet turu, kumarbaz cagirici) kapanir; End'de geri acilir.
+            pausedBehaviours.Clear();
+            foreach (MonoBehaviour behaviour in furniture.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (!(behaviour is IPlacementPausable) || !behaviour.enabled) continue;
+
+                behaviour.enabled = false;
+                pausedBehaviours.Add(behaviour);
+            }
+
             renderers = furniture.GetComponentsInChildren<Renderer>(true);
             originalMaterials = new Material[renderers.Length][];
             for (int i = 0; i < renderers.Length; i++)
@@ -314,7 +336,14 @@ namespace KanBagi.Furniture
         {
             if (!IsPlacing) return;
 
-            bool onFloor = TryGetFloorPoint(out Vector3 point);
+            bool onFloor = TryGetFloorPoint(out Vector3 point, out FurnitureZone floorZone);
+
+            // Bolge: rulet masasi sadece kumar odasina, diger esyalar oraya konamaz. Sebep ipucu satirinda yazar.
+            FurnitureData data = pendingPurchase != null ? pendingPurchase : current.Data;
+            FurnitureZone furnitureZone = data != null ? data.Zone : FurnitureZone.Main;
+            bool zoneOk = !onFloor || floorZone == furnitureZone;
+            SetZoneHint(zoneOk ? null : furnitureZone == FurnitureZone.GamblingRoom ? gamblingRoomOnlyMessage : mainOnlyMessage);
+
             if (onFloor)
             {
                 point.x = Snap(point.x);
@@ -327,7 +356,7 @@ namespace KanBagi.Furniture
                 current.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             }
 
-            bool valid = onFloor && !OverlapsSomething() && !OverlapsReservedArea() && IsSeatClear();
+            bool valid = onFloor && zoneOk && !OverlapsSomething() && !OverlapsReservedArea() && IsSeatClear();
             if (valid != isValid)
             {
                 isValid = valid;
@@ -336,17 +365,29 @@ namespace KanBagi.Furniture
         }
 
         /// <summary>Bakis isini dukkan zemininde (ana zemin veya acilmis genisletme bolgesi) karsilayan nokta.</summary>
-        private bool TryGetFloorPoint(out Vector3 point)
+        private bool TryGetFloorPoint(out Vector3 point, out FurnitureZone zone)
         {
             point = Vector3.zero;
+            zone = FurnitureZone.Main;
 
             if (!Physics.Raycast(rayOrigin.position, rayOrigin.forward, out RaycastHit hit, placeRange, ~0, QueryTriggerInteraction.Ignore))
                 return false;
 
             if (!IsShopFloor(hit.collider)) return false;
 
+            ShopFloor floor = hit.collider.GetComponentInParent<ShopFloor>();
+            if (floor != null) zone = floor.Zone;
+
             point = hit.point;
             return true;
+        }
+
+        private void SetZoneHint(string hint)
+        {
+            if (hint == zoneHint) return;
+
+            zoneHint = hint;
+            OnZoneHintChanged?.Invoke(zoneHint);
         }
 
         private static bool IsShopFloor(Collider collider) =>
@@ -478,6 +519,8 @@ namespace KanBagi.Furniture
 
             if (interactor != null && CanControl()) interactor.enabled = true;
 
+            pausedBehaviours.Clear();
+            SetZoneHint(null);
             pendingPurchase = null;
             current = null;
             table = null;
@@ -501,6 +544,13 @@ namespace KanBagi.Furniture
             }
 
             if (table != null) table.enabled = true;
+            foreach (MonoBehaviour behaviour in pausedBehaviours)
+            {
+                if (behaviour != null) behaviour.enabled = true;
+            }
+
+            pausedBehaviours.Clear();
+            SetZoneHint(null);
             if (interactor != null && CanControl()) interactor.enabled = true;
 
             current = null;

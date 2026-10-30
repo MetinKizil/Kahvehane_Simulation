@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using KanBagi.Core;
 using KanBagi.Economy;
+using KanBagi.Furniture;
 using KanBagi.Interaction;
 using KanBagi.Player;
 using UnityEngine;
@@ -43,7 +44,7 @@ namespace KanBagi.Illegal
     /// Oturan her kumarbaz her turda kasaya pay birakir ve suphe biriktirir.
     /// Polisten saklanma masada degil, bodrumun kapaginda (HiddenHatch). Kendi kurallarini bilir; polisi/raporu bilmez (SOLID).
     /// </summary>
-    public class GamblingTable : MonoBehaviour, IInteractable
+    public class GamblingTable : MonoBehaviour, IInteractable, IFurnitureMoveCheck, IPlacementPausable
     {
         [Header("Bahis")]
         [SerializeField] private int betAmount = 100;
@@ -84,6 +85,8 @@ namespace KanBagi.Illegal
         [SerializeField] private string noMoneyFormat = "{0} TL gerekli";
         [Tooltip("Gunduz masaya bakinca.")]
         [SerializeField] private string closedMessage = "Gunduz kumar oynanmaz";
+        [Tooltip("Masada kumarbaz/bahis varken F ile kaldirmaya calisinca.")]
+        [SerializeField] private string moveBlockedMessage = "Masada oyun var, tasinamaz";
 
         [Header("Sandalyeler (Kumarbaz NPC)")]
         [Tooltip("En fazla kac kumarbaz otursun.")]
@@ -130,6 +133,12 @@ namespace KanBagi.Illegal
         /// <summary>Tur tamamen bitince tetiklenir. Kumarbazlar oynadiklari turu buradan sayar.</summary>
         public event Action OnRoundFinished;
 
+        /// <summary>Herhangi bir rulet masasinda OnRoundPlayed. Masalar oyun sirasinda alinip konuldugu icin gunluk ozet buna abone (D6d-2).</summary>
+        public static event Action<GamblingRoundResult> AnyRoundPlayed;
+
+        /// <summary>Herhangi bir rulet masasinda OnHouseRound.</summary>
+        public static event Action<int> AnyHouseRound;
+
         /// <summary>Kumar su anda oynanabilir mi? (Gece olmali.)</summary>
         public bool IsOpen => DayCycleManager.Instance == null || !DayCycleManager.Instance.IsShopOpen;
 
@@ -169,6 +178,38 @@ namespace KanBagi.Illegal
         {
             if (DayCycleManager.Instance != null)
                 DayCycleManager.Instance.OnShopClosed += HandleShopClosed;
+            if (FurnitureManager.Instance != null)
+                FurnitureManager.Instance.OnLayoutChanged += HandleLayoutChanged;
+        }
+
+        /// <summary>Masada kumarbaz (yolda olan dahil), bahis veya donen tur varsa kalkmaz.</summary>
+        public bool CanMove(out string reason)
+        {
+            bool busy = stakes.Count > 0 || Phase == RoulettePhase.Spinning || Phase == RoulettePhase.Result;
+            if (!busy && seatOccupants != null)
+            {
+                foreach (Gambler occupant in seatOccupants)
+                {
+                    if (occupant != null) busy = true;
+                }
+            }
+
+            reason = busy ? moveBlockedMessage : null;
+            return !busy;
+        }
+
+        /// <summary>Masa tasindiysa (veya etrafina esya kondu) sandalyeler bir sonraki ihtiyacta yeniden hesaplanir.</summary>
+        private void HandleLayoutChanged()
+        {
+            if (seatOccupants != null)
+            {
+                foreach (Gambler occupant in seatOccupants)
+                {
+                    if (occupant != null) return; // dolu masada sandalyeler kaymasin
+                }
+            }
+
+            seatPositions = null;
         }
 
         // Masa bodrumla birlikte acilir/kapanir; tur dongusu acik oldugu surece calisir.
@@ -280,6 +321,7 @@ namespace KanBagi.Illegal
                 if (SuspicionManager.Instance != null) SuspicionManager.Instance.Add(suspicionPerRound);
 
                 OnRoundPlayed?.Invoke(roundResult);
+                AnyRoundPlayed?.Invoke(roundResult);
             }
 
             int gamblers = SeatedCount;
@@ -291,6 +333,7 @@ namespace KanBagi.Illegal
             if (SuspicionManager.Instance != null) SuspicionManager.Instance.Add(gamblers * suspicionPerGambler);
 
             OnHouseRound?.Invoke(rake);
+            AnyHouseRound?.Invoke(rake);
         }
 
         private void SetPhase(RoulettePhase phase, int secondsLeft)
@@ -472,6 +515,8 @@ namespace KanBagi.Illegal
         {
             if (DayCycleManager.Instance != null)
                 DayCycleManager.Instance.OnShopClosed -= HandleShopClosed;
+            if (FurnitureManager.Instance != null)
+                FurnitureManager.Instance.OnLayoutChanged -= HandleLayoutChanged;
         }
     }
 }

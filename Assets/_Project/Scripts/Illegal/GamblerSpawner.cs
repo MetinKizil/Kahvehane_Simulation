@@ -1,20 +1,22 @@
 using System.Collections;
 using System.Collections.Generic;
 using KanBagi.Core;
+using KanBagi.Customers;
+using KanBagi.Furniture;
 using UnityEngine;
 
 namespace KanBagi.Illegal
 {
     /// <summary>
     /// Gece kumar masasina kumarbaz gonderir ve icerdekilerin kaydini tutar.
-    /// Kumar masasinin UZERINDE durur: masa upgrade alinana kadar pasif oldugu icin
-    /// kumarhane acilmadan hic kumarbaz gelmez - ekstra kod gerekmez.
+    /// Rulet masasinin (prefab, D6d-2) UZERINDE durur; masa ancak Kumar Odasi alininca bodruma konabildigi icin
+    /// kumarhane acilmadan hic kumarbaz gelmez. Masa hayaletken kapali kalir (IPlacementPausable).
     /// Sadece "ne zaman ve kac kisi" sorusundan sorumludur (SOLID).
     ///
     /// Kurulum: Kan Bagi > Kumarhaneyi Kur (prefab ve giris noktasini kendisi baglar).
     /// </summary>
     [RequireComponent(typeof(GamblingTable))]
-    public class GamblerSpawner : MonoBehaviour
+    public class GamblerSpawner : MonoBehaviour, IPlacementPausable
     {
         [Header("Kumarbaz")]
         [SerializeField] private GameObject gamblerPrefab;
@@ -33,6 +35,13 @@ namespace KanBagi.Illegal
         private void Awake()
         {
             table = GetComponent<GamblingTable>();
+
+            // Masa prefab olarak (ESYALAR sayfasindan) geldiginde sahnedeki kapiyi tutamaz: musterilerin giris noktasi kullanilir.
+            if (entryPoint == null)
+            {
+                CustomerSpawner customers = FindFirstObjectByType<CustomerSpawner>();
+                if (customers != null) entryPoint = customers.EntryPoint;
+            }
 
             if (gamblerPrefab == null || entryPoint == null)
             {
