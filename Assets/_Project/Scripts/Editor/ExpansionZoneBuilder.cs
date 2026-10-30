@@ -32,6 +32,7 @@ namespace KanBagi.EditorTools
         private const float WallThickness = 0.2f;
         private static readonly Color WallColor = new Color(0.85f, 0.8f, 0.7f);
         private static readonly Color FenceColor = new Color(0.45f, 0.3f, 0.18f);
+        private static readonly Color GrassColor = new Color(0.3f, 0.55f, 0.22f);
 
         private enum Side { Right, Left, Back }
 
@@ -66,11 +67,24 @@ namespace KanBagi.EditorTools
             }
         }
 
-        // ---- BOLGE TABLOSU (D6d'de kalan bolgeler buraya satir olarak eklenecek) ----
+        // ---- BOLGE TABLOSU (sira onemli: onkosul asset'i kendinden once olusmus olmali) ----
+        // Dukkan ici (sag + arka) istenen sirayla; ayni tarafta 2. asama 1.'den sonra. Bahce dukkan ici 4 genisletmeden sonra.
+        // Ust Kat (D6f) en sonda, Buyuk Bahce'den sonra.
         private static readonly Zone[] Zones =
         {
             new Zone("YanOda", "YanOdaUpgrade", Side.Right, 1, 5f, false,
                      600, 30, 3, new string[0], "Duvarlar/DuvarSag"),
+            new Zone("BuyukYanOda", "BuyukYanOdaUpgrade", Side.Right, 2, 5f, false,
+                     1400, 110, 3, new[] { "YanOdaUpgrade" }, "YanOda"),
+            new Zone("ArkaSalon", "ArkaSalonUpgrade", Side.Back, 1, 5f, false,
+                     900, 60, 3, new string[0], "Duvarlar/DuvarArka"),
+            new Zone("GenisArkaSalon", "GenisArkaSalonUpgrade", Side.Back, 2, 5f, false,
+                     1800, 150, 3, new[] { "ArkaSalonUpgrade" }, "ArkaSalon"),
+            new Zone("Bahce", "BahceUpgrade", Side.Left, 1, 5f, true,
+                     2000, 160, 4, new[] { "YanOdaUpgrade", "BuyukYanOdaUpgrade", "ArkaSalonUpgrade", "GenisArkaSalonUpgrade" },
+                     "Duvarlar/DuvarSol"),
+            new Zone("BuyukBahce", "BuyukBahceUpgrade", Side.Left, 2, 5f, true,
+                     2800, 200, 4, new[] { "BahceUpgrade" }, "Bahce"),
         };
 
         [MenuItem("Kan Bagi/Genisletme Bolgelerini Kur")]
@@ -207,7 +221,9 @@ namespace KanBagi.EditorTools
             floor.transform.SetParent(room.transform, false);
             floor.transform.position = new Vector3((minX + maxX) * 0.5f, y, (minZ + maxZ) * 0.5f);
             floor.transform.localScale = new Vector3((maxX - minX) / 10f, 1f, (maxZ - minZ) / 10f);
-            if (floorMaterial != null) floor.GetComponent<Renderer>().sharedMaterial = floorMaterial;
+            // Bahce cimen; kapali odalar ana salonun zeminiyle ayni.
+            Material zoneFloor = zone.IsFence ? TableGamesBuilder.GetOrCreateMaterial("BahceCimMat", GrassColor) : floorMaterial;
+            if (zoneFloor != null) floor.GetComponent<Renderer>().sharedMaterial = zoneFloor;
             floor.AddComponent<ShopFloor>();
 
             // Duvarlar/cit: ana salonun disindaki uc kenar. Koseler kalinlik kadar tasar (bosluk kalmasin).
@@ -242,6 +258,16 @@ namespace KanBagi.EditorTools
                 CreateWall(walls.transform, "DuvarOn", new Vector3(centerX, y, minZ - h), new Vector3(spanX, height, t), material);
                 CreateWall(walls.transform, "DuvarArka", new Vector3(centerX, y, maxZ + h), new Vector3(spanX, height, t), material);
                 CreateWall(walls.transform, OuterWallName, new Vector3(outerX, y, (minZ + maxZ) * 0.5f), new Vector3(t, height, maxZ - minZ + 2f * t), material);
+
+                // Ana salona bitisik citli bolge: ana yan duvar kalkinca binanin on/arka koselerinde 1 m'nin ustu acik
+                // kalir; bina yuksekliginde birer kose diregi bu boslugu kapatir.
+                if (zone.IsFence && zone.Stage == 1)
+                {
+                    float pillarX = zone.Side == Side.Right ? main.max.x + h : main.min.x - h;
+                    Material wallMaterial = TableGamesBuilder.GetOrCreateMaterial("DuvarMat", WallColor);
+                    CreateWall(walls.transform, "KoseOn", new Vector3(pillarX, y, main.min.z - h), new Vector3(t, WallHeight, t), wallMaterial);
+                    CreateWall(walls.transform, "KoseArka", new Vector3(pillarX, y, main.max.z + h), new Vector3(t, WallHeight, t), wallMaterial);
+                }
             }
 
             room.SetActive(false);
