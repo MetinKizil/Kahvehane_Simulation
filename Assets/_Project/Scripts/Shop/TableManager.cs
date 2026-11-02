@@ -41,19 +41,20 @@ namespace KanBagi.Shop
 
         public void Unregister(Table table) => tables.Remove(table);
 
-        /// <summary>Bos bir masa bulup musteriye ayirir. Bos masa yoksa false doner.</summary>
-        public bool TryReserveFreeTable(Customer customer, out Table reservedTable)
+        /// <summary>Bos bir masa bulup musteriye bir sandalye ayirir. Bos masa yoksa false doner.</summary>
+        public bool TryReserveFreeTable(Customer customer, out Table reservedTable, out int seat)
         {
             foreach (Table table in tables)
             {
                 if (!table.IsFree) continue;
-                if (!table.TryReserve(customer)) continue;
+                if (!table.TryReserve(customer, out seat)) continue;
 
                 reservedTable = table;
                 return true;
             }
 
             reservedTable = null;
+            seat = -1;
             return false;
         }
 

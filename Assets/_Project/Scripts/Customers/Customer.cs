@@ -58,6 +58,7 @@ namespace KanBagi.Customers
 
         private NavMeshAgent agent;
         private Table reservedTable;
+        private int reservedSeat = -1;
         private Vector3 exitPosition;
         private TeaGlass servedGlass;
         private CustomerProfile profile;
@@ -194,14 +195,14 @@ namespace KanBagi.Customers
         {
             // Bos masa yoksa musteri iceri girmeden geri doner.
             if (TableManager.Instance == null ||
-                !TableManager.Instance.TryReserveFreeTable(this, out reservedTable))
+                !TableManager.Instance.TryReserveFreeTable(this, out reservedTable, out reservedSeat))
             {
                 yield return LeaveRoutine();
                 yield break;
             }
 
             SetState(CustomerState.WalkingToTable);
-            yield return MoveToRoutine(reservedTable.SeatPosition);
+            yield return MoveToRoutine(reservedTable.GetSeatPosition(reservedSeat));
 
             SitDown();
             SetState(CustomerState.WaitingForOrder);
@@ -409,8 +410,9 @@ namespace KanBagi.Customers
         {
             if (reservedTable == null) return;
 
-            reservedTable.Release();
+            reservedTable.Release(this);
             reservedTable = null;
+            reservedSeat = -1;
         }
 
         private void SetState(CustomerState newState)

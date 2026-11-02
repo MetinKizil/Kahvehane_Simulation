@@ -427,12 +427,21 @@ namespace KanBagi.Furniture
             return ReservedArea.AnyOverlaps(new Bounds(center, extents * 2f));
         }
 
-        /// <summary>Masanin oturma noktasi zeminde mi ve bos mu? (Sandalye tarafi duvara/tezgaha dayanmasin.)</summary>
+        /// <summary>Masanin BUTUN oturma noktalari (D7a: 4 sandalye) zeminde ve bos mu? (Sandalye tarafi duvara/tezgaha dayanmasin.)</summary>
         private bool IsSeatClear()
         {
             if (table == null) return true;
 
-            Vector3 seat = table.SeatPosition;
+            foreach (Vector3 seat in table.SeatPositions)
+            {
+                if (!IsSeatPointClear(seat)) return false;
+            }
+
+            return true;
+        }
+
+        private bool IsSeatPointClear(Vector3 seat)
+        {
             Vector3 probeTop = new Vector3(seat.x, current.transform.position.y + 1f, seat.z);
 
             // Zemin var mi?
