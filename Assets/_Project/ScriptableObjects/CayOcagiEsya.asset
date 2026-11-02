@@ -12,8 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a464912ec4dabf48917a1902a6e0699, type: 3}
   m_Name: CayOcagiEsya
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.FurnitureData
-  displayName: "Çay Ocağı"
+  displayName: "\xC7ay Oca\u011F\u0131"
   category: 1
   prefab: {fileID: 6620527164531228407, guid: 0ad5954b956fdca4089e3836d9723c6b, type: 3}
-  price: 0
+  price: 150
+  priceStep: 0
+  requiredReputation: 0
+  requiredUpgrade: {fileID: 0}
   baseLimit: 1
+  zone: 0

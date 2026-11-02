@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: daebcd5ffb35a6b40bd3e2e39552ea09, type: 3}
+  m_Name: UstKatUpgrade
+  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.UpgradeData
+  upgradeName: "Üst Kat"
+  description: "Dükkanın üstüne kat: önde 10 m teras, arkada kapalı salon; L merdiven arka salondan çıkar. Masa sınırı +8, her makineden bir tane daha."
+  cost: 5000
+  requiredReputation: 250
+  requiredUpgrades:
+  - {fileID: 11400000, guid: 955e0879b074a6947aa546526ea4ee30, type: 2}
+  - {fileID: 11400000, guid: 0acda01275cd8394fb651c40b6866c28, type: 2}
+  limitBonuses:
+  - furniture: {fileID: 11400000, guid: 62a10f579da6f8744a1afc8ff09c5a3c, type: 2}
+    amount: 8
+  - furniture: {fileID: 11400000, guid: e34c43d71a59fd847be0427363ed021a, type: 2}
+    amount: 1
+  - furniture: {fileID: 11400000, guid: 4516118ba3fb3ea43abb2d48fcab7271, type: 2}
+    amount: 1
+  - furniture: {fileID: 11400000, guid: a2a97c550a14e4c46b2ddf1848a5c02a, type: 2}
+    amount: 1
+  - furniture: {fileID: 11400000, guid: 0d7caf462776bf64f8b8d4f224112de9, type: 2}
+    amount: 1

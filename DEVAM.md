@@ -639,7 +639,7 @@ En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 
 | D6d-2 ✅ | Rulet masası eşyası | EŞYALAR'dan **1. 800 TL, 2. 1000 TL**, en fazla 2, Kumar Odası gerekli, **sadece bodruma** (bodruma da başka eşya konamaz); polis ve günlük özet bütün masalara bakar; sahnedeki sabit masa kalkar. |
 | D6e ✅ | Kalan 5 bölge | Büyük Yan Oda, Arka Salon, Geniş Arka Salon, Bahçe, Büyük Bahçe — `ExpansionZoneBuilder.Zones` tablosuna satır. |
 | D6f ✅ | Köşe Salon + Köşe Bahçe | L şeklindeki dükkanın sağ arka köşesi (Köşe Salon 10×10, 2400 TL / itibar 180, masa +8) ve bahçenin arkası (Köşe Bahçe 10×10, 3200 / 220, masa +8). |
-| D6g | Üst Kat | **En son** (Köşe Salon + Köşe Bahçe'den sonra), 5000 TL / itibar 250, masa +4, her makine +1; merdiven, üst zemin, tavan/ışık. **Dükkanın en büyük boyutu burada kesinleşir.** |
+| D6g ✅ | Üst Kat | Köşe Salon + Köşe Bahçe'den sonra, 5000 TL / itibar 250; 20×20 (önde 10 m teras, arkada kapalı salon), L merdiven, zemin kat tavanı + lambalar; masa +8, her makine +1 (çay ocağı EŞYALAR'a girdi). **Dükkanın en büyük boyutu kesinleşti.** |
 | D7 | Çok kişilik masalar + grup müşteriler | 2'lik/4'lük masalar, 2–4 kişilik gruplar; birlikte gelir/gider, her kişi kendi siparişi. |
 | D8 | Masa oyunları masa bazında | Okey/iskambil/domino masaya konan eşya; 4 kişilik okey grubu okeyli masayı ister (10c-2'deki dükkan geneli etki buna dönüşür). |
 | D9 | Kişiselleştirme / cafe | Mobilya kataloğu, duvar kâğıdı, zemin. (Dükkan boyutunu etkilemediği için mahalleden sonraya da kayabilir — kullanıcıya sorulacak.) |
@@ -914,6 +914,25 @@ Hepsi alınınca masa sınırı 4 → 28.
 
 **Test:** önkoşul etiketleri, köşe salonda 4 duvarın kalkıp tek salon olması, köşe bahçede çitlerin kalkması, masa + müşteri, sınır 40, kayıttan açık gelme. Kullanıcı "çalışıyor" dedi.
 
+### Adım D6g — Üst Kat ✅ (D6 bitti: dükkanın en büyük boyutu kesinleşti)
+**Oyuncu ne görür:** GELİŞTİRME'de **"Üst Kat — 5000 TL"** (itibar 250, önce **Köşe Salon + Köşe Bahçe**). Almadan önce merdivenin yerine eşya konamaz. Alınınca:
+- **L merdiven** (arka salonlar): bahçeye bakan sol duvar boyunca 6 basamak arkaya → sol arka köşede sahanlık → Geniş Arka Salon'un arka duvarı boyunca 5 basamak sağa → üst kat (25 cm basamak, 1.5 m genişlik).
+- **Zemin katın üstü tavanla kapanır**, tavanda 16 sarı lamba.
+- **Üst kat 20×20 m** (dükkanın kapalı kısmının tamamı): **önde (kapı tarafından) 10 m teras** (çatısız, 1 m ahşap korkuluk), **arkada 10 m kapalı salon** (3 m duvar, çatı, 8 lamba), aralarında ortada 2 m kapılı ara duvar; merdiven boşluğu korkuluklu.
+- Üst kata masa/makine konur, müşteriler çıkıp oturur. **Masa +8** (bütün genişletmelerle sınır **48**), **her makine +1** (çay ocağı, oralet, kahve, sahlep → ikişer).
+- **Çay Ocağı EŞYALAR'a girdi (150 TL)** — ikinci ocak Üst Kat'la alınabiliyor.
+
+**Kullanıcı kararları:** üst kat dükkanın tamamı; yarısı kapalı yarısı teras (kapı tarafından 10 m teras); her makine +1 (çay ocağı dahil); L merdiven bahçeye bitişik duvardan Geniş Arka Salon'un duvarına döner. (Masa +8 ve çay ocağı 150 TL Claude'un önerisi, kullanıcı onayladı.)
+
+**Parçalar:**
+- `Kan Bagi > Ust Kati Kur` (`UpperFloorBuilder`, tekrar çalıştırılabilir): `Genisletmeler/UstKat` (**kapalı**): `Doseme` (5 kutu, L boşluk hariç, `ShopFloor`, y 3), `Merdiven` (basamak kutuları + sahanlık), `BoslukKorkulugu`, `TerasKorkulugu`, `Duvarlar` (sol/sağ/arka + kapılı ara duvar, Not Walkable), `Cati`, `Lambalar` (16 zemin + 8 üst). `Genisletmeler/UstKatMerdivenAlani` (her zaman açık): 2 `ReservedArea` (kol 1 + sahanlık, kol 2). `UstKatUpgrade` (5000/250, önkoşul KoseSalon + KoseBahce; bonus masa +8, CayOcagiEsya/OraletSemaveriEsya/KahveMakinesiEsya/SahlepMakinesiEsya +1), `Managers`'a açıcı. `CayOcagiEsya` fiyatı 150 + EsyaKatalogu.
+- Döşeme, çatı ve merdiven **işaretsiz** (D6c dersi); duvarlar ve korkuluklar Not Walkable.
+- Ölçüler: kapalı alan x −5…15, z −5…15; teras z −5…5, kapalı üst salon z 5…15; merdiven kol 1 x −5…−3.5, z 11.4…15 (sahanlık z 13.5…15), kol 2 x −3.5…−1.75, z 13.5…15.
+
+**Dükkanın son boyutu (mahalle bunun etrafına kurulacak):** zemin x −15…15 × z −5…15 (30×20 m: kapalı 20×20 + bahçe 10×20), **üst kat 20×20 (y 3…6)**, **bodrum 10×10 (y −3)**; giriş kapısı ön cephe x 0, sokak z < −5.
+
+**Test:** önkoşul, merdiven (çıkış/iniş, sahanlık dönüşü), zemin kat ışığı, teras korkuluğu, ara duvar kapısı, üst katta masa + müşteri, sınırlar (masa 48, makineler /2), kayıttan açık gelme. Kullanıcı "çalışıyor" dedi.
+
 **Değişecek mevcut parçalar (bilerek):** sabit eşyalar + `UpgradeUnlocker`, editörde NavMesh bake (`NavMesh'i Yeniden Bake Et`), `Icecek Istasyonlarini Kur` / `Masa Oyunlarini Kur` builder'ları, tek kişilik `Table`, tek eşya tutan eller, dükkan geneli masa oyunları. **Değişmeyenler:** müşteri profilleri, sipariş/ikinci tur, menü, stok/kurye, ekonomi, itibar, gün döngüsü, kayıt altyapısı, kumar/mafya/polis, fısıltılar, hikaye, co-op etkileşim katmanı.
 
 ---
@@ -925,7 +944,7 @@ Hepsi alınınca masa sınırı 4 → 28.
 | `Zemin` (Plane) | (0,0,0) | **NavMeshSurface** — `Kan Bagi > NavMesh'i Yeniden Bake Et` ile bake edilir (elle Bake'e basma: kilitli eşyaların deliği açılmaz). Tüm eşyalarda "Not Walkable" `NavMeshModifier` var |
 | `Player` (Empty) | (0, 1.1, 0) | CharacterController, PlayerController, PlayerInteractor, PlayerHands, PlayerLock, **FurniturePlacer** |
 | └ `Main Camera` | (0, 0.6, 0) | — (child) |
-| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, PoliceManager, **BalanceLogger**, **9 × UpgradeUnlocker** (Kumar Odası→Bodrum/KumarOdasi; **8 genişletme (D6b/D6e/D6f): YanOda, BuyukYanOda, ArkaSalon, GenisArkaSalon, Bahce, BuyukBahce, KoseSalon, KoseBahce → Genisletmeler/<Ad>, hideTargets ilgili duvar** — masa/parça açıcıları D2'de, makine açıcıları D5b'de kalktı), **2 × TableGameBoost** (İskambil 0.3, Domino 0.2), **FurnitureManager, NavMeshRuntimeBaker, UpgradeFurnitureGrant** (YeniMasa → masa (0, 0.4, −2)) |
+| `Managers` (Empty) | — | EconomyManager, ReputationManager, TableManager, InventoryManager, PurchaseManager, DeliveryManager, UpgradeManager, MenuManager, CustomerModifiers, StationSpeedBoost, CustomerPatienceBoost, DayCycleManager, DailyStatsManager, SaveManager, PropertyManager, SuspicionManager, MafiaManager, PoliceManager, **BalanceLogger**, **10 × UpgradeUnlocker** (Kumar Odası→Bodrum/KumarOdasi; **Üst Kat→Genisletmeler/UstKat (D6g)**; **8 genişletme (D6b/D6e/D6f): YanOda, BuyukYanOda, ArkaSalon, GenisArkaSalon, Bahce, BuyukBahce, KoseSalon, KoseBahce → Genisletmeler/<Ad>, hideTargets ilgili duvar** — masa/parça açıcıları D2'de, makine açıcıları D5b'de kalktı), **2 × TableGameBoost** (İskambil 0.3, Domino 0.2), **FurnitureManager, NavMeshRuntimeBaker, UpgradeFurnitureGrant** (YeniMasa → masa (0, 0.4, −2)) |
 | `EventSystem` | — | **Input System UI Input Module** (butonlar bunsuz çalışmaz) |
 | `Canvas` | — | InteractionPromptUI, HeldItemUI, ProgressBarUI, **ComputerUI** |
 | ├ `MoneyText` | sol üst (Pos Y -20) | MoneyUI |
@@ -965,7 +984,7 @@ Hepsi alınınca masa sınırı 4 → 28.
 | `MafyaNoktasi` (Empty) | (1.5, 0.9, -4) | — (tahsildar burada belirir, y=0.9 kapsül yere bassın diye) |
 | `PolisNoktasi` (Empty) | (-1.5, 0.9, -4) | — (memur burada belirir) |
 | `Duvarlar` (Empty, NavMeshModifier "Not Walkable") | zemin kenarları | **D6a:** `DuvarSol` / `DuvarSag` / `DuvarArka` / `DuvarOn` (`KapiSolu`, `KapiSagi`, `KapiUstu`) — kapı x = 0, 2 m × 2.4 m. Elle kurulmaz: `Kan Bagi > Dukkan Duvarlarini Kur` |
-| `Genisletmeler` (Empty) | — | **D6b:** genişletme odaları, **başta kapalı**, `UpgradeUnlocker` açar. `YanOda` (x 5…10), **D6e:** `BuyukYanOda` (x 10…15), `ArkaSalon` (z 5…10), `GenisArkaSalon` (z 10…15), `Bahce` (x −10…−5, çit + çim + köşe direkleri), `BuyukBahce` (x −15…−10), **D6f:** `KoseSalon` (x 5…15, z 5…15), `KoseBahce` (x −15…−5, z 5…15, çit + çim). Her biri `Zemin` Plane + `ShopFloor`, `Duvarlar`/`Cit` (dış duvar `DuvarDis`). Elle kurulmaz: `Kan Bagi > Genisletme Bolgelerini Kur` |
+| `Genisletmeler` (Empty) | — | **D6b:** genişletme odaları, **başta kapalı**, `UpgradeUnlocker` açar. `YanOda` (x 5…10), **D6e:** `BuyukYanOda` (x 10…15), `ArkaSalon` (z 5…10), `GenisArkaSalon` (z 10…15), `Bahce` (x −10…−5, çit + çim + köşe direkleri), `BuyukBahce` (x −15…−10), **D6f:** `KoseSalon` (x 5…15, z 5…15), `KoseBahce` (x −15…−5, z 5…15, çit + çim), **D6g:** `UstKat` (kapalı; döşeme y 3, L merdiven, teras + kapalı salon, lambalar) ve `UstKatMerdivenAlani` (ReservedArea, hep açık). Her biri `Zemin` Plane + `ShopFloor`, `Duvarlar`/`Cit` (dış duvar `DuvarDis`). Elle kurulmaz: `Kan Bagi > Genisletme Bolgelerini Kur` |
 
 **Prefab'lar:**
 - `CayBardagi` (Cylinder 0.08/0.05/0.08 + child `Sivi` + HoldableItem + TeaGlass)
@@ -995,7 +1014,7 @@ Hepsi alınınca masa sınırı 4 → 28.
 | `SahlepTozu` | Consumable | 0 | 5 | 0 |
 
 - `MalzemeKatalogu` (ShopCatalog) — CayYapragi ×10 (20 TL), KahveCekirdegi ×10 (40 TL), OraletTozu ×10 (30 TL), **SahlepTozu ×10 (50 TL)** — son üçü `requiresStation` (makinesi dükkanda değilse gizli, D5b)
-- `GelistirmeKatalogu` (UpgradeCatalog) — ~~YeniMasaUpgrade~~ (D4'te çıktı; masa EŞYALAR'dan), ~~KahveMakinesiUpgrade, OraletUpgrade, SahlepMakinesiUpgrade~~ (D5b'de çıktı; makineler EŞYALAR'dan, asset'ler duruyor), SanayiOcagiUpgrade (250), OkeyTakimiUpgrade (150), GizliKumarhaneUpgrade (**görünen ad "Kumar Odası" — D6c**, 1500 + **itibar 180**), **IskambilUpgrade (200 + itibar 40), DominoUpgrade (350 + itibar 100)**, **YanOdaUpgrade (600 + itibar 30, masa +3 — D6b)**, **D6e: BuyukYanOdaUpgrade (1400/110), ArkaSalonUpgrade (900/60), GenisArkaSalonUpgrade (1800/150), BahceUpgrade (2000/160), BuyukBahceUpgrade (2800/200)**, **D6f: KoseSalonUpgrade (2400/180, masa +8), KoseBahceUpgrade (3200/220, masa +8)**
+- `GelistirmeKatalogu` (UpgradeCatalog) — ~~YeniMasaUpgrade~~ (D4'te çıktı; masa EŞYALAR'dan), ~~KahveMakinesiUpgrade, OraletUpgrade, SahlepMakinesiUpgrade~~ (D5b'de çıktı; makineler EŞYALAR'dan, asset'ler duruyor), SanayiOcagiUpgrade (250), OkeyTakimiUpgrade (150), GizliKumarhaneUpgrade (**görünen ad "Kumar Odası" — D6c**, 1500 + **itibar 180**), **IskambilUpgrade (200 + itibar 40), DominoUpgrade (350 + itibar 100)**, **YanOdaUpgrade (600 + itibar 30, masa +3 — D6b)**, **D6e: BuyukYanOdaUpgrade (1400/110), ArkaSalonUpgrade (900/60), GenisArkaSalonUpgrade (1800/150), BahceUpgrade (2000/160), BuyukBahceUpgrade (2800/200)**, **D6f: KoseSalonUpgrade (2400/180, masa +8), KoseBahceUpgrade (3200/220, masa +8)**, **D6g: UstKatUpgrade (5000/250, masa +8, her makine +1)**
 - `UrunVeritabani` (ItemDatabase) — 8 ItemData'nın tamamı (kayıt sistemi için, **yeni ürün eklenince buraya da eklenmeli** — elle; `Icecek Istasyonlarini Kur` D5b'de silindi)
 - `BakkalMulk` (800 TL / 60 / itibar **60**), `TerziMulk` (1200 / 90 / **140**), `KirathaneMulk` (2000 / 160 / **240**) — 9a-3'te güncellendi
 - `EmlakKatalogu` (PropertyCatalog) — üç mülkün tamamı (**kayıt eşlemesi buradan yapılır, boş bırakılamaz**)
@@ -1003,7 +1022,7 @@ Hepsi alınınca masa sınırı 4 → 28.
 - `MahalleFisiltilari` (WhisperData) — fısıltı metinleri, kumarhane upgrade referansı, itibar barajları (60/140/240)
 - `ArayuzMetinleri` (TextPreset) — sahne/prefab metin alanlarının yeni değerleri; `Kan Bagi > Metinleri Uygula` yazar
 - `MusteriProfilleri/` (CustomerProfile) — `EmekliDayi`, `Ogrenci`, `Esnaf`, `Kabadayi` (değerler bölüm 6.8, 10c-1)
-- `MasaEsya` (FurnitureData: 100 TL, **baseLimit 4**), `CayOcagiEsya` / `LavaboEsya` / `BardakRafiEsya` / `DepoEsya` / `YonetimPCEsya` (Station, satılmıyor, baseLimit 1), **`OraletSemaveriEsya` (100 TL), `KahveMakinesiEsya` (200 TL), `SahlepMakinesiEsya` (300 TL + itibar 80)** (Station, baseLimit 1, D5b), **`RuletMasasiEsya` (800 TL + 200/kopya, sınır 2, Kumar Odası gerekli, zone GamblingRoom — D6d-2)**, `EsyaVeritabani` (FurnitureDatabase), `VarsayilanDuzen` (FurnitureLayout: Masa1/Masa2 yerleri), **`EsyaKatalogu`** (FurnitureCatalog: PC'nin EŞYALAR sekmesi — Masa, Oralet Semaveri, Kahve Makinesi, Sahlep Makinesi, Rulet Masası)
+- `MasaEsya` (FurnitureData: 100 TL, **baseLimit 4**), `CayOcagiEsya` (**D6g: 150 TL, EŞYALAR'da**) / `LavaboEsya` / `BardakRafiEsya` / `DepoEsya` / `YonetimPCEsya` (Station, satılmıyor, baseLimit 1), **`OraletSemaveriEsya` (100 TL), `KahveMakinesiEsya` (200 TL), `SahlepMakinesiEsya` (300 TL + itibar 80)** (Station, baseLimit 1, D5b), **`RuletMasasiEsya` (800 TL + 200/kopya, sınır 2, Kumar Odası gerekli, zone GamblingRoom — D6d-2)**, `EsyaVeritabani` (FurnitureDatabase), `VarsayilanDuzen` (FurnitureLayout: Masa1/Masa2 yerleri), **`EsyaKatalogu`** (FurnitureCatalog: PC'nin EŞYALAR sekmesi — Masa, Oralet Semaveri, Kahve Makinesi, Sahlep Makinesi, Rulet Masası)
 
 > ✅ **Sahne GERÇEK değerlerde** (Adım 9a-1). Hızlı test için `Kan Bagi > Denge > Test Degerlerini Uygula` (50.000 TL, itibar 300, 1 dk gün), geri dönmek için `Gercek Degerleri Uygula`. Mod değiştirdikten sonra sahneyi kaydet; sıfırdan test için `Kan Bagi > Kaydi Sil`.
 
@@ -1037,7 +1056,9 @@ Hepsi alınınca masa sınırı 4 → 28.
 
 **Adım D6e bitti ve test edildi.** Büyük Yan Oda, Arka Salon, Geniş Arka Salon, Bahçe (çimenli, çitli) ve Büyük Bahçe GELİŞTİRME'den alınıyor; önkoşullar ve masa sınırı (24'e kadar) çalışıyor.
 
-**Adım D6f bitti ve test edildi.** Köşe Salon (sağ arka köşe, dükkan 20×20 tek salon) ve Köşe Bahçe (bahçe arkaya büyür) GELİŞTİRME'den alınıyor; masa sınırı 40'a kadar. Test parası 50.000 TL. **Sıradaki iş: D6g — Üst Kat** (Köşe Salon + Köşe Bahçe'den sonra, 5000 TL \/ itibar 250, masa +4 ve her makine +1; merdiven, üst zemin, tavan\/ışık; plan ayrıca onaylanacak).
+**Adım D6f bitti ve test edildi.** Köşe Salon (sağ arka köşe, dükkan 20×20 tek salon) ve Köşe Bahçe (bahçe arkaya büyür) GELİŞTİRME'den alınıyor; masa sınırı 40'a kadar. Test parası 50.000 TL.
+
+**Adım D6g bitti ve test edildi — D6 (duvarlar + genişletmeler + kumar odası + üst kat) TAMAM.** Üst Kat: L merdiven, önde teras, arkada kapalı salon, zemin kat tavanı ve lambaları; masa sınırı 48, her makineden 2. **Sıradaki iş: D7 — Çok kişilik masalar + grup müşteriler** (plan ayrıca onaylanacak).
 
 **Adım 10c-2 bitti ve test edildi.** İskambil (200 TL, itibar 40, +%30) ve Domino (350 TL, itibar 100, +%20) masalarda beliriyor; müşteriler içtikten sonra oyun meraklarına göre bir tur daha sipariş veriyor, ciro iki satışı da sayıyor, ikinci turda bekletmenin cezası yok.
 
@@ -1234,7 +1255,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**10a-2a**~~ ✅ | Mahalle fısıltıları (olaylara eşlik eden ton satırı + ilk sabah yönlendirmesi) — **bitti** | Ucuz, kimliği oyunun içine taşır |
 | ~~**10a-2b**~~ ✅ | Mevcut metinlerin tonu (sadece tablodakiler), `ArayuzMetinleri` + `Metinleri Uygula` — **bitti** | Fısıltılarla aynı tonu mevcut arayüze yayar |
 | ~~**10c**~~ ✅ | Müşteri ve stok çeşitliliği — **bitti** (10c-1 profiller, 10c-2 masa oyunları, 10c-3 sahlep; 10c-4 bahçe → D bölümüne taşındı) | Faz 2'den kalan |
-| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi, D2 ✅ eşya altyapısı, D3 ✅ yerleştirme modu, D4 ✅ eşya satın alma, D5a ✅ temel eşyalar taşınabilir, D5b ✅ makineler kataloğa, D6a ✅ duvarlar + kapı, D6b ✅ genişletme altyapısı + Yan Oda, D6c ✅ bodrum + gizli kapak, D6d-1 ✅ rulet oyunu, D6d-2 ✅ rulet masası eşyası, D6e ✅ kalan 5 bölge, D6f ✅ köşe salon + köşe bahçe; sıradaki D6g Üst Kat): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
+| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi, D2 ✅ eşya altyapısı, D3 ✅ yerleştirme modu, D4 ✅ eşya satın alma, D5a ✅ temel eşyalar taşınabilir, D5b ✅ makineler kataloğa, D6a ✅ duvarlar + kapı, D6b ✅ genişletme altyapısı + Yan Oda, D6c ✅ bodrum + gizli kapak, D6d-1 ✅ rulet oyunu, D6d-2 ✅ rulet masası eşyası, D6e ✅ kalan 5 bölge, D6f ✅ köşe salon + köşe bahçe, D6g ✅ üst kat; sıradaki D7 grup müşteriler): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **bahçenin sokağa kapısı (D6e kararı)**, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
 | **11** | Görsel cila, ses, ana menü, kayıt slotları | **En sona**: mekanikler değişince geometri/model yeniden yapılır |
@@ -1259,7 +1280,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum (2026-10-17): GitHub bağlantısı kuruldu, tüm commit'ler push edildi** (ilk push: 17 commit, ~2.7 MB). Yerel `main` = `origin/main`.
 ```
-(yeni)   Adim D6f: kose salon ve kose bahce
+(yeni)   Adim D6g: ust kat
+a5c58ee  Adim D6f: kose salon ve kose bahce
 40f9671  Adim D6e: kalan genisletme bolgeleri ve bahce
 a912f7e  Adim D6d-2: rulet masasi esyasi
 2444d20  Adim D6d-1: rulet oyunu
@@ -1306,7 +1328,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (D6g — Üst Kat: Köşe Salon + Köşe Bahçe'den sonra, 5000 TL / itibar 250, masa +4 ve her makine +1; merdiven, üst zemin, tavan/ışık), Büyük Bahçe; fiyat/önkoşul tablosu bölüm 6.9 D6b, ExpansionZoneBuilder.Zones tablosuna satır) planını anlat, onay al**, sonra kod yaz. Planda **oyuncunun ne göreceğini** açıkça yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
+3. **Sıradaki adımın (D7 — Çok kişilik masalar + grup müşteriler: 2'lik/4'lük masalar, 2–4 kişilik gruplar; kararlar bölüm 6.9), Büyük Bahçe; fiyat/önkoşul tablosu bölüm 6.9 D6b, ExpansionZoneBuilder.Zones tablosuna satır) planını anlat, onay al**, sonra kod yaz. Planda **oyuncunun ne göreceğini** açıkça yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.
