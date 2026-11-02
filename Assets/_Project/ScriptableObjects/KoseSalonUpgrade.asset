@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: daebcd5ffb35a6b40bd3e2e39552ea09, type: 3}
+  m_Name: KoseSalonUpgrade
+  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.UpgradeData
+  upgradeName: "Köşe Salon"
+  description: "Yan oda ile arka salon arasındaki köşe açılır; dükkan tek büyük salon olur (10×10 m). Masa sınırı +8."
+  cost: 2400
+  requiredReputation: 180
+  requiredUpgrades:
+  - {fileID: 11400000, guid: 7d6152bf0a033224986d696a401681de, type: 2}
+  - {fileID: 11400000, guid: 52f42c5eedc584d47a659b215fb71095, type: 2}
+  limitBonuses:
+  - furniture: {fileID: 11400000, guid: 62a10f579da6f8744a1afc8ff09c5a3c, type: 2}
+    amount: 8

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using KanBagi.Core;
 using KanBagi.Data;
@@ -34,7 +35,8 @@ namespace KanBagi.EditorTools
         private static readonly Color FenceColor = new Color(0.45f, 0.3f, 0.18f);
         private static readonly Color GrassColor = new Color(0.3f, 0.55f, 0.22f);
 
-        private enum Side { Right, Left, Back }
+        // BackRight/BackLeft: ana salonun arka koselerindeki kare bolge (D6f): x yaninda, z arkasinda Depth kadar.
+        private enum Side { Right, Left, Back, BackRight, BackLeft }
 
         private readonly struct Zone
         {
@@ -48,7 +50,7 @@ namespace KanBagi.EditorTools
             public readonly int Reputation;
             public readonly int TableBonus;
             public readonly string[] Prerequisites;  // UpgradeData asset adlari
-            public readonly string HiddenWall;       // Alininca kapanan duvar ("Duvarlar/DuvarSag" veya "<onceki bolge>")
+            public readonly string HiddenWall;       // Alininca kapanan duvar(lar), ";" ile: "Duvarlar/DuvarSag", "<bolge>" (dis duvari) veya "<bolge>/<duvar>"
 
             public Zone(string name, string upgradeAsset, Side side, int stage, float depth, bool isFence,
                         int cost, int reputation, int tableBonus, string[] prerequisites, string hiddenWall)
@@ -69,7 +71,7 @@ namespace KanBagi.EditorTools
 
         // ---- BOLGE TABLOSU (sira onemli: onkosul asset'i kendinden once olusmus olmali) ----
         // Dukkan ici (sag + arka) istenen sirayla; ayni tarafta 2. asama 1.'den sonra. Bahce dukkan ici 4 genisletmeden sonra.
-        // Ust Kat (D6f) en sonda, Buyuk Bahce'den sonra.
+        // Kose Salon (Buyuk Yan Oda + Genis Arka Salon) ve Kose Bahce (Buyuk Bahce) D6f; Ust Kat (D6g) ikisinden sonra.
         private static readonly Zone[] Zones =
         {
             new Zone("YanOda", "YanOdaUpgrade", Side.Right, 1, 5f, false,
@@ -85,6 +87,11 @@ namespace KanBagi.EditorTools
                      "Duvarlar/DuvarSol"),
             new Zone("BuyukBahce", "BuyukBahceUpgrade", Side.Left, 2, 5f, true,
                      2800, 200, 4, new[] { "BahceUpgrade" }, "Bahce"),
+            new Zone("KoseSalon", "KoseSalonUpgrade", Side.BackRight, 1, 10f, false,
+                     2400, 180, 8, new[] { "BuyukYanOdaUpgrade", "GenisArkaSalonUpgrade" },
+                     "YanOda/DuvarArka;BuyukYanOda/DuvarArka;ArkaSalon/DuvarSag;GenisArkaSalon/DuvarSag"),
+            new Zone("KoseBahce", "KoseBahceUpgrade", Side.BackLeft, 1, 10f, true,
+                     3200, 220, 8, new[] { "BuyukBahceUpgrade" }, "Bahce/DuvarArka;BuyukBahce/DuvarArka"),
         };
 
         [MenuItem("Kan Bagi/Genisletme Bolgelerini Kur")]
@@ -130,14 +137,15 @@ namespace KanBagi.EditorTools
 
                 GameObject room = BuildRoom(root.transform, zone, mainFloor, floorMaterial);
 
-                GameObject hidden = FindHiddenWall(root.transform, zone.HiddenWall);
-                if (hidden == null) report.AppendLine($"  UYARI: kapanacak duvar '{zone.HiddenWall}' bulunamadi.");
+                var missing = new List<string>();
+                List<GameObject> hidden = FindHiddenWalls(root.transform, zone.HiddenWall, missing);
+                foreach (string path in missing) report.AppendLine($"  UYARI: kapanacak duvar '{path}' bulunamadi.");
 
                 WireUnlocker(upgradeManager.gameObject, upgrade, room, hidden);
                 bool addedToCatalog = TableGamesBuilder.AddToCatalog(upgradeManager, upgrade);
 
                 report.AppendLine($"  {zone.Name}: {upgrade.Cost} TL, itibar {upgrade.RequiredReputation}, masa +{zone.TableBonus}, " +
-                                  $"kapanan duvar: {(hidden != null ? hidden.name : "-")}, katalog: {(addedToCatalog ? "eklendi" : "zaten vardi")}");
+                                  $"kapanan duvar: {hidden.Count}, katalog: {(addedToCatalog ? "eklendi" : "zaten vardi")}");
             }
 
             AssetDatabase.SaveAssets();
@@ -208,6 +216,10 @@ namespace KanBagi.EditorTools
                 case Side.Right: minX = main.max.x + offset; maxX = minX + zone.Depth; break;
                 case Side.Left: maxX = main.min.x - offset; minX = maxX - zone.Depth; break;
                 case Side.Back: minZ = main.max.z + offset; maxZ = minZ + zone.Depth; break;
+                case Side.BackRight:
+                    minX = main.max.x; maxX = minX + zone.Depth; minZ = main.max.z; maxZ = minZ + zone.Depth; break;
+                case Side.BackLeft:
+                    maxX = main.min.x; minX = maxX - zone.Depth; minZ = main.max.z; maxZ = minZ + zone.Depth; break;
             }
 
             var room = new GameObject(zone.Name);
@@ -241,7 +253,21 @@ namespace KanBagi.EditorTools
             float t = WallThickness;
             float h = t * 0.5f;
 
-            if (zone.Side == Side.Back)
+            if (zone.Side == Side.BackRight || zone.Side == Side.BackLeft)
+            {
+                // Kose: sadece dis iki kenar (yan + arka). Ic kenarlardaki komsu duvarlar hideTargets ile kalkar
+                // (salon) ya da bina duvari olarak kalir (bahce kosesinin arka salona bakan tarafi).
+                bool right = zone.Side == Side.BackRight;
+                float sideX = right ? maxX + h : minX - h;
+                float backMinX = right ? minX : minX - t;
+                float backMaxX = right ? maxX + t : maxX;
+
+                CreateWall(walls.transform, right ? "DuvarSag" : "DuvarSol", new Vector3(sideX, y, (minZ + maxZ + t) * 0.5f),
+                           new Vector3(t, height, maxZ - minZ + t), material);
+                CreateWall(walls.transform, OuterWallName, new Vector3((backMinX + backMaxX) * 0.5f, y, maxZ + h),
+                           new Vector3(backMaxX - backMinX, height, t), material);
+            }
+            else if (zone.Side == Side.Back)
             {
                 CreateWall(walls.transform, "DuvarSol", new Vector3(minX - h, y, (minZ + maxZ) * 0.5f), new Vector3(t, height, maxZ - minZ), material);
                 CreateWall(walls.transform, "DuvarSag", new Vector3(maxX + h, y, (minZ + maxZ) * 0.5f), new Vector3(t, height, maxZ - minZ), material);
@@ -274,7 +300,26 @@ namespace KanBagi.EditorTools
             return room;
         }
 
-        /// <summary>"Duvarlar/DuvarSag" ana duvarlardan; "YanOda" gibi bir bolge adi o bolgenin dis duvari.</summary>
+        /// <summary>";" ile ayrilmis her yol icin duvari bulur; bulunamayanlar 'missing'e yazilir.</summary>
+        private static List<GameObject> FindHiddenWalls(Transform root, string paths, List<string> missing)
+        {
+            var walls = new List<GameObject>();
+            if (string.IsNullOrEmpty(paths)) return walls;
+
+            foreach (string path in paths.Split(';'))
+            {
+                GameObject wall = FindHiddenWall(root, path.Trim());
+                if (wall != null) walls.Add(wall);
+                else missing.Add(path);
+            }
+
+            return walls;
+        }
+
+        /// <summary>
+        /// "Duvarlar/DuvarSag": ana duvarlardan. "YanOda": o bolgenin dis duvari (DuvarDis).
+        /// "YanOda/DuvarArka": o bolgenin adi verilen duvari (kose bolgeleri komsularin birden fazla duvarini kaldirir).
+        /// </summary>
         private static GameObject FindHiddenWall(Transform root, string path)
         {
             if (string.IsNullOrEmpty(path)) return null;
@@ -286,19 +331,22 @@ namespace KanBagi.EditorTools
                 return wall != null ? wall.gameObject : null;
             }
 
-            Transform zone = root.Find(path);
+            string[] parts = path.Split('/');
+            string wallName = parts.Length > 1 ? parts[1] : OuterWallName;
+
+            Transform zone = root.Find(parts[0]);
             if (zone == null) return null;
 
             foreach (Transform child in zone.GetComponentsInChildren<Transform>(true))
             {
-                if (child.name == OuterWallName) return child.gameObject;
+                if (child.name == wallName) return child.gameObject;
             }
 
             return null;
         }
 
         /// <summary>Ayni upgrade'e bagli acici varsa guncellenir; yoksa eklenir.</summary>
-        private static void WireUnlocker(GameObject managers, UpgradeData upgrade, GameObject room, GameObject hiddenWall)
+        private static void WireUnlocker(GameObject managers, UpgradeData upgrade, GameObject room, List<GameObject> hiddenWalls)
         {
             UpgradeUnlocker unlocker = TableGamesBuilder.FindByUpgrade<UpgradeUnlocker>(managers, upgrade);
             if (unlocker == null) unlocker = Undo.AddComponent<UpgradeUnlocker>(managers);
@@ -311,8 +359,9 @@ namespace KanBagi.EditorTools
             targets.GetArrayElementAtIndex(0).objectReferenceValue = room;
 
             SerializedProperty hide = serialized.FindProperty("hideTargets");
-            hide.arraySize = hiddenWall != null ? 1 : 0;
-            if (hiddenWall != null) hide.GetArrayElementAtIndex(0).objectReferenceValue = hiddenWall;
+            hide.arraySize = hiddenWalls.Count;
+            for (int i = 0; i < hiddenWalls.Count; i++)
+                hide.GetArrayElementAtIndex(i).objectReferenceValue = hiddenWalls[i];
 
             serialized.ApplyModifiedProperties();
         }

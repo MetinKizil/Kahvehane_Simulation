@@ -12,8 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: daebcd5ffb35a6b40bd3e2e39552ea09, type: 3}
   m_Name: BuyukBahceUpgrade
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.UpgradeData
-  upgradeName: "Büyük Bahçe"
-  description: "Bahçenin dış çiti kalkar, bahçe 10 m'ye genişler. Masa sınırı +4."
+  upgradeName: "B\xFCy\xFCk Bah\xE7e"
+  description: "Bah\xE7enin d\u0131\u015F \xE7iti kalkar, bah\xE7e 10 m'ye geni\u015Fler.
+    Masa s\u0131n\u0131r\u0131 +4."
   cost: 2800
   requiredReputation: 200
   requiredUpgrades:

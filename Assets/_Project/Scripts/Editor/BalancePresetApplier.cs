@@ -55,7 +55,7 @@ namespace KanBagi.EditorTools
         // ---- DENGE TABLOSU (bilesen, alan, GERCEK, TEST) ----
         private static readonly Setting[] Settings =
         {
-            new Setting(typeof(EconomyManager), "startingMoney", 250f, 10000f),
+            new Setting(typeof(EconomyManager), "startingMoney", 250f, 50000f),
             new Setting(typeof(ReputationManager), "startingReputation", 0f, 300f),
 
             new Setting(typeof(DayCycleManager), "dayDurationMinutes", 6f, 1f),

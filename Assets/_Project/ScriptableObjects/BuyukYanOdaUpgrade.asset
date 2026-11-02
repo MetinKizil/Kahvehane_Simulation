@@ -12,8 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: daebcd5ffb35a6b40bd3e2e39552ea09, type: 3}
   m_Name: BuyukYanOdaUpgrade
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.UpgradeData
-  upgradeName: "Büyük Yan Oda"
-  description: "Yan odanın dış duvarı kalkar, oda 10 m'ye uzar. Masa sınırı +3."
+  upgradeName: "B\xFCy\xFCk Yan Oda"
+  description: "Yan odan\u0131n d\u0131\u015F duvar\u0131 kalkar, oda 10 m'ye uzar.
+    Masa s\u0131n\u0131r\u0131 +3."
   cost: 1400
   requiredReputation: 110
   requiredUpgrades:

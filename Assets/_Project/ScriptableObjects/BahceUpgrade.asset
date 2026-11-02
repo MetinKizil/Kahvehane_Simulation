@@ -12,8 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: daebcd5ffb35a6b40bd3e2e39552ea09, type: 3}
   m_Name: BahceUpgrade
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.UpgradeData
-  upgradeName: "Bahçe"
-  description: "Sol duvar kalkar, çitle çevrili çimenli bahçe açılır. Masa sınırı +4."
+  upgradeName: "Bah\xE7e"
+  description: "Sol duvar kalkar, \xE7itle \xE7evrili \xE7imenli bah\xE7e a\xE7\u0131l\u0131r.
+    Masa s\u0131n\u0131r\u0131 +4."
   cost: 2000
   requiredReputation: 160
   requiredUpgrades:

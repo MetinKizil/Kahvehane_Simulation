@@ -12,8 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: daebcd5ffb35a6b40bd3e2e39552ea09, type: 3}
   m_Name: ArkaSalonUpgrade
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.UpgradeData
-  upgradeName: "Arka Salon"
-  description: "Arka duvar kalkar, 10×5 m'lik salon açılır. Masa sınırı +3."
+  upgradeName: Arka Salon
+  description: "Arka duvar kalkar, 10\xD75 m'lik salon a\xE7\u0131l\u0131r. Masa
+    s\u0131n\u0131r\u0131 +3."
   cost: 900
   requiredReputation: 60
   requiredUpgrades: []
