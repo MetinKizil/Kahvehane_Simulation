@@ -72,7 +72,7 @@ namespace KanBagi.EditorTools
             new Setting(typeof(CustomerSpawner), "firstSpawnDelay", 3f, 2f),
             new Setting(typeof(CustomerSpawner), "spawnDelayRange.x", 6f, 4f),
             new Setting(typeof(CustomerSpawner), "spawnDelayRange.y", 14f, 8f),
-            new Setting(typeof(CustomerSpawner), "maxActiveCustomers", 4f, 4f),
+            new Setting(typeof(CustomerSpawner), "maxActiveCustomers", 60f, 60f),
 
             new Setting(typeof(PoliceManager), "minimumSuspicionRatio", 0.2f, 0f),
             new Setting(typeof(PoliceManager), "maxRaidChance", 0.6f, 1f),

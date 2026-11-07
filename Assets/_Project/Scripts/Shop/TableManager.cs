@@ -58,6 +58,34 @@ namespace KanBagi.Shop
             return false;
         }
 
+        /// <summary>Bu kadar kisilik bir grubun oturabilecegi bos masa var mi? (Spawner grubu olusturmadan once sorar.)</summary>
+        public bool HasTableFor(int groupSize)
+        {
+            foreach (Table table in tables)
+            {
+                if (table.IsFree && table.UsableSeatCount >= groupSize) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Gruba uygun ilk bos masayi bulup her uyeye bir sandalye ayirir.</summary>
+        public bool TryReserveTableForGroup(IReadOnlyList<Customer> members, out Table reservedTable, out int[] seats)
+        {
+            foreach (Table table in tables)
+            {
+                if (!table.IsFree) continue;
+                if (!table.TryReserveGroup(members, out seats)) continue;
+
+                reservedTable = table;
+                return true;
+            }
+
+            reservedTable = null;
+            seats = null;
+            return false;
+        }
+
         /// <summary>Su anda bos masa var mi? Spawner musteri gondermeden once sorar.</summary>
         public bool HasFreeTable()
         {

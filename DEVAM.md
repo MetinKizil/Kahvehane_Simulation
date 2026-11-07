@@ -641,7 +641,7 @@ En pahalı içecek: **Sahlep 30 TL** (çay 15, oralet 18, kahve 25), hazırlama 
 | D6f ✅ | Köşe Salon + Köşe Bahçe | L şeklindeki dükkanın sağ arka köşesi (Köşe Salon 10×10, 2400 TL / itibar 180, masa +8) ve bahçenin arkası (Köşe Bahçe 10×10, 3200 / 220, masa +8). |
 | D6g ✅ | Üst Kat | Köşe Salon + Köşe Bahçe'den sonra, 5000 TL / itibar 250; 20×20 (önde 10 m teras, arkada kapalı salon), L merdiven, zemin kat tavanı + lambalar; masa +8, her makine +1 (çay ocağı EŞYALAR'a girdi). **Dükkanın en büyük boyutu kesinleşti.** |
 | D7a ✅ | Dört kişilik masalar | Bütün masalar 4 sandalye + 4 bardak yeri; sandalye bazında servis, tepsiyle hepsine; yerleştirmede 4 taraf boş; duvar arkasına sandalye seçilmez. |
-| D7b | Grup müşteriler | 1–4 kişilik gruplar (profile göre), birlikte gelir/oturur/kalkar, herkes kendi siparişi ve parası; kızan tek başına gider (itibar cezası). |
+| D7b ✅ | Grup müşteriler | 1–4 kişilik gruplar (profile göre), birlikte gelir/oturur/kalkar, herkes kendi siparişi ve parası; kızan tek başına gider (itibar cezası). |
 | D8 | Masa oyunları masa bazında | Okey/iskambil/domino masaya konan eşya; 4 kişilik okey grubu okeyli masayı ister (10c-2'deki dükkan geneli etki buna dönüşür). |
 | D9 | Kişiselleştirme / cafe | Mobilya kataloğu, duvar kâğıdı, zemin. (Dükkan boyutunu etkilemediği için mahalleden sonraya da kayabilir — kullanıcıya sorulacak.) |
 
@@ -947,6 +947,20 @@ Hepsi alınınca masa sınırı 4 → 28.
 
 **Test:** müşteriler farklı kenarlara oturuyor, duvar arkasına oturan yok, tek bardak ve tepsiyle servis/toplama, dört taraf boş olmadan masa konmuyor. Kullanıcı "çalışıyor" dedi.
 
+### Adım D7b — Grup müşteriler ✅
+**Oyuncu ne görür:** kapıdan **1–4 kişilik gruplar** girer (kapıda yan yana belirir), grup hep **aynı profilden** (aynı renk). Grup birlikte **tek masaya** oturur, her kişi ayrı kenara; o büyüklükte kullanılabilir yeri olan boş masa yoksa **grup hiç gelmez** (sıradaki denenir). Herkes kendi siparişini verir, kendi parasını + bahşişini öder; tepsiyle tek basışta bütün masaya servis. İçeceğini bitiren **grubun geri kalanını oturarak bekler** (balon kaybolur); herkes bitince **birlikte kalkar**. Sabrı biten **tek başına kızıp gider** (itibar cezası), diğerleri kalır. Kapanışta herkes kalkar. Günlük özet kişi başına sayar.
+
+**Kullanıcı kararları:** grup aynı profil; grup büyüklüğü ağırlıkları (1/2/3/4 kişi): **Emekli Dayı 60/20/10/10, Öğrenci 0/20/30/50, Esnaf 15/35/30/20, Kabadayı 0/40/40/20** (kabadayı tek gezmez); uygun masa yoksa grup gelmez; **içerideki müşteri sınırı oyunda kalktı** (asıl sınır masalar: en fazla masa × 4 kişi), sadece **performans emniyeti 60 kişi**.
+
+**Parçalar:**
+- **`CustomerGroup`** (yeni, düz C# sınıfı): üyeler + kim bitirdi; herkes bitince/gidince `OnAllDone`.
+- **`CustomerProfile.groupSizeWeights`** (int[4]) + `PickGroupSize()`; değerler 4 profil asset'inde.
+- **`CustomerSpawner.SpawnGroup`**: profil → grup büyüklüğü → `TableManager.HasTableFor(size)` → üyeler oluşturulur → `TryReserveTableForGroup` (bütün sandalyeler birden) → hepsi gruba eklenir → `Initialize(exit, profile, table, seat, group)`. `groupSpacing` 0.6 (kapıda yan yana). `maxActiveCustomers` **60** (BalancePresetApplier gerçek/test).
+- **`Table`**: `UsableSeatCount`, `TryReserveGroup(members, out seats)`. **`TableManager`**: `HasTableFor`, `TryReserveTableForGroup`.
+- **`Customer`**: masa/sandalye spawner'dan gelir (gelmezse eskisi gibi kendisi arar); yeni durum **`WaitingForGroup`**; bitirince `group.MarkDone`, `OnAllDone` gelene kadar oturur; kızınca/kapanışta/yok olunca da `MarkDone`.
+
+**Test:** gruplar aynı masaya farklı kenarlardan oturuyor, tepsiyle hepsine servis, kızan tek gidiyor, grup birlikte kalkıyor, masa yoksa grup gelmiyor. Kullanıcı "çalışıyor" dedi.
+
 **Değişecek mevcut parçalar (bilerek):** sabit eşyalar + `UpgradeUnlocker`, editörde NavMesh bake (`NavMesh'i Yeniden Bake Et`), `Icecek Istasyonlarini Kur` / `Masa Oyunlarini Kur` builder'ları, tek kişilik `Table`, tek eşya tutan eller, dükkan geneli masa oyunları. **Değişmeyenler:** müşteri profilleri, sipariş/ikinci tur, menü, stok/kurye, ekonomi, itibar, gün döngüsü, kayıt altyapısı, kumar/mafya/polis, fısıltılar, hikaye, co-op etkileşim katmanı.
 
 ---
@@ -1074,7 +1088,9 @@ Hepsi alınınca masa sınırı 4 → 28.
 
 **Adım D6g bitti ve test edildi — D6 (duvarlar + genişletmeler + kumar odası + üst kat) TAMAM.** Üst Kat: L merdiven, önde teras, arkada kapalı salon, zemin kat tavanı ve lambaları; masa sınırı 48, her makineden 2.
 
-**Adım D7a bitti ve test edildi.** Bütün masalar 4 kişilik; müşteri kullanılabilir kenara oturuyor (duvar arkasına değil), servis sandalye bazında, tepsiyle hepsine. **Sıradaki iş: D7b — Grup müşteriler** (1–4 kişi, profile göre; birlikte gelir/oturur/kalkar; kızan tek gider; plan ayrıca onaylanacak).
+**Adım D7a bitti ve test edildi.** Bütün masalar 4 kişilik; müşteri kullanılabilir kenara oturuyor (duvar arkasına değil), servis sandalye bazında, tepsiyle hepsine.
+
+**Adım D7b bitti ve test edildi.** Müşteriler 1–4 kişilik gruplar halinde (profile göre) gelip tek masaya oturuyor, herkes kendi siparişini veriyor, birlikte kalkıyor; kızan tek gidiyor; oyun içi müşteri sınırı yerine masalar sınırlıyor (emniyet 60). **Sıradaki iş: D8 — Masa oyunları masa bazında** (okey/iskambil/domino masaya konan eşya; 4 kişilik okey grubu okeyli masayı ister; plan ayrıca onaylanacak).
 
 **Adım 10c-2 bitti ve test edildi.** İskambil (200 TL, itibar 40, +%30) ve Domino (350 TL, itibar 100, +%20) masalarda beliriyor; müşteriler içtikten sonra oyun meraklarına göre bir tur daha sipariş veriyor, ciro iki satışı da sayıyor, ikinci turda bekletmenin cezası yok.
 
@@ -1271,7 +1287,7 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**10a-2a**~~ ✅ | Mahalle fısıltıları (olaylara eşlik eden ton satırı + ilk sabah yönlendirmesi) — **bitti** | Ucuz, kimliği oyunun içine taşır |
 | ~~**10a-2b**~~ ✅ | Mevcut metinlerin tonu (sadece tablodakiler), `ArayuzMetinleri` + `Metinleri Uygula` — **bitti** | Fısıltılarla aynı tonu mevcut arayüze yayar |
 | ~~**10c**~~ ✅ | Müşteri ve stok çeşitliliği — **bitti** (10c-1 profiller, 10c-2 masa oyunları, 10c-3 sahlep; 10c-4 bahçe → D bölümüne taşındı) | Faz 2'den kalan |
-| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi, D2 ✅ eşya altyapısı, D3 ✅ yerleştirme modu, D4 ✅ eşya satın alma, D5a ✅ temel eşyalar taşınabilir, D5b ✅ makineler kataloğa, D6a ✅ duvarlar + kapı, D6b ✅ genişletme altyapısı + Yan Oda, D6c ✅ bodrum + gizli kapak, D6d-1 ✅ rulet oyunu, D6d-2 ✅ rulet masası eşyası, D6e ✅ kalan 5 bölge, D6f ✅ köşe salon + köşe bahçe, D6g ✅ üst kat, D7a ✅ dört kişilik masalar; sıradaki D7b grup müşteriler): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
+| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi, D2 ✅ eşya altyapısı, D3 ✅ yerleştirme modu, D4 ✅ eşya satın alma, D5a ✅ temel eşyalar taşınabilir, D5b ✅ makineler kataloğa, D6a ✅ duvarlar + kapı, D6b ✅ genişletme altyapısı + Yan Oda, D6c ✅ bodrum + gizli kapak, D6d-1 ✅ rulet oyunu, D6d-2 ✅ rulet masası eşyası, D6e ✅ kalan 5 bölge, D6f ✅ köşe salon + köşe bahçe, D6g ✅ üst kat, D7a ✅ dört kişilik masalar, D7b ✅ grup müşteriler; sıradaki D8 masa bazında oyunlar): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
 | **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **bahçenin sokağa kapısı (D6e kararı)**, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
 | **11** | Görsel cila, ses, ana menü, kayıt slotları | **En sona**: mekanikler değişince geometri/model yeniden yapılır |
@@ -1296,7 +1312,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum (2026-10-17): GitHub bağlantısı kuruldu, tüm commit'ler push edildi** (ilk push: 17 commit, ~2.7 MB). Yerel `main` = `origin/main`.
 ```
-(yeni)   Adim D7a: dort kisilik masalar
+(yeni)   Adim D7b: grup musteriler
+7d1c36c  Adim D7a: dort kisilik masalar
 cca8207  Adim D6g: ust kat
 a5c58ee  Adim D6f: kose salon ve kose bahce
 40f9671  Adim D6e: kalan genisletme bolgeleri ve bahce
@@ -1345,7 +1362,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (D7b — Grup müşteriler: 1–4 kişi profile göre, birlikte gelir/oturur/kalkar, herkes kendi siparişi ve parası, kızan tek gider; kararlar bölüm 6.9 D7a), Büyük Bahçe; fiyat/önkoşul tablosu bölüm 6.9 D6b, ExpansionZoneBuilder.Zones tablosuna satır) planını anlat, onay al**, sonra kod yaz. Planda **oyuncunun ne göreceğini** açıkça yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
+3. **Sıradaki adımın (D8 — Masa oyunları masa bazında: okey/iskambil/domino masaya konan eşya, 4 kişilik okey grubu okeyli masayı ister; 10c-2'deki dükkan geneli etki masaya iner), Büyük Bahçe; fiyat/önkoşul tablosu bölüm 6.9 D6b, ExpansionZoneBuilder.Zones tablosuna satır) planını anlat, onay al**, sonra kod yaz. Planda **oyuncunun ne göreceğini** açıkça yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.

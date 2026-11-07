@@ -50,6 +50,8 @@ namespace KanBagi.Data
         [SerializeField] private int requiredReputation;
         [Tooltip("Gelebilecek profiller arasinda secilme agirligi.")]
         [SerializeField] private int spawnWeight = 1;
+        [Tooltip("Kac kisilik grup gelir: sirasiyla 1, 2, 3, 4 kisi olma agirligi (D7b). Grup hep ayni profilden olur.")]
+        [SerializeField] private int[] groupSizeWeights = { 1, 0, 0, 0 };
 
         public Color BodyColor => bodyColor;
         public float PatienceMultiplier => patienceMultiplier;
@@ -60,5 +62,26 @@ namespace KanBagi.Data
         public int ReputationOnAngryLeave => reputationOnAngryLeave;
         public int RequiredReputation => requiredReputation;
         public int SpawnWeight => spawnWeight;
+
+        /// <summary>Agirliklara gore grup buyuklugu (1-4). Agirlik yoksa 1.</summary>
+        public int PickGroupSize()
+        {
+            int total = 0;
+            if (groupSizeWeights != null)
+            {
+                foreach (int weight in groupSizeWeights) total += Mathf.Max(0, weight);
+            }
+
+            if (total == 0) return 1;
+
+            int roll = UnityEngine.Random.Range(0, total);
+            for (int i = 0; i < groupSizeWeights.Length; i++)
+            {
+                roll -= Mathf.Max(0, groupSizeWeights[i]);
+                if (roll < 0) return i + 1;
+            }
+
+            return 1;
+        }
     }
 }

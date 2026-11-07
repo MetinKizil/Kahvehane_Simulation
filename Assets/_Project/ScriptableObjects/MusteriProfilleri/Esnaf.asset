@@ -25,3 +25,8 @@ MonoBehaviour:
   reputationOnAngryLeave: 2
   requiredReputation: 60
   spawnWeight: 2
+  groupSizeWeights:
+  - 15
+  - 35
+  - 30
+  - 20

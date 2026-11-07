@@ -18,7 +18,8 @@ namespace KanBagi.Customers
         WalkingToTable,  // Ayrilan masaya yuruyor.
         WaitingForOrder, // Oturdu, siparisini bekliyor.
         Drinking,        // Siparisi geldi, iciyor.
-        Leaving          // Kalkti, cikisa gidiyor.
+        Leaving,         // Kalkti, cikisa gidiyor.
+        WaitingForGroup  // Isini bitirdi, grubun geri kalanini oturarak bekliyor (D7b).
     }
 
     /// <summary>
@@ -59,6 +60,8 @@ namespace KanBagi.Customers
         private NavMeshAgent agent;
         private Table reservedTable;
         private int reservedSeat = -1;
+        private CustomerGroup group;
+        private bool groupReleased;
         private Vector3 exitPosition;
         private TeaGlass servedGlass;
         private CustomerProfile profile;
@@ -93,12 +96,20 @@ namespace KanBagi.Customers
             agent = GetComponent<NavMeshAgent>();
         }
 
-        /// <summary>Spawner tarafindan cagrilir; musterinin yasam dongusunu baslatir.</summary>
-        public void Initialize(Vector3 exit, CustomerProfile customerProfile = null)
+        /// <summary>
+        /// Spawner tarafindan cagrilir; musterinin yasam dongusunu baslatir.
+        /// Grup musterisinde (D7b) masa ve sandalye spawner'da ayrilmis gelir; yoksa musteri kendisi bos masa arar.
+        /// </summary>
+        public void Initialize(Vector3 exit, CustomerProfile customerProfile = null,
+                               Table table = null, int seat = -1, CustomerGroup customerGroup = null)
         {
             exitPosition = exit;
             profile = customerProfile;
             hasFixedOrder = desiredOrder != null;
+            reservedTable = table;
+            reservedSeat = seat;
+            group = customerGroup;
+            if (group != null) group.OnAllDone += HandleGroupDone;
 
             ApplyBodyColor();
             ResolveOrder();
@@ -193,9 +204,10 @@ namespace KanBagi.Customers
 
         private IEnumerator LifeRoutine()
         {
-            // Bos masa yoksa musteri iceri girmeden geri doner.
-            if (TableManager.Instance == null ||
-                !TableManager.Instance.TryReserveFreeTable(this, out reservedTable, out reservedSeat))
+            // Masasi ayrilmadan geldiyse kendisi arar; bos masa yoksa iceri girmeden geri doner.
+            if (reservedTable == null &&
+                (TableManager.Instance == null ||
+                 !TableManager.Instance.TryReserveFreeTable(this, out reservedTable, out reservedSeat)))
             {
                 yield return LeaveRoutine();
                 yield break;
@@ -213,14 +225,26 @@ namespace KanBagi.Customers
                 yield return DrinkRoutine();
 
                 if (WantsSecondRound()) yield return SecondRoundRoutine();
+
+                // Grupla geldiyse herkes bitirene kadar oturur, sonra birlikte kalkarlar.
+                if (group != null)
+                {
+                    SetState(CustomerState.WaitingForGroup);
+                    group.MarkDone(this);
+                    while (!groupReleased) yield return null;
+                }
             }
             else
             {
+                // Kizan tek basina gider; grubun geri kalani devam eder.
                 LosePatience();
+                group?.MarkDone(this);
             }
 
             yield return LeaveRoutine();
         }
+
+        private void HandleGroupDone() => groupReleased = true;
 
         /// <summary>Masa oyunu varsa ictikten sonra bir tur daha ister mi? (dukkan payi x profilin oyun meraki)</summary>
         private bool WantsSecondRound()
@@ -286,6 +310,7 @@ namespace KanBagi.Customers
             // Servis edilmeden kapida kalmak da memnuniyetsizliktir.
             if (!WasServed) LosePatience();
 
+            group?.MarkDone(this);
             FinishDrink();
             StartCoroutine(LeaveRoutine());
         }
@@ -423,8 +448,12 @@ namespace KanBagi.Customers
 
         private void OnDestroy()
         {
-            // Beklenmedik yok olmalarda masa kilitli kalmasin.
+            // Beklenmedik yok olmalarda masa kilitli kalmasin, grup da bunu beklemesin.
             ReleaseTable();
+            if (group == null) return;
+
+            group.OnAllDone -= HandleGroupDone;
+            group.MarkDone(this);
         }
     }
 }

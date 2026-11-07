@@ -321,6 +321,47 @@ namespace KanBagi.Shop
             || other.GetComponentInParent<NavMeshAgent>() != null
             || other.GetComponentInParent<HoldableItem>() != null;
 
+        /// <summary>Bos masada kullanilabilir sandalye sayisi (masa doluysa 0). Grup buna sigmali (D7b).</summary>
+        public int UsableSeatCount
+        {
+            get
+            {
+                if (!IsFree) return 0;
+
+                int count = 0;
+                for (int i = 0; i < SeatCount; i++)
+                {
+                    if (IsSeatUsable(i)) count++;
+                }
+
+                return count;
+            }
+        }
+
+        /// <summary>Bos masada gruptaki her kisiye bir kullanilabilir sandalye ayirir. Yetmezse hic ayirmaz.</summary>
+        public bool TryReserveGroup(IReadOnlyList<Customer> members, out int[] seats)
+        {
+            seats = null;
+            if (members == null || members.Count == 0 || !IsFree) return false;
+
+            var usable = new List<int>();
+            for (int i = 0; i < SeatCount && usable.Count < members.Count; i++)
+            {
+                if (IsSeatUsable(i)) usable.Add(i);
+            }
+
+            if (usable.Count < members.Count) return false;
+
+            seats = new int[members.Count];
+            for (int m = 0; m < members.Count; m++)
+            {
+                occupants[usable[m]] = members[m];
+                seats[m] = usable[m];
+            }
+
+            return true;
+        }
+
         /// <summary>Musteri kalkinca sandalyesini serbest birakir.</summary>
         public void Release(Customer customer)
         {

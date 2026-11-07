@@ -20645,7 +20645,8 @@ MonoBehaviour:
   exitPoint: {fileID: 1822745117}
   firstSpawnDelay: 3
   spawnDelayRange: {x: 6, y: 14}
-  maxActiveCustomers: 4
+  maxActiveCustomers: 60
+  groupSpacing: 0.6
 --- !u!4 &1974894605
 Transform:
   m_ObjectHideFlags: 0

@@ -34,8 +34,13 @@ namespace KanBagi.Customers
         [SerializeField] private Vector2 spawnDelayRange = new Vector2(6f, 14f);
 
         [Header("Limit")]
-        [Tooltip("Ayni anda dukkanda bulunabilecek en fazla musteri sayisi.")]
-        [SerializeField] private int maxActiveCustomers = 4;
+        [Tooltip("Ayni anda dukkanda bulunabilecek en fazla musteri (kisi). D7b'den beri asil sinir masalar " +
+                 "(grup ancak sigacagi bos masa varsa gelir); bu sadece performans emniyeti (NavMesh ajani sayisi).")]
+        [SerializeField] private int maxActiveCustomers = 60;
+
+        [Header("Grup")]
+        [Tooltip("Grup uyeleri kapida yan yana bu aralikla dogar (metre).")]
+        [SerializeField] private float groupSpacing = 0.6f;
 
         private readonly List<Customer> activeCustomers = new List<Customer>();
 
@@ -73,7 +78,7 @@ namespace KanBagi.Customers
 
             while (true)
             {
-                if (CanSpawn()) SpawnCustomer();
+                if (CanSpawn()) SpawnGroup();
 
                 yield return new WaitForSeconds(UnityEngine.Random.Range(spawnDelayRange.x, spawnDelayRange.y));
             }
@@ -88,22 +93,62 @@ namespace KanBagi.Customers
             return TableManager.Instance != null && TableManager.Instance.HasFreeTable();
         }
 
-        private void SpawnCustomer()
+        /// <summary>
+        /// Bir grup gonderir (D7b): profil secilir, grup buyuklugu profilden (1-4). O buyuklukte bos masa yoksa
+        /// grup hic gelmez (siradaki grup denenir). Grubun sandalyeleri burada birden ayrilir.
+        /// </summary>
+        private void SpawnGroup()
         {
-            GameObject customerObject = Instantiate(customerPrefab, SpawnPosition, SpawnRotation);
+            CustomerProfile profile = PickProfile();
+            int size = profile != null ? profile.PickGroupSize() : 1;
+            size = Mathf.Min(size, maxActiveCustomers - activeCustomers.Count);
+            if (size <= 0 || !TableManager.Instance.HasTableFor(size)) return;
 
-            if (!customerObject.TryGetComponent(out Customer customer))
+            var members = new List<Customer>();
+            Vector3 side = SpawnRotation * Vector3.right;
+            for (int i = 0; i < size; i++)
             {
-                Debug.LogError($"[CustomerSpawner] '{customerPrefab.name}' prefab'inda Customer scripti yok.", this);
-                Destroy(customerObject);
+                Vector3 position = SpawnPosition + side * ((i - (size - 1) * 0.5f) * groupSpacing);
+                GameObject customerObject = Instantiate(customerPrefab, position, SpawnRotation);
+
+                if (!customerObject.TryGetComponent(out Customer customer))
+                {
+                    Debug.LogError($"[CustomerSpawner] '{customerPrefab.name}' prefab'inda Customer scripti yok.", this);
+                    Destroy(customerObject);
+                    DestroyAll(members);
+                    return;
+                }
+
+                members.Add(customer);
+            }
+
+            if (!TableManager.Instance.TryReserveTableForGroup(members, out Table table, out int[] seats))
+            {
+                DestroyAll(members);
                 return;
             }
 
-            activeCustomers.Add(customer);
-            customer.OnLeft += HandleCustomerLeft;
-            customer.Initialize(ExitPosition, PickProfile());
+            // Once herkes gruba girer, sonra baslarlar: grup "kac kisi bitirmeli" bilgisini eksiksiz bilsin.
+            var group = new CustomerGroup();
+            foreach (Customer member in members) group.Add(member);
 
-            OnCustomerSpawned?.Invoke(customer);
+            for (int i = 0; i < members.Count; i++)
+            {
+                Customer member = members[i];
+                activeCustomers.Add(member);
+                member.OnLeft += HandleCustomerLeft;
+                member.Initialize(ExitPosition, profile, table, seats[i], group);
+
+                OnCustomerSpawned?.Invoke(member);
+            }
+        }
+
+        private static void DestroyAll(List<Customer> members)
+        {
+            foreach (Customer member in members)
+            {
+                if (member != null) Destroy(member.gameObject);
+            }
         }
 
         /// <summary>Itibari yeten profiller arasindan agirlikli secim. Uygun profil yoksa null (varsayilan musteri).</summary>
