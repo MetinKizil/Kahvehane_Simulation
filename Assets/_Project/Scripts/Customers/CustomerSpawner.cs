@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using KanBagi.Core;
 using KanBagi.Data;
+using KanBagi.Furniture;
 using KanBagi.Shop;
 using UnityEngine;
 
@@ -41,6 +42,16 @@ namespace KanBagi.Customers
         [Header("Grup")]
         [Tooltip("Grup uyeleri kapida yan yana bu aralikla dogar (metre).")]
         [SerializeField] private float groupSpacing = 0.6f;
+
+        [Header("Oyun istegi (D8b)")]
+        [Tooltip("ESYALAR'daki oyun takimlari. Grup bunlardan, buyuklugune uyan ve itibari acilmis olani isteyebilir.")]
+        [SerializeField] private List<FurnitureData> gameSetItems = new List<FurnitureData>();
+        [Tooltip("2+ kisilik grubun oyun isteme ihtimali (profilin oyun merakiyla carpilir).")]
+        [SerializeField] [Range(0f, 1f)] private float gameRequestChance = 0.5f;
+        [Tooltip("Istenen oyun gelince grubun bir kez odedigi masa parasi (TL).")]
+        [SerializeField] private int tablePayment = 20;
+        [Tooltip("Istek karsilaninca kisi basi itibar; getirilmeyip siparis de gelmezse kisi basi ceza.")]
+        [SerializeField] private int gameReputationPerPerson = 1;
 
         private readonly List<Customer> activeCustomers = new List<Customer>();
 
@@ -131,6 +142,7 @@ namespace KanBagi.Customers
             // Once herkes gruba girer, sonra baslarlar: grup "kac kisi bitirmeli" bilgisini eksiksiz bilsin.
             var group = new CustomerGroup();
             foreach (Customer member in members) group.Add(member);
+            group.SetGameRequest(table, PickGameRequest(profile, size), tablePayment, gameReputationPerPerson);
 
             for (int i = 0; i < members.Count; i++)
             {
@@ -141,6 +153,30 @@ namespace KanBagi.Customers
 
                 OnCustomerSpawned?.Invoke(member);
             }
+        }
+
+        /// <summary>
+        /// Grup oyun ister mi, isterse hangisini? Tek kisi istemez; oyun grubun buyuklugune uymali (okey sadece 4)
+        /// ve itibari acilmis olmali (henuz alinamayan oyun istenmez). Uygun yoksa null.
+        /// </summary>
+        private TableGameData PickGameRequest(CustomerProfile profile, int size)
+        {
+            if (size < 2 || gameSetItems.Count == 0) return null;
+
+            float chance = gameRequestChance * (profile != null ? profile.GameCuriosity : 1f);
+            if (UnityEngine.Random.value >= chance) return null;
+
+            var candidates = new List<TableGameData>();
+            foreach (FurnitureData item in gameSetItems)
+            {
+                TableGameData game = item != null ? item.TableGame : null;
+                if (game == null || size < game.MinRequestGroup || size > game.MaxRequestGroup) continue;
+                if (FurnitureManager.Instance != null && !FurnitureManager.Instance.MeetsReputation(item)) continue;
+
+                candidates.Add(game);
+            }
+
+            return candidates.Count > 0 ? candidates[UnityEngine.Random.Range(0, candidates.Count)] : null;
         }
 
         private static void DestroyAll(List<Customer> members)

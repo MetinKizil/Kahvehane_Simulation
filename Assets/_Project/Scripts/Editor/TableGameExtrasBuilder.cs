@@ -265,6 +265,105 @@ namespace KanBagi.EditorTools
                       "ESYALAR'dan alinir.");
         }
 
+        // ---- 3) Oyun istegi (D8b) ----
+
+        /// <summary>
+        /// Masa prefab'ina oyun istegi balonunu ekler (masanin ustunde, kameraya donen yazi), oyunlarin istek kurallarini
+        /// yazar (okey sadece 4 kisilik grup + "dordu tamam" bonusu, iskambil/domino 2-4) ve CustomerSpawner'a
+        /// ESYALAR'daki takimlari baglar. Tekrar calistirilabilir.
+        /// </summary>
+        [MenuItem("Kan Bagi/Oyun Istegi Balonunu Kur")]
+        public static void BuildRequestBubble()
+        {
+            if (EditorApplication.isPlaying) return;
+
+            GameObject table = PrefabUtility.LoadPrefabContents(TablePrefabPath);
+            try
+            {
+                Transform old = table.transform.Find("OyunIstegi");
+                if (old != null) Object.DestroyImmediate(old.gameObject);
+
+                var root = new GameObject("OyunIstegi").transform;
+                root.SetParent(table.transform, false);
+                Vector3 s = table.transform.localScale;
+                root.localScale = new Vector3(1f / s.x, 1f / s.y, 1f / s.z);
+                root.localPosition = new Vector3(0f, 0.5f + 1.3f / s.y, 0f); // masanin ustunden 1.3 m yukarida
+
+                var bubble = new GameObject("Balon", typeof(RectTransform));
+                bubble.transform.SetParent(root, false);
+                bubble.transform.localScale = Vector3.one * 0.05f; // musteri siparis balonuyla ayni olcu
+                var text = bubble.AddComponent<TMPro.TextMeshPro>();
+                text.text = "Okey Takimi istiyor";
+                text.fontSize = 36f;
+                text.alignment = TMPro.TextAlignmentOptions.Center;
+                text.color = new Color(1f, 0.85f, 0.3f);
+                text.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+                text.rectTransform.sizeDelta = new Vector2(30f, 5f);
+                bubble.AddComponent<KanBagi.UI.Billboard>();
+                var ignore = bubble.AddComponent<NavMeshModifier>();
+                ignore.ignoreFromBuild = true;
+                bubble.SetActive(false);
+
+                var ui = root.gameObject.AddComponent<KanBagi.UI.GameRequestBubbleUI>();
+                var uiData = new SerializedObject(ui);
+                uiData.FindProperty("table").objectReferenceValue = table.GetComponent<Table>();
+                uiData.FindProperty("bubbleRoot").objectReferenceValue = bubble;
+                uiData.FindProperty("requestText").objectReferenceValue = text;
+                uiData.ApplyModifiedPropertiesWithoutUndo();
+
+                PrefabUtility.SaveAsPrefabAsset(table, TablePrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(table);
+            }
+
+            SetRequestRules("OkeyTakimiOyun", 4, 4, 4, 0.4f);
+            SetRequestRules("IskambilDestesiOyun", 2, 4, 0, 0f);
+            SetRequestRules("DominoTakimiOyun", 2, 4, 0, 0f);
+            string spawner = WireSpawner();
+            AssetDatabase.SaveAssets();
+
+            Debug.Log($"[TableGameExtrasBuilder] Oyun istegi balonu masaya eklendi, istek kurallari yazildi. {spawner} " +
+                      "Sahneyi kaydet (Ctrl+S).");
+        }
+
+        private static void SetRequestRules(string assetName, int min, int max, int fullSize, float bonus)
+        {
+            var game = AssetDatabase.LoadAssetAtPath<TableGameData>($"{DataFolder}/{assetName}.asset");
+            if (game == null) return;
+
+            var data = new SerializedObject(game);
+            data.FindProperty("minRequestGroup").intValue = min;
+            data.FindProperty("maxRequestGroup").intValue = max;
+            data.FindProperty("fullGroupSize").intValue = fullSize;
+            data.FindProperty("fullGroupSecondRoundBonus").floatValue = bonus;
+            data.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(game);
+        }
+
+        private static string WireSpawner()
+        {
+            var spawner = Object.FindFirstObjectByType<KanBagi.Customers.CustomerSpawner>(FindObjectsInactive.Include);
+            if (spawner == null) return "UYARI: CustomerSpawner bulunamadi.";
+
+            var data = new SerializedObject(spawner);
+            SerializedProperty items = data.FindProperty("gameSetItems");
+            items.arraySize = 0;
+            foreach (string assetName in new[] { "OkeyTakimiEsya", "IskambilDestesiEsya", "DominoTakimiEsya" })
+            {
+                var item = AssetDatabase.LoadAssetAtPath<FurnitureData>($"{DataFolder}/{assetName}.asset");
+                if (item == null) continue;
+
+                items.arraySize++;
+                items.GetArrayElementAtIndex(items.arraySize - 1).objectReferenceValue = item;
+            }
+
+            data.ApplyModifiedProperties();
+            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(spawner.gameObject.scene);
+            return $"CustomerSpawner'a {items.arraySize} oyun takimi baglandi.";
+        }
+
         // ---- Yardimcilar ----
 
         private static Transform Part(Transform parent, PrimitiveType type, string partName, Vector3 localPosition, Vector3 localScale, Material material)

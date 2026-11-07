@@ -20602,6 +20602,13 @@ MonoBehaviour:
   spawnDelayRange: {x: 6, y: 14}
   maxActiveCustomers: 60
   groupSpacing: 0.6
+  gameSetItems:
+  - {fileID: 11400000, guid: 722447369b553884893e7f3953d4f111, type: 2}
+  - {fileID: 11400000, guid: 8f826c490eacce44ebfcba005c1bcfdc, type: 2}
+  - {fileID: 11400000, guid: d37af81054c05ec489bbb8357c55c668, type: 2}
+  gameRequestChance: 0.5
+  tablePayment: 20
+  gameReputationPerPerson: 1
 --- !u!4 &1974894605
 Transform:
   m_ObjectHideFlags: 0

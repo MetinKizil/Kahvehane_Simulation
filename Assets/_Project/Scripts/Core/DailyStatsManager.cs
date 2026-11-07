@@ -141,15 +141,11 @@ namespace KanBagi.Core
             customer.OnLeft -= HandleCustomerLeft;
 
             // 6a'da eklenen WasServed/PaidAmount sayesinde ekstra event'e gerek kalmadi.
-            if (customer.WasServed)
-            {
-                CustomersServed++;
-                Revenue += customer.PaidAmount;
-            }
-            else
-            {
-                CustomersLost++;
-            }
+            // Servis almayan da odemis olabilir (D8b: grubun masa parasi) - ciro her durumda eklenir.
+            Revenue += customer.PaidAmount;
+
+            if (customer.WasServed) CustomersServed++;
+            else CustomersLost++;
         }
 
         private void OnDestroy()

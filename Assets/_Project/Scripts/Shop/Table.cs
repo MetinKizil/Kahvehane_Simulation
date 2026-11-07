@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using KanBagi.Customers;
+using KanBagi.Data;
 using KanBagi.Furniture;
 using KanBagi.Interaction;
 using KanBagi.Items;
@@ -56,6 +57,21 @@ namespace KanBagi.Shop
 
         /// <summary>Masadaki oyun takimi (D8a). Musteri sabir ve ikinci tur etkisini buradan sorar. Yoksa null.</summary>
         public TableGame Game => game;
+
+        /// <summary>Masadaki grubun istedigi (henuz getirilmemis) oyun (D8b). Balon bunu gosterir. Yoksa null.</summary>
+        public TableGameData RequestedGame { get; private set; }
+
+        /// <summary>Oyun istegi baslayinca/karsilaninca/grup kalkinca.</summary>
+        public event System.Action OnGameRequestChanged;
+
+        /// <summary>Grubun oyun istegini masaya yazar (null: istek yok). Sadece CustomerGroup cagirir.</summary>
+        public void SetGameRequest(TableGameData requested)
+        {
+            if (RequestedGame == requested) return;
+
+            RequestedGame = requested;
+            OnGameRequestChanged?.Invoke();
+        }
 
         private void Awake()
         {

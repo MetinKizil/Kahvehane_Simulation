@@ -79,6 +79,9 @@ namespace KanBagi.Customers
         /// <summary>Bu musterinin kasaya biraktigi para (servis edilmediyse 0).</summary>
         public int PaidAmount { get; private set; }
 
+        /// <summary>Oturmus mu? (Siparis bekliyor, iciyor veya grubu bekliyor.)</summary>
+        public bool IsSeated => State == CustomerState.WaitingForOrder || State == CustomerState.Drinking || State == CustomerState.WaitingForGroup;
+
         /// <summary>Musterinin istedigi urun (atanmamissa null). Siparis balonu bunu okur.</summary>
         public ItemData Order => desiredOrder;
 
@@ -218,6 +221,9 @@ namespace KanBagi.Customers
 
             SitDown();
             SetState(CustomerState.WaitingForOrder);
+
+            // Grup bir oyun istediyse ve takim zaten masadaysa oturur oturmaz karsilanir (D8b).
+            group?.TryDeliver();
             yield return WaitForOrderRoutine();
 
             if (State == CustomerState.Drinking)
@@ -253,6 +259,8 @@ namespace KanBagi.Customers
             // D8a: masa oyunlari artik dukkan geneli degil, oturulan masadaki takimdan gelir.
             if (reservedTable != null && reservedTable.Game != null) chance += reservedTable.Game.SecondRoundChance;
             if (profile != null) chance *= profile.GameCuriosity;
+            // Okey dordu tamam: istedigi oyun gelen tam grup bir tur daha oynamaya meyilli (D8b).
+            if (group != null) chance += group.SecondRoundBonus;
 
             return chance > 0f && UnityEngine.Random.value < chance;
         }
@@ -401,10 +409,20 @@ namespace KanBagi.Customers
                 ReputationManager.Instance.AddReputation(reputationOnServed);
         }
 
+        /// <summary>Siparis disi odeme (D8b: istenen oyun gelince grubun masa parasi). Kasaya girer, ciroya sayilir.</summary>
+        public void AddExtraPayment(int amount)
+        {
+            if (amount <= 0 || EconomyManager.Instance == null) return;
+
+            PaidAmount += amount;
+            EconomyManager.Instance.AddMoney(amount);
+        }
+
         /// <summary>Siparisi gelmedi: mahalledeki itibarimiz zarar gorur (profil varsa onun cezasi gecerli).</summary>
         private void LosePatience()
         {
-            int penalty = profile != null ? profile.ReputationOnAngryLeave : reputationOnAngryLeave;
+            // D8b: grubun istedigi oyun da getirilmediyse kisi basi ekstra ceza (ikisi de yoksa toplam 2).
+            int penalty = (profile != null ? profile.ReputationOnAngryLeave : reputationOnAngryLeave) + (group != null ? group.GameFailPenalty : 0);
             if (penalty <= 0 || ReputationManager.Instance == null) return;
 
             ReputationManager.Instance.AddReputation(-penalty);

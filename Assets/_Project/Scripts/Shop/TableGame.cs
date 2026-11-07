@@ -25,11 +25,15 @@ namespace KanBagi.Shop
 
         private void Awake() => RefreshPieces();
 
+        /// <summary>Masadaki takim degisince (kondu/alindi). Oyun isteyen grup buna bakar (D8b).</summary>
+        public event System.Action OnGameChanged;
+
         /// <summary>Takimi koyar (null: kaldirir). Parcalar buna gore gorunur.</summary>
         public void SetGame(TableGameData game)
         {
             CurrentGame = game;
             RefreshPieces();
+            OnGameChanged?.Invoke();
         }
 
         private void RefreshPieces()

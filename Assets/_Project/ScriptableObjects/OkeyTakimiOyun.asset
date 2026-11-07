@@ -17,3 +17,7 @@ MonoBehaviour:
   boxPrefab: {fileID: 8356194536073165433, guid: 2ffd9e48776d57148be961d9a5584974, type: 3}
   patienceMultiplier: 1.5
   secondRoundChance: 0
+  minRequestGroup: 4
+  maxRequestGroup: 4
+  fullGroupSize: 4
+  fullGroupSecondRoundBonus: 0.4
