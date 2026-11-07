@@ -31,6 +31,8 @@ namespace KanBagi.UI
         [SerializeField] private string reputationLockedFormat = "Itibar {0} gerekli";
         [Tooltip("Gereken gelistirme alinmamisken buton yazisi. {0} gelistirmenin adi.")]
         [SerializeField] private string upgradeLockedFormat = "{0} gerekli";
+        [Tooltip("Oyun takimi satirinda (D8a) sayi yerine.")]
+        [SerializeField] private string gameSetDescription = "Ele gelir, masaya E ile konur";
 
         private FurnitureData furniture;
         private Action<FurnitureData> onBuy;
@@ -62,8 +64,8 @@ namespace KanBagi.UI
 
             if (nameText != null) nameText.text = furniture.DisplayName;
             if (descriptionText != null)
-                descriptionText.text = limit > 0
-                    ? string.Format(countFormat, count, limit)
+                descriptionText.text = furniture.TableGame != null ? gameSetDescription
+                    : limit > 0 ? string.Format(countFormat, count, limit)
                     : string.Format(unlimitedCountFormat, count);
 
             if (buyButtonLabel != null)

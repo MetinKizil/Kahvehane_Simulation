@@ -52,7 +52,16 @@ namespace KanBagi.Shop
             }
         }
 
-        private void Awake() => EnsureArrays();
+        private TableGame game;
+
+        /// <summary>Masadaki oyun takimi (D8a). Musteri sabir ve ikinci tur etkisini buradan sorar. Yoksa null.</summary>
+        public TableGame Game => game;
+
+        private void Awake()
+        {
+            EnsureArrays();
+            game = GetComponent<TableGame>();
+        }
 
         private void EnsureArrays()
         {
@@ -105,6 +114,13 @@ namespace KanBagi.Shop
             if (player.Hands != null && TryGetHeldTray(player.Hands, out Tray tray))
                 return GetTrayPrompt(tray);
 
+            string gamePrompt = GetGameSetPrompt(player.Hands);
+            if (gamePrompt != null) return gamePrompt;
+
+            // Bos elle, bos masadaki takim geri alinabilir.
+            if (game != null && game.HasGame && IsFree && player.Hands != null && player.Hands.IsEmpty)
+                return $"{game.CurrentGame.GameName} al";
+
             if (IsAnyoneWaiting())
             {
                 PlayerHands hands = player.Hands;
@@ -127,7 +143,15 @@ namespace KanBagi.Shop
         {
             EnsureArrays();
             PlayerHands hands = player.Hands;
-            if (hands == null || hands.IsEmpty) return;
+            if (hands == null) return;
+
+            if (hands.IsEmpty)
+            {
+                TakeGameSet(hands);
+                return;
+            }
+
+            if (TryPlaceGameSet(hands)) return;
 
             if (TryGetHeldTray(hands, out Tray tray))
             {
@@ -174,6 +198,47 @@ namespace KanBagi.Shop
             }
 
             return requireEmptySpot ? -1 : fallback;
+        }
+
+        // ---- Oyun takimi (D8a) ----
+
+        /// <summary>Elde oyun takimi varsa onun ipucu; yoksa null.</summary>
+        private string GetGameSetPrompt(PlayerHands hands)
+        {
+            if (game == null || hands == null || hands.IsEmpty || !hands.HeldItem.TryGetComponent(out GameSetItem set)) return null;
+            if (set.Game == null) return "Bu masaya konmaz";
+            if (game.CurrentGame == set.Game) return $"Masada zaten {set.Game.GameName} var";
+
+            return game.HasGame ? "Once masadaki takimi al" : $"{set.Game.GameName} koy";
+        }
+
+        /// <summary>Eldeki takimi masaya koyar (kutu yok olur, masadaki parca gorunur). Musteri otururken de konabilir.</summary>
+        private bool TryPlaceGameSet(PlayerHands hands)
+        {
+            if (game == null || game.HasGame || !hands.HeldItem.TryGetComponent(out GameSetItem set) || set.Game == null) return false;
+
+            HoldableItem box = hands.ReleaseHeldItem();
+            if (box == null) return false;
+
+            game.SetGame(set.Game);
+            Destroy(box.gameObject);
+            return true;
+        }
+
+        /// <summary>Bos masadan takimi alip ele verir (masada kimse yokken).</summary>
+        private void TakeGameSet(PlayerHands hands)
+        {
+            if (game == null || !game.HasGame || !IsFree || game.CurrentGame.BoxPrefab == null) return;
+
+            GameObject box = Instantiate(game.CurrentGame.BoxPrefab, transform.position + Vector3.up, Quaternion.identity);
+            box.name = game.CurrentGame.BoxPrefab.name;
+            if (!box.TryGetComponent(out HoldableItem item) || !hands.TryHold(item))
+            {
+                Destroy(box);
+                return;
+            }
+
+            game.SetGame(null);
         }
 
         // ---- Tepsi ----

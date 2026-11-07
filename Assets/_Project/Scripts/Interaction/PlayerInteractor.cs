@@ -129,6 +129,16 @@ namespace KanBagi.Interaction
             OnFocusChanged?.Invoke(currentFocus);
         }
 
+        /// <summary>
+        /// Bakilan obje ayni ama ipucu degismis olabilir (ocak siradaki bardagi bitirdi: "4 sirada" -> "3 sirada").
+        /// UI istasyon olaylarini dinleyip bunu cagirir; ipucu yeniden okunur.
+        /// </summary>
+        public void RefreshFocus()
+        {
+            if (currentFocus is Component focusComponent && focusComponent == null) currentFocus = null;
+            OnFocusChanged?.Invoke(currentFocus);
+        }
+
         private void HandleInteractInput(InputAction.CallbackContext context)
         {
             if (currentFocus == null) return;

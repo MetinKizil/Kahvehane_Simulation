@@ -25,6 +25,7 @@ namespace KanBagi.Furniture
             public string furniture;
             public Vector3 position;
             public float yaw;
+            public string state; // IFurnitureState (D8a: masadaki oyun takimi)
         }
 
         [Serializable]
@@ -209,6 +210,18 @@ namespace KanBagi.Furniture
             return Spawn(data, position, yaw) != null;
         }
 
+        /// <summary>
+        /// Yerlestirilmeyen esyanin (oyun takimi, D8a) satin alinmasi: para hemen duser, esya cagirana (ele) verilir.
+        /// Tek gecis noktasi (co-op'ta RPC siniri); harcama gunluk ozetin giderine girer.
+        /// </summary>
+        public bool TryPurchaseItem(FurnitureData data)
+        {
+            if (data == null || data.TableGame == null) return false;
+            if (!CanPurchase(data, out _)) return false;
+
+            return EconomyManager.Instance.TrySpendMoney(GetPrice(data));
+        }
+
         // ---- Ic isler ----
 
         private void SpawnLayout(IReadOnlyList<FurnitureLayoutEntry> entries)
@@ -274,7 +287,8 @@ namespace KanBagi.Furniture
                 {
                     furniture = furniture.Data.name,
                     position = furniture.transform.position,
-                    yaw = furniture.Yaw
+                    yaw = furniture.Yaw,
+                    state = furniture.TryGetComponent(out IFurnitureState furnitureState) ? furnitureState.CaptureFurnitureState() : null
                 });
             }
 
@@ -299,7 +313,9 @@ namespace KanBagi.Furniture
                     continue;
                 }
 
-                CreateInstance(furnitureData, entry.position, entry.yaw);
+                PlacedFurniture created = CreateInstance(furnitureData, entry.position, entry.yaw);
+                if (created != null && created.TryGetComponent(out IFurnitureState restoredState))
+                    restoredState.RestoreFurnitureState(entry.state);
             }
 
             SpawnMissingDefaults();

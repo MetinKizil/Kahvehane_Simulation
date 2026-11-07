@@ -4201,7 +4201,6 @@ GameObject:
   - component: {fileID: 334363815}
   - component: {fileID: 334363819}
   - component: {fileID: 334363818}
-  - component: {fileID: 334363817}
   - component: {fileID: 334363820}
   - component: {fileID: 334363822}
   - component: {fileID: 334363823}
@@ -4211,8 +4210,6 @@ GameObject:
   - component: {fileID: 334363827}
   - component: {fileID: 334363828}
   - component: {fileID: 334363829}
-  - component: {fileID: 334363832}
-  - component: {fileID: 334363830}
   - component: {fileID: 334363837}
   - component: {fileID: 334363836}
   - component: {fileID: 334363838}
@@ -4359,20 +4356,6 @@ MonoBehaviour:
   - beverage: {fileID: 11400000, guid: 53b6885b5345d3147b2634188c3f77f1, type: 2}
   - beverage: {fileID: 11400000, guid: 572513dc46bf148449408b0b5faaf6ee, type: 2}
   - beverage: {fileID: 11400000, guid: 295f57fdd3b7454d9f14e4e5a27cf31a, type: 2}
---- !u!114 &334363817
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 334363803}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bf2cae7032376974fa67e278ca5d676b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Customers.CustomerPatienceBoost
-  requiredUpgrade: {fileID: 11400000, guid: c4b9bc6b8fe3b7e44a0c76ca56cd1859, type: 2}
-  patienceMultiplier: 1.5
 --- !u!114 &334363818
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4551,34 +4534,6 @@ MonoBehaviour:
   fileName: denge_log.csv
   writeToFile: 1
   reputationMilestones: 0a000000140000001e00000032000000
---- !u!114 &334363830
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 334363803}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 11c9e62e88a32f345a2b6d483171bed9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Customers.TableGameBoost
-  requiredUpgrade: {fileID: 11400000, guid: 360332cb2fc749f381855f88518fdfcf, type: 2}
-  secondRoundChance: 0.2
---- !u!114 &334363832
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 334363803}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 11c9e62e88a32f345a2b6d483171bed9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Customers.TableGameBoost
-  requiredUpgrade: {fileID: 11400000, guid: 5f4236a6210f4727977195d84d8e5539, type: 2}
-  secondRoundChance: 0.3
 --- !u!114 &334363836
 MonoBehaviour:
   m_ObjectHideFlags: 0

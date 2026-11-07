@@ -250,6 +250,8 @@ namespace KanBagi.Customers
         private bool WantsSecondRound()
         {
             float chance = CustomerModifiers.Instance != null ? CustomerModifiers.Instance.SecondRoundChance : 0f;
+            // D8a: masa oyunlari artik dukkan geneli degil, oturulan masadaki takimdan gelir.
+            if (reservedTable != null && reservedTable.Game != null) chance += reservedTable.Game.SecondRoundChance;
             if (profile != null) chance *= profile.GameCuriosity;
 
             return chance > 0f && UnityEngine.Random.value < chance;
@@ -285,7 +287,7 @@ namespace KanBagi.Customers
             }
         }
 
-        /// <summary>Temel sabir x profilin sabri x dukkandaki sabir carpani (okey takimi vb.).</summary>
+        /// <summary>Temel sabir x dukkandaki sabir carpani x profilin sabri x oturulan masadaki oyun (okey, D8a).</summary>
         private float GetEffectivePatience()
         {
             float multiplier = CustomerModifiers.Instance != null
@@ -293,6 +295,7 @@ namespace KanBagi.Customers
                 : 1f;
 
             if (profile != null) multiplier *= profile.PatienceMultiplier;
+            if (reservedTable != null && reservedTable.Game != null) multiplier *= reservedTable.Game.PatienceMultiplier;
 
             return Mathf.Max(0.1f, patienceDuration * multiplier);
         }

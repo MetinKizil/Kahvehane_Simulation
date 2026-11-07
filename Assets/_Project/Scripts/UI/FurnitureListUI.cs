@@ -3,6 +3,8 @@ using KanBagi.Core;
 using KanBagi.Data;
 using KanBagi.Economy;
 using KanBagi.Furniture;
+using KanBagi.Interaction;
+using KanBagi.Player;
 using KanBagi.Shop;
 using UnityEngine;
 
@@ -78,6 +80,14 @@ namespace KanBagi.UI
             // PC tasinabilir esya (D5): satin alma aninda ekrani acik olan PC bulunur.
             ComputerStation computer = ComputerStation.FindOpen();
             if (computer == null || computer.ScreenUser == null) return;
+
+            // Oyun takimi (D8a) yerlestirilmez: para hemen duser, kutu ele gelir (el doluysa onune birakilir).
+            if (data.TableGame != null)
+            {
+                BuyGameSet(data, computer);
+                return;
+            }
+
             if (!computer.ScreenUser.TryGetComponent(out FurniturePlacer placer))
             {
                 Debug.LogError("[FurnitureListUI] Oyuncuda FurniturePlacer yok. 'Kan Bagi > Yerlestirme Modunu Kur' calistir.", this);
@@ -87,6 +97,23 @@ namespace KanBagi.UI
             // Once ekran kapanir (oyuncunun kontrolu geri gelir), sonra esya ele verilir.
             computer.CloseScreen();
             placer.BeginPlacingNew(data);
+        }
+
+        private void BuyGameSet(FurnitureData data, ComputerStation computer)
+        {
+            GameObject boxPrefab = data.TableGame.BoxPrefab;
+            if (boxPrefab == null || FurnitureManager.Instance == null) return;
+            if (!FurnitureManager.Instance.TryPurchaseItem(data)) return;
+
+            // CloseScreen ekrani kullanani sifirlar: oyuncu once alinir.
+            PlayerLock user = computer.ScreenUser;
+            Vector3 front = user.transform.position + user.transform.forward * 0.8f;
+            GameObject box = Instantiate(boxPrefab, front, Quaternion.identity);
+            box.name = boxPrefab.name;
+
+            computer.CloseScreen();
+            if (user.TryGetComponent(out PlayerHands hands) && box.TryGetComponent(out HoldableItem item))
+                hands.TryHold(item);
         }
 
         private void OnDestroy()

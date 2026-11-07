@@ -44,6 +44,10 @@ namespace KanBagi.Data
         [Tooltip("Dukkanda en fazla kac tane olabilir (ana salon). 0 = sinirsiz. Genisletme bolgeleri (D6) artiracak.")]
         [SerializeField] private int baseLimit;
 
+        [Header("Oyun takimi")]
+        [Tooltip("Doluysa bu bir masa oyun takimidir (D8a): yerlestirilmez, satin alininca ELE kutu olarak gelir, masaya E ile konur.")]
+        [SerializeField] private TableGameData tableGame;
+
         [Header("Yer")]
         [Tooltip("Hangi bolgenin zeminine konabilir. Kumar odasina sadece bu bolgedeki esyalar konur.")]
         [SerializeField] private FurnitureZone zone = FurnitureZone.Main;
@@ -57,5 +61,6 @@ namespace KanBagi.Data
         public UpgradeData RequiredUpgrade => requiredUpgrade;
         public int BaseLimit => baseLimit;
         public FurnitureZone Zone => zone;
+        public TableGameData TableGame => tableGame;
     }
 }
