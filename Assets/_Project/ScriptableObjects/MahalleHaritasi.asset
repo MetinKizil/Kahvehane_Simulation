@@ -1,0 +1,656 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13b2ca54ad3983446900601735ddf089, type: 3}
+  m_Name: MahalleHaritasi
+  m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.NeighborhoodMap
+  cellSize: 5
+  gridSize: {x: 39, y: 51}
+  blocks:
+  - name: EvBati1
+    type: 0
+    col: 0
+    row: 2
+    width: 2
+    height: 8
+    front: 2
+    color: {r: 0.63529414, g: 0.85490197, b: 0.9764706, a: 1}
+    link: 
+  - name: EvBati2
+    type: 0
+    col: 0
+    row: 10
+    width: 2
+    height: 11
+    front: 2
+    color: {r: 0.63529414, g: 0.85490197, b: 0.9764706, a: 1}
+    link: 
+  - name: EvBati3
+    type: 0
+    col: 0
+    row: 21
+    width: 2
+    height: 19
+    front: 2
+    color: {r: 0.63529414, g: 0.85490197, b: 0.9764706, a: 1}
+    link: 
+  - name: EvBati4
+    type: 0
+    col: 0
+    row: 40
+    width: 2
+    height: 11
+    front: 2
+    color: {r: 0.63529414, g: 0.85490197, b: 0.9764706, a: 1}
+    link: 
+  - name: KoseAvlu
+    type: 6
+    col: 0
+    row: 0
+    width: 2
+    height: 2
+    front: 1
+    color: {r: 0.3372549, g: 0.3372549, b: 0.3372549, a: 1}
+    link: 
+  - name: EvKuzey1
+    type: 0
+    col: 2
+    row: 0
+    width: 9
+    height: 2
+    front: 1
+    color: {r: 0.63529414, g: 0.85490197, b: 0.9764706, a: 1}
+    link: 
+  - name: EvKuzey2
+    type: 0
+    col: 11
+    row: 0
+    width: 9
+    height: 2
+    front: 1
+    color: {r: 0.63529414, g: 0.85490197, b: 0.9764706, a: 1}
+    link: 
+  - name: EvKuzey3
+    type: 0
+    col: 20
+    row: 0
+    width: 8
+    height: 2
+    front: 1
+    color: {r: 0.63529414, g: 0.85490197, b: 0.9764706, a: 1}
+    link: 
+  - name: OyunDisiKuzey
+    type: 8
+    col: 28
+    row: 0
+    width: 11
+    height: 2
+    front: 1
+    color: {r: 0.23529412, g: 0.23529412, b: 0.23529412, a: 1}
+    link: 
+  - name: OyunDisiDogu1
+    type: 8
+    col: 36
+    row: 2
+    width: 3
+    height: 10
+    front: 3
+    color: {r: 0.23529412, g: 0.23529412, b: 0.23529412, a: 1}
+    link: 
+  - name: OyunDisiDogu2
+    type: 8
+    col: 36
+    row: 25
+    width: 3
+    height: 26
+    front: 3
+    color: {r: 0.23529412, g: 0.23529412, b: 0.23529412, a: 1}
+    link: 
+  - name: EvDogu1
+    type: 0
+    col: 36
+    row: 12
+    width: 3
+    height: 5
+    front: 3
+    color: {r: 0.63529414, g: 0.85490197, b: 0.9764706, a: 1}
+    link: 
+  - name: EvDogu2
+    type: 0
+    col: 36
+    row: 21
+    width: 3
+    height: 4
+    front: 3
+    color: {r: 0.63529414, g: 0.85490197, b: 0.9764706, a: 1}
+    link: 
+  - name: EvHavuzlu
+    type: 0
+    col: 28
+    row: 2
+    width: 4
+    height: 15
+    front: 3
+    color: {r: 0.63529414, g: 0.85490197, b: 0.9764706, a: 1}
+    link: 
+  - name: Pavyon
+    type: 2
+    col: 33
+    row: 2
+    width: 3
+    height: 5
+    front: 3
+    color: {r: 0.80784315, g: 0.7490196, b: 0.8509804, a: 1}
+    link: 
+  - name: AvluPavyon
+    type: 6
+    col: 33
+    row: 7
+    width: 3
+    height: 5
+    front: 3
+    color: {r: 0.3372549, g: 0.3372549, b: 0.3372549, a: 1}
+    link: 
+  - name: EvKoseDogu
+    type: 0
+    col: 32
+    row: 12
+    width: 4
+    height: 5
+    front: 1
+    color: {r: 0.63529414, g: 0.85490197, b: 0.9764706, a: 1}
+    link: 
+  - name: Hastane
+    type: 1
+    col: 4
+    row: 4
+    width: 6
+    height: 13
+    front: 1
+    color: {r: 0.70980394, g: 0.36078432, b: 0.41568628, a: 1}
+    link: 
+  - name: EvlerKuzey
+    type: 0
+    col: 12
+    row: 4
+    width: 8
+    height: 5
+    front: 1
+    color: {r: 0.63529414, g: 0.85490197, b: 0.9764706, a: 1}
+    link: 
+  - name: Park
+    type: 5
+    col: 20
+    row: 4
+    width: 6
+    height: 5
+    front: 1
+    color: {r: 0.5686275, g: 0.70980394, b: 0.5372549, a: 1}
+    link: 
+  - name: Veteriner
+    type: 1
+    col: 12
+    row: 11
+    width: 4
+    height: 4
+    front: 3
+    color: {r: 0.95686275, g: 0.7529412, b: 0.7764706, a: 1}
+    link: 
+  - name: Petshop
+    type: 1
+    col: 12
+    row: 15
+    width: 4
+    height: 2
+    front: 1
+    color: {r: 0.9764706, g: 0.9137255, b: 0.6392157, a: 1}
+    link: 
+  - name: Halici
+    type: 1
+    col: 20
+    row: 11
+    width: 3
+    height: 3
+    front: 3
+    color: {r: 0.8235294, g: 0.5686275, b: 0.6431373, a: 1}
+    link: 
+  - name: Ayakkabici
+    type: 1
+    col: 20
+    row: 14
+    width: 3
+    height: 3
+    front: 3
+    color: {r: 0.88235295, g: 0.8509804, b: 0.5568628, a: 1}
+    link: 
+  - name: GymMagazasi
+    type: 1
+    col: 23
+    row: 11
+    width: 3
+    height: 6
+    front: 2
+    color: {r: 0.9843137, g: 0.7137255, b: 0.50980395, a: 1}
+    link: 
+  - name: Eczane2
+    type: 1
+    col: 4
+    row: 21
+    width: 4
+    height: 2
+    front: 0
+    color: {r: 0.8980392, g: 0.54509807, b: 0.5568628, a: 1}
+    link: 
+  - name: Cicekci
+    type: 2
+    col: 8
+    row: 21
+    width: 3
+    height: 2
+    front: 0
+    color: {r: 0.5686275, g: 0.70980394, b: 0.5372549, a: 1}
+    link: 
+  - name: Dukkan1
+    type: 1
+    col: 11
+    row: 21
+    width: 2
+    height: 2
+    front: 0
+    color: {r: 0.8235294, g: 0.64705884, b: 0.6039216, a: 1}
+    link: 
+  - name: Pastane
+    type: 1
+    col: 13
+    row: 21
+    width: 3
+    height: 5
+    front: 2
+    color: {r: 0.9764706, g: 0.9137255, b: 0.6392157, a: 1}
+    link: 
+  - name: Emlakci
+    type: 2
+    col: 13
+    row: 26
+    width: 3
+    height: 4
+    front: 2
+    color: {r: 0.9843137, g: 0.7137255, b: 0.50980395, a: 1}
+    link: 
+  - name: Kiraathane
+    type: 3
+    col: 12
+    row: 30
+    width: 4
+    height: 4
+    front: 2
+    color: {r: 0.8235294, g: 0.64705884, b: 0.6039216, a: 1}
+    link: 
+  - name: Bahce
+    type: 4
+    col: 12
+    row: 34
+    width: 4
+    height: 2
+    front: 1
+    color: {r: 0.6627451, g: 0.75686276, b: 0.6156863, a: 1}
+    link: 
+  - name: Mobilyaci
+    type: 2
+    col: 6
+    row: 32
+    width: 6
+    height: 4
+    front: 1
+    color: {r: 0.8745098, g: 0.6784314, b: 0.74509805, a: 1}
+    link: 
+  - name: EvlerBati
+    type: 0
+    col: 4
+    row: 23
+    width: 2
+    height: 13
+    front: 3
+    color: {r: 0.63529414, g: 0.85490197, b: 0.9764706, a: 1}
+    link: 
+  - name: AvluBati1
+    type: 6
+    col: 6
+    row: 23
+    width: 7
+    height: 7
+    front: 0
+    color: {r: 0.3372549, g: 0.3372549, b: 0.3372549, a: 1}
+    link: 
+  - name: AvluBati2
+    type: 6
+    col: 6
+    row: 30
+    width: 6
+    height: 2
+    front: 0
+    color: {r: 0.3372549, g: 0.3372549, b: 0.3372549, a: 1}
+    link: 
+  - name: Kasap
+    type: 2
+    col: 20
+    row: 21
+    width: 2
+    height: 4
+    front: 3
+    color: {r: 0.8235294, g: 0.5686275, b: 0.6431373, a: 1}
+    link: 
+  - name: Dukkan2
+    type: 1
+    col: 20
+    row: 25
+    width: 2
+    height: 2
+    front: 3
+    color: {r: 0.8235294, g: 0.64705884, b: 0.6039216, a: 1}
+    link: 
+  - name: Eczane
+    type: 2
+    col: 22
+    row: 21
+    width: 4
+    height: 2
+    front: 0
+    color: {r: 0.8980392, g: 0.54509807, b: 0.5568628, a: 1}
+    link: KirathaneMulk
+  - name: Manav2
+    type: 1
+    col: 24
+    row: 23
+    width: 2
+    height: 4
+    front: 2
+    color: {r: 0.6627451, g: 0.81960785, b: 0.5568628, a: 1}
+    link: 
+  - name: Dukkan3
+    type: 1
+    col: 22
+    row: 25
+    width: 2
+    height: 2
+    front: 1
+    color: {r: 0.8235294, g: 0.64705884, b: 0.6039216, a: 1}
+    link: 
+  - name: AvluOrta1
+    type: 6
+    col: 22
+    row: 23
+    width: 2
+    height: 2
+    front: 0
+    color: {r: 0.3372549, g: 0.3372549, b: 0.3372549, a: 1}
+    link: 
+  - name: Donerci
+    type: 1
+    col: 20
+    row: 28
+    width: 3
+    height: 2
+    front: 0
+    color: {r: 0.8235294, g: 0.64705884, b: 0.6039216, a: 1}
+    link: 
+  - name: EvErEr
+    type: 0
+    col: 23
+    row: 28
+    width: 3
+    height: 2
+    front: 0
+    color: {r: 0.63529414, g: 0.85490197, b: 0.9764706, a: 1}
+    link: 
+  - name: InternetCafe
+    type: 2
+    col: 26
+    row: 28
+    width: 2
+    height: 6
+    front: 2
+    color: {r: 0.80784315, g: 0.7490196, b: 0.8509804, a: 1}
+    link: 
+  - name: Kuyumcu
+    type: 2
+    col: 20
+    row: 30
+    width: 4
+    height: 6
+    front: 3
+    color: {r: 0.9764706, g: 0.9137255, b: 0.6392157, a: 1}
+    link: 
+  - name: Berber
+    type: 2
+    col: 24
+    row: 34
+    width: 4
+    height: 2
+    front: 1
+    color: {r: 0.8980392, g: 0.54509807, b: 0.5568628, a: 1}
+    link: 
+  - name: AvluOrta2
+    type: 6
+    col: 24
+    row: 30
+    width: 2
+    height: 4
+    front: 0
+    color: {r: 0.3372549, g: 0.3372549, b: 0.3372549, a: 1}
+    link: 
+  - name: EvlerDogu
+    type: 0
+    col: 27
+    row: 21
+    width: 9
+    height: 4
+    front: 0
+    color: {r: 0.9843137, g: 0.7137255, b: 0.50980395, a: 1}
+    link: 
+  - name: TekelBayi
+    type: 1
+    col: 27
+    row: 25
+    width: 2
+    height: 2
+    front: 3
+    color: {r: 0.9843137, g: 0.7137255, b: 0.50980395, a: 1}
+    link: 
+  - name: AvluDogu1
+    type: 6
+    col: 29
+    row: 25
+    width: 7
+    height: 2
+    front: 0
+    color: {r: 0.3372549, g: 0.3372549, b: 0.3372549, a: 1}
+    link: 
+  - name: Iddia
+    type: 2
+    col: 29
+    row: 27
+    width: 3
+    height: 2
+    front: 3
+    color: {r: 0.5686275, g: 0.70980394, b: 0.5372549, a: 1}
+    link: 
+  - name: BeyazEsya
+    type: 1
+    col: 29
+    row: 29
+    width: 2
+    height: 3
+    front: 3
+    color: {r: 0.8156863, g: 0.83137256, b: 0.65882355, a: 1}
+    link: 
+  - name: Antikaci
+    type: 1
+    col: 29
+    row: 32
+    width: 4
+    height: 4
+    front: 3
+    color: {r: 0.78431374, g: 0.8, b: 0.65882355, a: 1}
+    link: 
+  - name: Dukkan4
+    type: 1
+    col: 33
+    row: 34
+    width: 3
+    height: 2
+    front: 1
+    color: {r: 0.80784315, g: 0.7490196, b: 0.8509804, a: 1}
+    link: 
+  - name: AvluDogu2
+    type: 6
+    col: 31
+    row: 29
+    width: 5
+    height: 3
+    front: 0
+    color: {r: 0.3372549, g: 0.3372549, b: 0.3372549, a: 1}
+    link: 
+  - name: AvluDogu3
+    type: 6
+    col: 33
+    row: 32
+    width: 3
+    height: 2
+    front: 0
+    color: {r: 0.3372549, g: 0.3372549, b: 0.3372549, a: 1}
+    link: 
+  - name: EvGuney
+    type: 0
+    col: 4
+    row: 40
+    width: 4
+    height: 11
+    front: 0
+    color: {r: 0.63529414, g: 0.85490197, b: 0.9764706, a: 1}
+    link: 
+  - name: Okul
+    type: 1
+    col: 8
+    row: 40
+    width: 8
+    height: 8
+    front: 0
+    color: {r: 0.6313726, g: 0.7019608, b: 0.8784314, a: 1}
+    link: 
+  - name: AvluOkul
+    type: 6
+    col: 8
+    row: 48
+    width: 6
+    height: 3
+    front: 0
+    color: {r: 0.3372549, g: 0.3372549, b: 0.3372549, a: 1}
+    link: 
+  - name: Cigkofte
+    type: 1
+    col: 14
+    row: 48
+    width: 2
+    height: 3
+    front: 2
+    color: {r: 0.95686275, g: 0.7529412, b: 0.7764706, a: 1}
+    link: 
+  - name: Bakkal
+    type: 2
+    col: 20
+    row: 40
+    width: 4
+    height: 4
+    front: 3
+    color: {r: 0.95686275, g: 0.7529412, b: 0.8784314, a: 1}
+    link: BakkalMulk
+  - name: Dukkan5
+    type: 1
+    col: 20
+    row: 44
+    width: 4
+    height: 2
+    front: 3
+    color: {r: 0.8235294, g: 0.64705884, b: 0.6039216, a: 1}
+    link: 
+  - name: Terzi
+    type: 2
+    col: 24
+    row: 40
+    width: 3
+    height: 3
+    front: 0
+    color: {r: 0.7529412, g: 0.78431374, b: 0.9098039, a: 1}
+    link: TerziMulk
+  - name: Dukkan6
+    type: 1
+    col: 24
+    row: 43
+    width: 3
+    height: 3
+    front: 2
+    color: {r: 0.8235294, g: 0.64705884, b: 0.6039216, a: 1}
+    link: 
+  - name: Firin
+    type: 2
+    col: 20
+    row: 47
+    width: 4
+    height: 4
+    front: 3
+    color: {r: 0.8784314, g: 0.7529412, b: 0.6901961, a: 1}
+    link: 
+  - name: Manav
+    type: 2
+    col: 24
+    row: 47
+    width: 3
+    height: 4
+    front: 2
+    color: {r: 0.6627451, g: 0.81960785, b: 0.5568628, a: 1}
+    link: 
+  - name: AmcaninYeri
+    type: 7
+    col: 29
+    row: 40
+    width: 7
+    height: 11
+    front: 3
+    color: {r: 0.99215686, g: 0.45882353, b: 0.003921569, a: 1}
+    link: 
+  - name: GirisKuzey
+    type: 9
+    col: 18
+    row: 26
+    width: 0
+    height: 0
+    front: 0
+    color: {r: 1, g: 1, b: 1, a: 1}
+    link: 
+  - name: GirisGuney
+    type: 9
+    col: 18
+    row: 39
+    width: 0
+    height: 0
+    front: 0
+    color: {r: 1, g: 1, b: 1, a: 1}
+    link: 
+  - name: GirisOkul
+    type: 9
+    col: 14
+    row: 39.6
+    width: 0
+    height: 0
+    front: 0
+    color: {r: 1, g: 1, b: 1, a: 1}
+    link: Ogrenci

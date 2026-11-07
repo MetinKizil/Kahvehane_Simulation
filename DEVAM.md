@@ -1002,6 +1002,36 @@ Hepsi alınınca masa sınırı 4 → 28.
 
 ---
 
+## 6.10 MAHALLE — 10d (kararlar 2026-11-07)
+
+**Kullanıcı kararları (10d planı):**
+1. **Mahalle kullanıcının kağıda çizdiği plana birebir** kuruldu (1 kare = 5 m, 39×51 kare ≈ 195×255 m). Çizimdeki "Bilinmeyen Dükkan" = bizim kıraathane (kapı doğuya, **Kuyumcu'ya** bakar), altındaki "Bahçe" = bizim bahçe. Tekrarlanan "Dükkan"lar dolgu. Yazım düzeltmeleri: Könerci = Dönerci, er er = Ev, Anükacı = Antikacı, Teled = Tekel Bayi, Payyon = Pavyon, Büyücü Eşya = Beyaz Eşya. **Yer değiştirme fikirleri (Kuyumcu↔Internet Cafe, İddia↔Emlakçı) kullanıcı tarafından İPTAL edildi — çizimdeki yerler geçerli.**
+2. **Mülkler (14) ve kademe etkileri** (10d-2'de uygulanacak; kullanıcı 700–1000 ile 1100–1600 kademelerinin **içeriklerini değiştirdi**):
+   - 60–200 itibar: **Bakkal** (malzeme −%20), **Fırın** (simit ek satış +5 TL), **Manav** (ucuz meyve suyu malzemesi, ileride), **Terzi** (Kabadayı/Esnaf daha sık)
+   - 300–600: **Berber** (itibar ×1.25), **Kasap** (haraç −%25), **Çiçekçi**, **Eczane** (etkileri netleşecek)
+   - 700–1000: **Emlakçı** (mülk −%10), **Pavyon** (mafya bağı: haraç azalır / mafya iş getirir), **Kuyumcu** (kasaya günlük faiz ya da polis cezası düşer)
+   - 1100–1600: **İddia** (gece ek gelir ama şüphe), **Internet Cafe** (müşteri gelişi artar), **Mobilyacı** (eşya −%15)
+   - Final: **Amcanın Yeri**. Eski `KirathaneMulk` asset'i (2000 TL / itibar 240 / kira 160) **Eczane** oldu (asset adı kayıt uyumu için aynı).
+3. **Bitiş koşulu:** bütün mülkler alınmış + itibar ≥ **2000** + hesaplaşma bedeli **50.000 TL** ödenir; sonra serbest oyun. **Amca NPC:** her mülkte gücü azalır; karşı hamleleri (ihbar şüphe +20, mafya kışkırtma → daha yüksek haraç, fiyat kırma → bir gün daha az müşteri) seyrek ve gittikçe azalan.
+4. Ev / Hastane / Okul / Park süs. **Öğrenciler Okul tarafından** gelir. Müşteriler yakın sokak noktalarından yürüyerek gelir (~10–15 sn).
+5. **Adım bölünmesi:** 10d-1a sokaklar/bloklar/giriş noktaları ✅ → 10d-1b tabelalar + bütün mülkler satın alınabilir + bahçe sokak kapısı + gece kepengi → 10d-2 mülk etkileri → 10d-3 Amca NPC + karşı hamleler → 10d-4 bitiş.
+
+### Adım 10d-1a — Mahalle haritası ✅
+**Oyuncu ne görür:** dükkandan çıkınca çizimdeki mahalle: asfalt sokaklar (çizimde 1–4 kare: 5–20 m), blok kenarlarında 1.5 m kaldırım, düz renkli binalar (evler mavi 6–9 m, dükkanlar 4 m, Hastane 12, Okul 9, Pavyon 5, **Amcanın Yeri 14 m turuncu**), yeşil park, ada içlerinde koyu gri alçak avlular, "Oyun Dışı" koyu arazi. Harita kenarına ve Oyun Dışı alanlarına yürünemez. Kapının tam karşısında **Kuyumcu**. Bakkal ve Terzi güneydeki bloğa, Eczane (eski Kıraathane mülkü) kuzeydoğu çaprazdaki bloğa taşındı; SATILIK tabelaları binanın sokağa bakan yüzünde, yerinde satın alma çalışıyor. Müşteri grupları kuzey/güney sokak noktalarından (öğrenciler Okul önünden) **yürüyerek** gelir, geldikleri yere dönüp kaybolur. Polis, tahsildar, kurye, kumarbaz hâlâ kapıdaki `GirisNoktsi`yi kullanır. Tabela/isim yok (10d-1b).
+
+**Parçalar:**
+- **`NeighborhoodMap`** (`KanBagi.Data`, SO, `Create > Kan Bagi > Neighborhood Map`): `cellSize` 5, `gridSize` 39×51, `blocks` (`MapBlock`: ad, `MapBlockType` Ev/Sus/Mulk/Dukkan/Bahce/Park/Avlu/Amca/Disari/Giris, sütun/satır/genişlik/yükseklik **çizimdeki kare cinsinden**, `MapFront` K/G/D/B = sokağa bakan yüz **çizimdeki yönle**, renk, `link` = mulk için PropertyData asset adı / giriş için tercih eden profil). Asset **`ScriptableObjects/MahalleHaritasi.asset`**.
+- **`Kan Bagi > Mahalleyi Kur`** (`NeighborhoodBuilder`, tekrar çalıştırılabilir): asset yoksa/boşsa **`DefaultTable`**'dan (koddaki çizim tablosu) doldurur. **Yön:** çizim dükkanın etrafında saat yönünde 90° döner — çizimin **doğusu = −z** (kapı), **güneyi = −x** (bahçe); hizalama ana `Zemin`'in `Renderer.bounds`'undan (`Dukkan` bloğunun doğu kenarı = ön duvar, güney kenarı = ana salonun bahçe tarafı). Dönüşüm: **x = 165 − 5·satır, z = 75 − 5·sütun**. Kurulanlar `Mahalle/Harita`: `Zemin` (asfalt, üstü y −0.03; **ana salon zemininin altı boş** — bodrum merdiveni), `Kaldirimlar` (üstü y 0.05, dükkan+bahçe alanına taşan kısım kesilir), `Binalar` (NavMeshModifier **Not Walkable**; mülk binası sahnede varsa o taşınır, yerel +Z = ön yüz), `Sinirlar` (collider'lı, renderer'sız görünmez duvarlar — NavMesh'e girmez), `GirisNoktalari` (`GirisKuzey`, `GirisGuney`, `GirisOkul` → Ogrenci; kapıya bakar). Eski `Mahalle/Sokak` silinir; `CustomerSpawner.streetEntries` bağlanır; tabelalar `Tabelalari Binalara Yerlestir` ile yeniden asılır. Malzemeler `Materials/Mahalle_<renk>.mat`, `MahalleAsfaltMat`, `MahalleKaldirimMat`.
+- **Bir bloğu taşımak:** `MahalleHaritasi.asset`'te sayıyı değiştir → `Mahalleyi Kur` → `NavMesh'i Yeniden Bake Et` → kaydet. (Tabloyu koddan yeniden almak için asset'i sil.)
+- **`CustomerSpawner`**: `StreetEntry` (`point`, `preferredProfiles`) listesi `streetEntries`. Grup, profilini tercih eden girişten (yoksa herkese açık girişlerden rastgele) doğar ve **çıkışı da o nokta**. Liste boşsa eski davranış (kapı noktası).
+- **`NavMeshRuntimeBaker`**: açılışta bir kez **tam** `BuildNavMesh` (diskteki asset değişmesin diye bellekte yeni veri), sonra her istek **`UpdateNavMesh`** (arka planda, sadece değişen karolar) → büyük haritada eşya taşırken takılma yok. Güncelleme sürerken gelen istek bitince bir tur daha çalıştırır.
+- **`SignPrefabBuilder`**: tabela binanın **yerel +Z** yüzüne ve dönüşüne göre asılır (eskiden dünya +Z).
+- `KirathaneMulk.asset`: adı **Eczane**, açıklaması güncellendi (fiyat/itibar/kira aynı).
+
+**Test:** mahalle çizimle aynı, Kuyumcu karşıda, müşteriler sokaktan yürüyerek gelip gidiyor, öğrenciler okul tarafından, mülk tabelaları ve satın alma, harita sınırı, eşya taşımada takılma yok, polis/mafya/kurye/kumar değişmedi. Kullanıcı "çalışıyor" dedi; ardından İddia↔Emlakçı yer değişimini iptal ettirdi (çizimdeki yerler, harita yeniden kuruldu).
+
+---
+
 ## 7. SAHNE KURULUMU (`Assets/Scenes/SampleScene.unity`)
 
 | Obje | Konum | Üzerindeki script'ler |
@@ -1039,11 +1069,8 @@ Hepsi alınınca masa sınırı 4 → 28.
 | `GirisNoktasi` (Empty) | (0, 0, -4.5) | — (spawn + exit) |
 | `Spawner` (Empty) | — | CustomerSpawner (**profiles**: EmekliDayi, Ogrenci, Esnaf, Kabadayi — `Musteri Profillerini Bagla` bağlar) |
 | `TeslimatNoktasi` (Empty) | (2, 0, -3.5) | — (kapının yanı, koliler buraya düşer) |
-| `Mahalle` (Empty) | — | — |
-| ├ `Sokak` (Plane) | (0, 0, -10), scale (1.5,1,1) | — |
-| ├ `BakkalBinasi` (Cube, scale 3) | (-4, 1.5, -9) | PropertyBuilding (BakkalMulk) + tabela child'ı |
-| ├ `TerziBinasi` (Cube, scale 3) | (0, 1.5, -12.5) | PropertyBuilding (TerziMulk) |
-| └ `KirathaneBinasi` (Cube, scale 3) | (4, 1.5, -9) | PropertyBuilding (KirathaneMulk) |
+| `Mahalle` (Empty) | — | **10d-1a:** `Harita` (`Zemin` asfalt, `Kaldirimlar`, `Binalar` Not Walkable, `Sinirlar` görünmez duvarlar, `GirisNoktalari` Kuzey/Guney/Okul). Elle kurulmaz: `Kan Bagi > Mahalleyi Kur` (veri `MahalleHaritasi.asset`) |
+| ├ `Harita/Binalar/BakkalBinasi`, `TerziBinasi`, `EczaneBinasi` | çizimdeki yerleri (Bakkal/Terzi güney blok, Eczane kuzeydoğu çapraz) | PropertyBuilding (BakkalMulk / TerziMulk / KirathaneMulk = Eczane) + tabela child'ı (yerel +Z ön yüz) |
 | ~~`Bodrum/KumarOdasi/RuletMasasi`~~ — **D6d-2'den beri sahnede YOK** | oyuncunun bodruma koyduğu yer | PC → EŞYALAR'dan alınır (`RuletMasasiEsya`), `FurnitureManager` `Prefabs/RuletMasasi.prefab`'tan oluşturur (GamblingTable rulet + GamblerSpawner + BahisAlanlari + Cark + tabela). Bodrum zemini `ShopFloor` zone GamblingRoom |
 | `Bodrum` (Empty) | sol arka köşe x −5…−3.5, z 0…5 | **D6c:** `MerdivenAlani` (ReservedArea), `MerdivenKapagiYeri`, `KumarOdasi` (zemin y −3, duvar, tavan, merdiven, korkuluk, `Mentese/Kapak` = HiddenHatch, ışıklar). `Zemin` mesh'i `ZeminMerdivenBoslugu`. Elle kurulmaz: `Kan Bagi > Bodrumu Kur` |
 | `MafyaNoktasi` (Empty) | (1.5, 0.9, -4) | — (tahsildar burada belirir, y=0.9 kapsül yere bassın diye) |
@@ -1132,6 +1159,8 @@ Hepsi alınınca masa sınırı 4 → 28.
 **Adım D8a bitti ve test edildi.** Oyun takımları EŞYALAR'dan alınıp masaya konuyor/alınıyor, etkisi sadece o masada; Oyun Rafı ile takımlar saklanıyor; parçalar gerçekçi; ocak sıra sayısı yazısı tazeleniyor.
 
 **Adım D8b bitti ve test edildi — D1–D8 TAMAM.** Gruplar içecek gibi oyun istiyor (balon), takım götürülünce 20 TL masa parası + kişi başı itibar; okey 4'lüye +%40 ikinci tur. **Sıradaki karar: D9 (kişiselleştirme / cafe: mobilya kataloğu, duvar kâğıdı, zemin) mı, yoksa 10d (mahalle) mı?** D9 dükkan boyutunu etkilemediği için mahalleden sonraya da kayabilir — kullanıcıya sorulacak.
+
+**Adım 10d-1a bitti ve test edildi — MAHALLE BAŞLADI.** Kullanıcının çizdiği mahalle (195×255 m) dükkanın etrafına kuruldu; Kuyumcu kapının karşısında, müşteriler sokak noktalarından (öğrenciler okuldan) yürüyerek geliyor, Bakkal/Terzi/Eczane (eski Kıraathane) yeni yerlerinde satılık, NavMesh eşya taşırken arka planda güncelleniyor. **Sıradaki iş: 10d-1b** — bina tabelaları, 14 mülkün hepsi satın alınabilir (kademeler bölüm 6.10), bahçenin sokak kapısı, gece kepengi (plan ayrıca onaylanacak).
 
 **Adım 10c-2 bitti ve test edildi.** İskambil (200 TL, itibar 40, +%30) ve Domino (350 TL, itibar 100, +%20) masalarda beliriyor; müşteriler içtikten sonra oyun meraklarına göre bir tur daha sipariş veriyor, ciro iki satışı da sayıyor, ikinci turda bekletmenin cezası yok.
 
@@ -1328,8 +1357,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 | ~~**10a-2a**~~ ✅ | Mahalle fısıltıları (olaylara eşlik eden ton satırı + ilk sabah yönlendirmesi) — **bitti** | Ucuz, kimliği oyunun içine taşır |
 | ~~**10a-2b**~~ ✅ | Mevcut metinlerin tonu (sadece tablodakiler), `ArayuzMetinleri` + `Metinleri Uygula` — **bitti** | Fısıltılarla aynı tonu mevcut arayüze yayar |
 | ~~**10c**~~ ✅ | Müşteri ve stok çeşitliliği — **bitti** (10c-1 profiller, 10c-2 masa oyunları, 10c-3 sahlep; 10c-4 bahçe → D bölümüne taşındı) | Faz 2'den kalan |
-| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi, D2 ✅ eşya altyapısı, D3 ✅ yerleştirme modu, D4 ✅ eşya satın alma, D5a ✅ temel eşyalar taşınabilir, D5b ✅ makineler kataloğa, D6a ✅ duvarlar + kapı, D6b ✅ genişletme altyapısı + Yan Oda, D6c ✅ bodrum + gizli kapak, D6d-1 ✅ rulet oyunu, D6d-2 ✅ rulet masası eşyası, D6e ✅ kalan 5 bölge, D6f ✅ köşe salon + köşe bahçe, D6g ✅ üst kat, D7a ✅ dört kişilik masalar, D7b ✅ grup müşteriler, D8a ✅ masaya konan oyun takımları, D8b ✅ gruplar oyun ister; sıradaki D9 kişiselleştirme veya 10d mahalle — kullanıcıya sorulacak): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
-| **10d** | Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **bahçenin sokağa kapısı (D6e kararı)**, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
+| **D1–D9** | **DÜKKAN DÜZENLEME — DEVAM EDİYOR** (D1 ✅ tepsi, D2 ✅ eşya altyapısı, D3 ✅ yerleştirme modu, D4 ✅ eşya satın alma, D5a ✅ temel eşyalar taşınabilir, D5b ✅ makineler kataloğa, D6a ✅ duvarlar + kapı, D6b ✅ genişletme altyapısı + Yan Oda, D6c ✅ bodrum + gizli kapak, D6d-1 ✅ rulet oyunu, D6d-2 ✅ rulet masası eşyası, D6e ✅ kalan 5 bölge, D6f ✅ köşe salon + köşe bahçe, D6g ✅ üst kat, D7a ✅ dört kişilik masalar, D7b ✅ grup müşteriler, D8a ✅ masaya konan oyun takımları, D8b ✅ gruplar oyun ister; D9 kişiselleştirme mahalleden sonraya kaldı): tepsi, eşya altyapısı, serbest yerleştirme, eşya satın alma, her şey taşınabilir, duvarlar + sıralı genişletme + kumar odası, grup müşteriler, masa bazlı oyunlar, kişiselleştirme. Ayrıntı bölüm 6.9 | **Mahalleden önce:** dükkanın en büyük boyutu belli olsun ki mahalle onun etrafına kurulsun |
+| **10d** | **DEVAM EDİYOR** (10d-1a ✅ mahalle haritası; sıradaki 10d-1b tabelalar + mülkler + bahçe kapısı + kepenk; ayrıntı bölüm 6.10) — Mahalle planlaması, mülkleri işletmeye çevirme, kapı/iç-dış ayrımı, **bahçenin sokağa kapısı (D6e kararı)**, **Amca NPC + bitiş koşulu** | Mekanikler oturmadan şehir planı yapmak boşa emek |
 | **10e** | "Aranan adam" senaryosu + mafya işbirliği kolu | Polis/mafya sistemlerine derinlik; altyapı hazır |
 | **11** | Görsel cila, ses, ana menü, kayıt slotları | **En sona**: mekanikler değişince geometri/model yeniden yapılır |
 | **FAZ 5** | **Co-op netcode** | Tek oyunculu her şey bitince |
@@ -1353,7 +1382,8 @@ Bundan sonrası **cila ve denge**. Öncelik sırasıyla:
 
 **Durum (2026-10-17): GitHub bağlantısı kuruldu, tüm commit'ler push edildi** (ilk push: 17 commit, ~2.7 MB). Yerel `main` = `origin/main`.
 ```
-(yeni)   Adim D8b: gruplar oyun ister
+(yeni)   Adim 10d-1a: mahalle haritasi
+edf6792  Adim D8b: gruplar oyun ister
 801f3be  Adim D8a: masaya konan oyun takimlari ve oyun rafi
 5a95fa5  Adim D7b: grup musteriler
 7d1c36c  Adim D7a: dort kisilik masalar
@@ -1405,7 +1435,7 @@ f9dc2d3  Adim 8b: mafya ve harac sistemi
 
 1. Bu dosyayı oku.
 2. `Assets/_Project/Scripts/` altındaki kodları oku — mevcut API ve stile uy.
-3. **Sıradaki adımın (önce kullanıcıya sor: D9 kişiselleştirme/cafe mı, 10d mahalle mi? Dükkanın son boyutu bölüm 6.9 D6g'de), Büyük Bahçe; fiyat/önkoşul tablosu bölüm 6.9 D6b, ExpansionZoneBuilder.Zones tablosuna satır) planını anlat, onay al**, sonra kod yaz. Planda **oyuncunun ne göreceğini** açıkça yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
+3. **Sıradaki adımın (10d-1b: bina tabelaları, 14 mülk satın alınabilir, bahçe sokak kapısı, gece kepengi — kararlar bölüm 6.10) planını anlat, onay al**, sonra kod yaz. Planda **oyuncunun ne göreceğini** açıkça yaz. Dükkan Düzenleme bölümünün kararları ve taslak adımları bölüm 6.9'da.
 
 ### Bu projede öğrenilen dersler (tekrar aynı hataya düşme)
 - **UI'ı elle kurdurma.** Panel/satır/tabela gerekiyorsa `Assets/_Project/Scripts/Editor/` altına bir builder yaz, menüden üretilsin. Elle kurulan ilk PC paneli üst üste bindi ve baştan yapıldı.

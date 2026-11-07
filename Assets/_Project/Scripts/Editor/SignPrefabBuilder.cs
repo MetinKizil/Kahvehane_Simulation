@@ -127,15 +127,11 @@ namespace KanBagi.EditorTools
             sign.name = $"{building.name}Tabelasi";
             sign.transform.SetParent(building.transform, worldPositionStays: true);
 
-            Bounds bounds = GetWorldBounds(building);
-
-            // Binanin +Z yuzu, kapi hizasinin biraz ustu. Oyuncu sokaktan +Z tarafindan gelir.
-            sign.transform.position = new Vector3(
-                bounds.center.x,
-                bounds.min.y + bounds.size.y * 0.55f,
-                bounds.max.z + 0.05f);
-
-            sign.transform.rotation = Quaternion.identity;
+            // Binanin YEREL +Z yuzu (mahallede sokaga bakan on yuz, 10d-1a), kapi hizasinin biraz ustu.
+            // Olcu yerel kutudan: kup -0.5..0.5; 0.05 m disari.
+            Transform t = building.transform;
+            sign.transform.position = t.TransformPoint(new Vector3(0f, 0.05f, 0.5f)) + t.forward * 0.05f;
+            sign.transform.rotation = t.rotation;
 
             // Binanin olcegi (ornegin 3x3x3) yaziyi buyutmesin: tersini uygula.
             Vector3 parentScale = building.transform.lossyScale;
@@ -150,17 +146,6 @@ namespace KanBagi.EditorTools
             var serialized = new SerializedObject(signUI);
             serialized.FindProperty("building").objectReferenceValue = building;
             serialized.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        private static Bounds GetWorldBounds(PropertyBuilding building)
-        {
-            var renderer = building.GetComponent<Renderer>();
-            if (renderer != null) return renderer.bounds;
-
-            var buildingCollider = building.GetComponent<Collider>();
-            if (buildingCollider != null) return buildingCollider.bounds;
-
-            return new Bounds(building.transform.position, Vector3.one);
         }
 
         private static float SafeInverse(float value) => Mathf.Approximately(value, 0f) ? 1f : 1f / value;

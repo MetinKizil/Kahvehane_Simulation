@@ -15,6 +15,15 @@ namespace KanBagi.Customers
     /// musterinin ne yaptigini bilmez (SOLID).
     /// Son musteri saatinden sonra gondermeyi keser, kapanista icerideki musterileri cikarir.
     /// </summary>
+    /// <summary>Mahalledeki bir sokak girisi (10d-1a). Tercih eden profil varsa o profil buradan gelir.</summary>
+    [Serializable]
+    public class StreetEntry
+    {
+        public Transform point;
+        [Tooltip("Bos = herkes. Dolu = sadece bu profiller (ogrenci okul tarafindan gelir).")]
+        public List<CustomerProfile> preferredProfiles = new List<CustomerProfile>();
+    }
+
     public class CustomerSpawner : MonoBehaviour
     {
         [Header("Musteri")]
@@ -28,6 +37,10 @@ namespace KanBagi.Customers
         [SerializeField] private Transform spawnPoint;
         [Tooltip("Musterinin ciktigi nokta. Bos birakilirsa giris noktasi kullanilir.")]
         [SerializeField] private Transform exitPoint;
+
+        [Tooltip("Mahalledeki sokak girisleri (10d-1a). Grup bunlardan birinden yurur gelir, ayni yerden gider. " +
+                 "Bos birakilirsa giris noktasi kullanilir. Kurulum: Kan Bagi > Mahalleyi Kur.")]
+        [SerializeField] private List<StreetEntry> streetEntries = new List<StreetEntry>();
 
         [Header("Zamanlama")]
         [SerializeField] private float firstSpawnDelay = 3f;
@@ -115,12 +128,17 @@ namespace KanBagi.Customers
             size = Mathf.Min(size, maxActiveCustomers - activeCustomers.Count);
             if (size <= 0 || !TableManager.Instance.HasTableFor(size)) return;
 
+            Transform street = PickStreetEntry(profile);
+            Vector3 origin = street != null ? street.position : SpawnPosition;
+            Quaternion facing = street != null ? street.rotation : SpawnRotation;
+            Vector3 exit = street != null ? street.position : ExitPosition;
+
             var members = new List<Customer>();
-            Vector3 side = SpawnRotation * Vector3.right;
+            Vector3 side = facing * Vector3.right;
             for (int i = 0; i < size; i++)
             {
-                Vector3 position = SpawnPosition + side * ((i - (size - 1) * 0.5f) * groupSpacing);
-                GameObject customerObject = Instantiate(customerPrefab, position, SpawnRotation);
+                Vector3 position = origin + side * ((i - (size - 1) * 0.5f) * groupSpacing);
+                GameObject customerObject = Instantiate(customerPrefab, position, facing);
 
                 if (!customerObject.TryGetComponent(out Customer customer))
                 {
@@ -149,7 +167,7 @@ namespace KanBagi.Customers
                 Customer member = members[i];
                 activeCustomers.Add(member);
                 member.OnLeft += HandleCustomerLeft;
-                member.Initialize(ExitPosition, profile, table, seats[i], group);
+                member.Initialize(exit, profile, table, seats[i], group);
 
                 OnCustomerSpawned?.Invoke(member);
             }
@@ -177,6 +195,26 @@ namespace KanBagi.Customers
             }
 
             return candidates.Count > 0 ? candidates[UnityEngine.Random.Range(0, candidates.Count)] : null;
+        }
+
+        /// <summary>
+        /// Profili tercih eden giris varsa ondan (ogrenci okul tarafindan), yoksa kimseye ozel olmayan girislerden
+        /// rastgele biri. Hic giris yoksa null (dukkan kapisindaki eski nokta kullanilir).
+        /// </summary>
+        private Transform PickStreetEntry(CustomerProfile profile)
+        {
+            var preferred = new List<Transform>();
+            var open = new List<Transform>();
+            foreach (StreetEntry entry in streetEntries)
+            {
+                if (entry == null || entry.point == null) continue;
+
+                if (entry.preferredProfiles.Count == 0) open.Add(entry.point);
+                else if (profile != null && entry.preferredProfiles.Contains(profile)) preferred.Add(entry.point);
+            }
+
+            List<Transform> pool = preferred.Count > 0 ? preferred : open;
+            return pool.Count > 0 ? pool[UnityEngine.Random.Range(0, pool.Count)] : null;
         }
 
         private static void DestroyAll(List<Customer> members)

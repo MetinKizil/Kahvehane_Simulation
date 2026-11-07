@@ -22,6 +22,8 @@ namespace KanBagi.Furniture
         private static NavMeshRuntimeBaker instance;
 
         private Coroutine pendingBake;
+        private bool bakeRequestedWhileRunning;
+        private bool hasBuiltOnce;  // ilk bake tam: diskteki NavMesh asset'i yerine bellekte yeni veri olussun
 
         /// <summary>Esya/upgrade disinda yolu degistiren seyler (bodrum kapagi, D6c) icin: sahnedeki baker'a bake ister.</summary>
         public static void RequestRebake()
@@ -54,16 +56,41 @@ namespace KanBagi.Furniture
         /// <summary>Bake'i bir sonraki kareye erteler; o kareye kadar gelen istekler birlesir.</summary>
         public void RequestBake()
         {
-            if (!enabled || pendingBake != null) return;
+            if (!enabled) return;
+            if (pendingBake != null)
+            {
+                bakeRequestedWhileRunning = true;
+                return;
+            }
 
             pendingBake = StartCoroutine(BakeNextFrame());
         }
 
+        /// <summary>
+        /// Ilk seferde tam bake (acilista; diskteki asset degistirilmesin diye yeni veri). Sonrakiler UpdateNavMesh: arka planda calisir ve sadece degisen
+        /// karolari (esyanin oldugu bolgeyi) yeniden kurar - buyuk mahallede takilma olmaz (10d-1a).
+        /// Guncelleme surerken gelen istek, bittikten sonra bir tur daha calistirir.
+        /// </summary>
         private IEnumerator BakeNextFrame()
         {
             yield return null;
 
-            surface.BuildNavMesh();
+            if (!hasBuiltOnce)
+            {
+                surface.BuildNavMesh();
+                hasBuiltOnce = true;
+                pendingBake = null;
+                yield break;
+            }
+
+            do
+            {
+                bakeRequestedWhileRunning = false;
+                AsyncOperation operation = surface.UpdateNavMesh(surface.navMeshData);
+                while (operation != null && !operation.isDone) yield return null;
+            }
+            while (bakeRequestedWhileRunning);
+
             pendingBake = null;
         }
 

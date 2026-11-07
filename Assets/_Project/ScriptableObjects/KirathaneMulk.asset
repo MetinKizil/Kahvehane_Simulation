@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ac8d6c249b03e24a9558ef4c3a49cbe, type: 3}
   m_Name: KirathaneMulk
   m_EditorClassIdentifier: Assembly-CSharp::KanBagi.Data.PropertyData
-  propertyName: "Eski K\u0131raathane"
-  description: "Mahallenin en eski mekânı. Herkes burayı bilir."
+  propertyName: Eczane
+  description: "Mahallenin eczanesi. Herkesin yolu bir gün buraya düşer."
   purchasePrice: 2000
   dailyIncome: 160
   requiredReputation: 240
